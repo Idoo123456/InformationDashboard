@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
 import TVDisplay from './pages/TVDisplay';
 import AdminDashboard from './pages/AdminDashboard';
