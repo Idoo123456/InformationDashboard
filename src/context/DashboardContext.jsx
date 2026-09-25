@@ -5,24 +5,32 @@ const DashboardContext = createContext();
 const defaultFacultyName = "Universitas Riau";
 
 const defaultSchedules = [
-  { id: 1, time: '09:00', day: 'Hari Ini', title: 'Rapat IKU Triwulan III', loc: 'Studio (Lt.1)' },
-  { id: 2, time: '10:00', day: 'Hari Ini', title: 'Rapat IKU', loc: 'Studio (Lt.1)' },
-  { id: 3, time: '13:00', day: 'Hari Ini', title: 'Rapat Koordinasi Distribusi Pengadaan 2026', loc: 'Studio (Lt.1)' },
-  { id: 4, time: '07:30', day: 'Besok', title: 'VAKSIN', loc: 'Ruang Rapat Lobi' },
-  { id: 5, time: '08:30', day: 'Besok', title: 'Rapat Rutin Dan Persiapan AMI Profesi Dokter', loc: 'Ruang Rapat Senat (Lt.5)' },
-  { id: 6, time: '09:40', day: 'Besok', title: 'Kuliah Sp.KKLP', loc: 'Kuantan Lt.1' }
+  { id: 1, date: '2026-09-22', startTime: '09:00', endTime: '12:00', title: 'Rapat IKU Triwulan III', description: 'Evaluasi kinerja triwulan', loc: 'Studio (Lt.1)', status: 'Berlangsung', pic: 'Biro Umum', partnerCategory: 'Internal' },
+  { id: 2, date: '2026-09-22', startTime: '10:00', endTime: '11:00', title: 'Rapat IKU', description: 'Lanjutan evaluasi', loc: 'Ruang Rapat Senat (Lt.5)', status: 'Akan Datang', pic: 'Bagian Keuangan', partnerCategory: 'Internal' },
+  { id: 3, date: '2026-09-22', startTime: '13:00', endTime: '15:00', title: 'Rapat Koordinasi Distribusi Pengadaan 2026', description: 'Persiapan distribusi alat', loc: 'Studio (Lt.1)', status: 'Akan Datang', pic: 'Tim Pengadaan', partnerCategory: 'Eksternal' },
+  { id: 4, date: '2026-09-23', startTime: '07:30', endTime: '10:00', title: 'VAKSIN', description: 'Vaksinasi booster', loc: 'Ruang Rapat Lobi', status: 'Akan Datang', pic: 'Dinas Kesehatan', partnerCategory: 'Eksternal' },
+  { id: 5, date: '2026-09-23', startTime: '08:30', endTime: '12:00', title: 'Rapat Rutin Dan Persiapan AMI Profesi Dokter', description: 'Rapat rutin bulanan', loc: 'Ruang Rapat Senat (Lt.5)', status: 'Akan Datang', pic: 'Fakultas Kedokteran', partnerCategory: 'Internal' },
+  { id: 6, date: '2026-09-23', startTime: '09:40', endTime: '11:40', title: 'Kuliah Sp.KKLP', description: 'Kuliah umum', loc: 'Kuantan Lt.1', status: 'Akan Datang', pic: 'Program Studi', partnerCategory: 'Internal' }
 ];
 
+const getNextMonthDate = () => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1);
+  return d.toISOString().split('T')[0];
+};
+
 const defaultAnnouncements = [
-  "Selamat Datang di Pusat Informasi Kampus Terpadu Universitas Riau.",
-  "Rapat IKU Triwulan III akan dilaksanakan pada pukul 09:00 di Gedung Rektorat.",
-  "Jangan lupa untuk selalu mematuhi protokol kesehatan di lingkungan kampus.",
-  "Pengisian KRS Semester Ganjil 2026/2027 telah dibuka melalui portal akademik."
+  { id: 1, text: "Selamat Datang di Pusat Informasi Kampus Terpadu Universitas Riau.", expiryDate: getNextMonthDate() },
+  { id: 2, text: "Rapat IKU Triwulan III akan dilaksanakan pada pukul 09:00 di Gedung Rektorat.", expiryDate: getNextMonthDate() },
+  { id: 3, text: "Jangan lupa untuk selalu mematuhi protokol kesehatan di lingkungan kampus.", expiryDate: getNextMonthDate() },
+  { id: 4, text: "Pengisian KRS Semester Ganjil 2026/2027 telah dibuka melalui portal akademik.", expiryDate: getNextMonthDate() }
 ];
 
 const defaultSlides = [
   {
     id: 1,
+    mediaType: 'none',
+    mediaUrl: '',
     tag: "Whistle Blower System",
     tagStyle: { background: "rgba(255,255,255,0.2)", color: "white" },
     title: "Laporkan Pelanggaran<br/>Integritas <strong>UNRI!</strong>",
@@ -35,11 +43,13 @@ const defaultSlides = [
   },
   {
     id: 2,
+    mediaType: 'none',
+    mediaUrl: '',
     tag: "Zona Integritas",
     tagStyle: { background: "white", color: "#4a7bd1" },
     title: "Stop Kekerasan<br/>di <strong>Lingkungan UNRI!</strong>",
     desc: "Terima atau melihat tindakan kekerasan di lingkungan kampus? Jangan diam, laporkan melalui kanal resmi kami. Setiap laporan akan diproses Tim Satgas PPKS Universitas Riau.",
-    btnText: "Lapor Disini",
+    btnText: "",
     btnStyle: { background: "white", color: "#2f5597" },
     bg: "linear-gradient(135deg, #2f5597 0%, #4a7bd1 100%)",
     qr: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id/lapor-kekerasan",
@@ -51,14 +61,42 @@ export function DashboardProvider({ children }) {
   const loadState = (key, defaultValue) => {
     const saved = localStorage.getItem(key);
     if (!saved) return defaultValue;
-    const parsed = JSON.parse(saved);
-    
-    // Fallback for corrupted slide data from previous version
-    if (key === 'slides' && parsed.length > 0 && !parsed[0].bg) {
+    try {
+      const parsed = JSON.parse(saved);
+      
+      // Data Migration
+      if (key === 'announcements' && Array.isArray(parsed)) {
+        // Jika data lama masih berupa string, ubah jadi object
+        return parsed.map((item, idx) => {
+          if (typeof item === 'string') {
+            return { id: Date.now() + idx, text: item, expiryDate: getNextMonthDate() };
+          }
+          return item;
+        });
+      }
+      
+      if (key === 'schedules' && Array.isArray(parsed)) {
+        return parsed.map(item => ({
+          ...item,
+          pic: item.pic || '-',
+          partnerCategory: item.partnerCategory || 'Internal'
+        }));
+      }
+
+      if (key === 'slides' && Array.isArray(parsed)) {
+        // Fallback for corrupted slide data from previous version
+        if (parsed.length > 0 && !parsed[0].bg) return defaultValue;
+        return parsed.map(item => ({
+          ...item,
+          mediaType: item.mediaType || 'none',
+          mediaUrl: item.mediaUrl || ''
+        }));
+      }
+      
+      return parsed;
+    } catch (e) {
       return defaultValue;
     }
-    
-    return parsed;
   };
 
   const [facultyName, setFacultyName] = useState(() => loadState('facultyName', defaultFacultyName));
@@ -78,6 +116,43 @@ export function DashboardProvider({ children }) {
   useEffect(() => localStorage.setItem('slideDuration', JSON.stringify(slideDuration)), [slideDuration]);
   useEffect(() => localStorage.setItem('marqueeSpeed', JSON.stringify(marqueeSpeed)), [marqueeSpeed]);
   useEffect(() => localStorage.setItem('scheduleSpeed', JSON.stringify(scheduleSpeed)), [scheduleSpeed]);
+
+  // Auto-cleanup expired items
+  useEffect(() => {
+    const cleanup = () => {
+      const now = new Date();
+      
+      setSchedules(prev => {
+        const active = prev.filter(item => {
+          try {
+            const dateStr = item.date || now.toISOString().split('T')[0];
+            const endStr = item.endTime || '23:59';
+            const endDateTime = new Date(`${dateStr}T${endStr}:00`);
+            const hideTime = new Date(endDateTime.getTime() + 10 * 60000); 
+            return now <= hideTime;
+          } catch (e) {
+            return true;
+          }
+        });
+        return active.length !== prev.length ? active : prev;
+      });
+
+      setAnnouncements(prev => {
+        const active = prev.filter(item => {
+          if (typeof item === 'string') return true;
+          if (!item.expiryDate) return true;
+          const expiry = new Date(item.expiryDate);
+          return expiry >= now;
+        });
+        return active.length !== prev.length ? active : prev;
+      });
+    };
+
+    cleanup(); // Run immediately on mount
+    const interval = setInterval(cleanup, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Listen to local storage changes from other tabs (Admin Dashboard)
   useEffect(() => {

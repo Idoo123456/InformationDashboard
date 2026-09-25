@@ -589,3 +589,131 @@ textarea.admin-input {
   border: 1px solid #fecaca;
 }
 
+.print-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+  
+  .no-print,
+  .admin-sidebar,
+  .admin-header,
+  .admin-breadcrumbs,
+  .admin-nav-footer {
+    display: none !important;
+  }
+  
+  /* Make sure background colors print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  .admin-layout, .admin-content, .admin-main, .card {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-area {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .print-header {
+    display: flex !important;
+    align-items: center;
+    border-bottom: 3px solid black;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    gap: 20px;
+  }
+
+  .print-logo-container {
+    flex-shrink: 0;
+  }
+
+  .print-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+  }
+
+  .print-title-container {
+    flex: 1;
+    text-align: center;
+  }
+
+  .print-title {
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0;
+    text-transform: uppercase;
+    color: black !important;
+  }
+
+  .print-subtitle {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 5px 0;
+    color: black !important;
+  }
+
+  .print-date {
+    font-size: 11pt;
+    margin: 0;
+    color: black !important;
+  }
+
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+    table-layout: fixed !important;
+    display: table !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+  }
+
+  .print-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .print-table th, .print-table td {
+    border: 1px solid black !important;
+    padding: 8px !important;
+    text-align: left !important;
+    color: black !important;
+    font-size: 10pt !important;
+  }
+
+  .print-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: bold !important;
+  }
+}
+
+/* RESPONSIVE TABLES */
+@media screen and (max-width: 768px) {
+  .print-area table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

@@ -1,11 +1,25 @@
 import { Info, Globe } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import logoUnri from '../assets/LogoUnri2.png';
 import { useDashboard } from '../context/DashboardContext';
 
 const Footer = () => {
   const marqueeRef = useRef(null);
   const { announcements, marqueeSpeed } = useDashboard();
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
+
+  const activeAnnouncements = announcements.filter(item => {
+    if (typeof item === 'string') return true; // Legacy fallback
+    if (!item.expiryDate) return true;
+    const expiry = new Date(item.expiryDate);
+    return expiry >= currentTime;
+  });
 
   // To make it seamless, we double the content in CSS animation
   return (
@@ -16,19 +30,25 @@ const Footer = () => {
           <div className="marquee-content" ref={marqueeRef} style={{ animationDuration: `${marqueeSpeed || 20}s` }}>
             {/* Group 1 */}
             <div className="marquee-group">
-              {announcements.map((text, i) => (
-                <span key={i}>
-                  <Info size={16} className="icon-blue" style={{ marginRight: '8px' }} /> {text}
-                </span>
-              ))}
+              {activeAnnouncements.map((item, i) => {
+                const text = typeof item === 'string' ? item : item.text;
+                return (
+                  <span key={i}>
+                    <Info size={16} className="icon-blue" style={{ marginRight: '8px' }} /> {text}
+                  </span>
+                );
+              })}
             </div>
             {/* Group 2 (Clone for seamless loop) */}
             <div className="marquee-group" aria-hidden="true">
-              {announcements.map((text, i) => (
-                <span key={`clone-${i}`}>
-                  <Info size={16} className="icon-blue" style={{ marginRight: '8px' }} /> {text}
-                </span>
-              ))}
+              {activeAnnouncements.map((item, i) => {
+                const text = typeof item === 'string' ? item : item.text;
+                return (
+                  <span key={`clone-${i}`}>
+                    <Info size={16} className="icon-blue" style={{ marginRight: '8px' }} /> {text}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
