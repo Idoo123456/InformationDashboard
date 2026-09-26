@@ -18,13 +18,14 @@ const Sidebar = () => {
   const activeSchedules = schedules.filter(item => {
     try {
       const scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
-      const endStr = item.endTime || '23:59';
-      const endDateTime = new Date(`${scheduleDateStr}T${endStr}:00`);
       
-      // Tambah 10 menit setelah waktu selesai
-      const hideTime = new Date(endDateTime.getTime() + 10 * 60000); 
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const scheduleDate = new Date(`${scheduleDateStr}T00:00:00`);
       
-      return currentTime <= hideTime;
+      // Tampilkan semua jadwal hari ini dan yang akan datang
+      return scheduleDate >= today;
     } catch (e) {
       return true;
     }

@@ -245,15 +245,7 @@ function AdminDashboard() {
   };
 
   const handleSaveAnnouncements = () => {
-    const now = new Date();
-    const active = localAnnouncements.filter(item => {
-      if (typeof item === 'string') return true;
-      if (!item.expiryDate) return true;
-      const expiry = new Date(item.expiryDate);
-      return expiry >= now;
-    });
-
-    setAnnouncements(active);
+    setAnnouncements(localAnnouncements);
     setMarqueeSpeed(localMarqueeSpeed);
     showSuccessPopup('Pengumuman berhasil disimpan dan diperbarui di layar TV!');
   };
@@ -275,20 +267,7 @@ function AdminDashboard() {
   };
 
   const handleSaveSchedules = () => {
-    const now = new Date();
-    const active = localSchedules.filter(item => {
-      try {
-        const dateStr = item.date || now.toISOString().split('T')[0];
-        const endStr = item.endTime || '23:59';
-        const endDateTime = new Date(`${dateStr}T${endStr}:00`);
-        const hideTime = new Date(endDateTime.getTime() + 10 * 60000); 
-        return now <= hideTime;
-      } catch (e) {
-        return true;
-      }
-    });
-
-    setSchedules(active);
+    setSchedules(localSchedules);
     setScheduleSpeed(localScheduleSpeed);
     showSuccessPopup('Jadwal berhasil disimpan dan diperbarui di layar TV!');
   };

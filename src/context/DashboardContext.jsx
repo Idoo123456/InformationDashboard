@@ -117,42 +117,7 @@ export function DashboardProvider({ children }) {
   useEffect(() => localStorage.setItem('marqueeSpeed', JSON.stringify(marqueeSpeed)), [marqueeSpeed]);
   useEffect(() => localStorage.setItem('scheduleSpeed', JSON.stringify(scheduleSpeed)), [scheduleSpeed]);
 
-  // Auto-cleanup expired items
-  useEffect(() => {
-    const cleanup = () => {
-      const now = new Date();
-      
-      setSchedules(prev => {
-        const active = prev.filter(item => {
-          try {
-            const dateStr = item.date || now.toISOString().split('T')[0];
-            const endStr = item.endTime || '23:59';
-            const endDateTime = new Date(`${dateStr}T${endStr}:00`);
-            const hideTime = new Date(endDateTime.getTime() + 10 * 60000); 
-            return now <= hideTime;
-          } catch (e) {
-            return true;
-          }
-        });
-        return active.length !== prev.length ? active : prev;
-      });
-
-      setAnnouncements(prev => {
-        const active = prev.filter(item => {
-          if (typeof item === 'string') return true;
-          if (!item.expiryDate) return true;
-          const expiry = new Date(item.expiryDate);
-          return expiry >= now;
-        });
-        return active.length !== prev.length ? active : prev;
-      });
-    };
-
-    cleanup(); // Run immediately on mount
-    const interval = setInterval(cleanup, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, []);
+  // Auto-cleanup was intentionally removed so admin can see history of past activities.
 
   // Listen to local storage changes from other tabs (Admin Dashboard)
   useEffect(() => {
