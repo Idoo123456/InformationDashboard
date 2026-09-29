@@ -7,6 +7,7 @@ import '../admin.css';
 import logoUnri from '../assets/LogoUnri2.png';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import localforage from 'localforage';
+import ImageCropper from '../components/ImageCropper';
 
 const showSuccessPopup = (message) => {
   Swal.fire({
@@ -51,6 +52,7 @@ const showConfirmDelete = (onConfirm) => {
 };
 
 function AdminDashboard() {
+  const [croppingImage, setCroppingImage] = useState(null);
   const { 
     facultyName, setFacultyName, 
     schedules, setSchedules, 
@@ -302,39 +304,66 @@ function AdminDashboard() {
 
   const handleImageUpload = (slideId, file, targetField) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let MAX_WIDTH = targetField === 'qr' ? 300 : 1920;
-        let MAX_HEIGHT = targetField === 'qr' ? 300 : 1080;
-        let width = img.width;
-        let height = img.height;
+    const objectUrl = URL.createObjectURL(file);
+    setCroppingImage({
+      slideId,
+      targetField,
+      src: objectUrl,
+      aspect: targetField === 'qr' ? 1 : undefined
+    });
+  };
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
+  const handleCropComplete = async (croppedBlob) => {
+    const { slideId, targetField } = croppingImage;
+    
+    if (targetField === 'mediaUrl') {
+      try {
+        const storageKey = `media_${slideId}_${Date.now()}`;
+        await localforage.setItem(storageKey, croppedBlob);
+        updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
+        URL.revokeObjectURL(croppingImage.src);
+        setCroppingImage(null);
+      } catch(e) {
+        console.error(e);
+        Swal.fire('Error', 'Gagal menyimpan gambar crop ke lokal', 'error');
+      }
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(croppedBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let MAX_WIDTH = targetField === 'qr' ? 300 : 1920;
+      let MAX_HEIGHT = targetField === 'qr' ? 300 : 1080;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        const finalValue = targetField === 'bg' ? `url('${dataUrl}') center/cover no-repeat` : dataUrl;
-        updateSlide(slideId, targetField, finalValue);
-      };
-      img.src = event.target.result;
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+      const finalValue = targetField === 'bg' ? `url('${dataUrl}') center/cover no-repeat` : dataUrl;
+      updateSlide(slideId, targetField, finalValue);
+      
+      URL.revokeObjectURL(croppingImage.src);
+      URL.revokeObjectURL(objectUrl);
+      setCroppingImage(null);
     };
-    reader.readAsDataURL(file);
+    img.src = objectUrl;
   };
 
   const handleMediaUpload = async (slideId, file) => {
@@ -351,8 +380,8 @@ function AdminDashboard() {
       return;
     }
     
-    // For small images (<2MB), base64 is still fast and easy
-    if (file.type.startsWith('image/') && file.size < 2 * 1024 * 1024) {
+    // For images, redirect to cropper
+    if (file.type.startsWith('image/')) {
       handleImageUpload(slideId, file, 'mediaUrl');
       return;
     }
@@ -685,6 +714,18 @@ function AdminDashboard() {
               </div>
               <div className="list-group">
                 {localSchedules.map((schedule) => {
+                  const locOptions = [
+                    'TGCL - Podcast',
+                    'TGCL - Meetingroom',
+                    'TGCL - Event & Training Area',
+                    'Studio Gurindam 12',
+                    'Ruang Pertemuan/Meeting Room',
+                    'Ruang Diskusi (Max 15 orang)',
+                    'Ruang Diskusi (Max 8 orang)',
+                    ''
+                  ];
+                  const isCustomLoc = schedule.isCustomLoc !== undefined ? schedule.isCustomLoc : !locOptions.includes(schedule.loc || '');
+
                   const picOptions = [
                     'Evi Susanti, S.Si., M.I.Kom.', 
                     'Gusti Maya Sari, S. IP.', 
@@ -748,7 +789,17 @@ function AdminDashboard() {
                         </div>
                         <div style={{ flex: '2 1 200px' }}>
                           <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ruangan</label>
-                          <select value={schedule.loc || ''} onChange={(e) => updateSchedule(schedule.id, 'loc', e.target.value)} className="admin-input">
+                          <select
+                            value={isCustomLoc ? 'Lainnya' : (schedule.loc || '')}
+                            onChange={(e) => {
+                              if (e.target.value === 'Lainnya') {
+                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomLoc: true, loc: '' } : s));
+                              } else {
+                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomLoc: false, loc: e.target.value } : s));
+                              }
+                            }}
+                            className="admin-input"
+                          >
                             <option value="">Pilih Ruangan...</option>
                             <option value="TGCL - Podcast">TGCL - Podcast</option>
                             <option value="TGCL - Meetingroom">TGCL - Meetingroom</option>
@@ -757,7 +808,18 @@ function AdminDashboard() {
                             <option value="Ruang Pertemuan/Meeting Room">Ruang Pertemuan/Meeting Room</option>
                             <option value="Ruang Diskusi (Max 15 orang)">Ruang Diskusi (Max 15 orang)</option>
                             <option value="Ruang Diskusi (Max 8 orang)">Ruang Diskusi (Max 8 orang)</option>
+                            <option value="Lainnya">Lainnya (Isi Sendiri)...</option>
                           </select>
+                          {isCustomLoc && (
+                            <input 
+                              type="text" 
+                              value={schedule.loc || ''} 
+                              onChange={(e) => updateSchedule(schedule.id, 'loc', e.target.value)} 
+                              className="admin-input" 
+                              placeholder="Ketik nama ruangan..." 
+                              style={{ marginTop: '0.5rem' }}
+                            />
+                          )}
                         </div>
                       </div>
 
@@ -976,15 +1038,16 @@ function AdminDashboard() {
                                 </label>
                               </div>
                               
-                              <label>Skala Tampilan (Rasio Aspek)</label>
+                              <label>Skala / Potongan Background</label>
                               <select 
                                 value={slide.mediaFit || 'cover'} 
                                 onChange={(e) => updateSlide(slide.id, 'mediaFit', e.target.value)} 
                                 className="admin-input" 
                                 style={{ marginBottom: '1rem' }}
                               >
-                                <option value="cover">Penuhi Layar (Cover - Tepian mungkin terpotong)</option>
-                                <option value="contain">Ukuran Asli (Contain - Presisi & tidak terpotong)</option>
+                                <option value="cover">Cover (Penuhi Layar - Tepian mungkin terpotong)</option>
+                                <option value="contain">Contain (Ukuran Asli - Presisi & tidak terpotong)</option>
+                                <option value="fill">Fill (Tarik Penuh - Gambar mungkin melebar/memanjang)</option>
                               </select>
                             </>
                           )}
@@ -992,12 +1055,27 @@ function AdminDashboard() {
 
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Gambar QR Code (Upload/URL)</label>
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
                             <input type="text" value={slide.qr} onChange={(e) => updateSlide(slide.id, 'qr', e.target.value)} className="admin-input" style={{ flex: 1 }} placeholder="Masukkan link gambar QR..." />
-                            <label className="btn-save" style={{ cursor: 'pointer', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
+                            <label className="btn-save" style={{ cursor: 'pointer', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#3b82f6', boxShadow: 'none' }}>
                               <Upload size={16} /> Pilih QR
                               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload(slide.id, e.target.files[0], 'qr')} />
                             </label>
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '0.85rem' }}>Ukuran QR (px)</label>
+                              <input type="number" value={slide.qrSize || 240} onChange={(e) => updateSlide(slide.id, 'qrSize', parseInt(e.target.value))} className="admin-input" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '0.85rem' }}>Potongan QR</label>
+                              <select value={slide.qrFit || 'cover'} onChange={(e) => updateSlide(slide.id, 'qrFit', e.target.value)} className="admin-input">
+                                <option value="cover">Cover</option>
+                                <option value="contain">Contain</option>
+                                <option value="fill">Fill</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1125,6 +1203,17 @@ function AdminDashboard() {
 
         </main>
       </div>
+      {croppingImage && (
+        <ImageCropper 
+          imageSrc={croppingImage.src}
+          initialAspect={croppingImage.aspect}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            URL.revokeObjectURL(croppingImage.src);
+            setCroppingImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }

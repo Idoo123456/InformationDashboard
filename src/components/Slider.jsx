@@ -65,7 +65,7 @@ const Slider = () => {
               ...(slide.mediaType === 'image' && finalUrl ? {
                 backgroundImage: `url(${finalUrl})`,
                 backgroundPosition: 'center',
-                backgroundSize: slide.mediaFit || 'cover',
+                backgroundSize: slide.mediaFit === 'fill' ? '100% 100%' : (slide.mediaFit || 'cover'),
                 backgroundRepeat: 'no-repeat'
               } : {})
             }}
@@ -109,7 +109,15 @@ const Slider = () => {
             
             {!slide.isMediaOnly && slide.qr && (
               <div className="slide-qr" style={{ position: 'relative', zIndex: 2 }}>
-                <img src={slide.qr} alt="QR Code" />
+                <img 
+                  src={slide.qr} 
+                  alt="QR Code" 
+                  style={{ 
+                    width: slide.qrSize ? `${slide.qrSize}px` : '240px', 
+                    height: slide.qrSize ? `${slide.qrSize}px` : '240px', 
+                    objectFit: slide.qrFit || 'cover' 
+                  }} 
+                />
                 <span>{slide.qrLabel}</span>
               </div>
             )}
