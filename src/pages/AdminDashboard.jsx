@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search } from 'lucide-react';
+import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import '../admin.css';
@@ -67,6 +67,15 @@ function AdminDashboard() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Schedule Views & Modal States
+  const [scheduleView, setScheduleView] = useState('daftar');
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null);
+  const [scheduleSearch, setScheduleSearch] = useState('');
+  const [scheduleDateFrom, setScheduleDateFrom] = useState('');
+  const [scheduleDateTo, setScheduleDateTo] = useState('');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Filter Reports States
   const [reportStartDate, setReportStartDate] = useState(() => {
@@ -254,8 +263,29 @@ function AdminDashboard() {
 
   const handleAddSchedule = () => {
     const today = new Date().toISOString().split('T')[0];
-    setLocalSchedules([...localSchedules, { id: Date.now(), date: today, startTime: '09:00', endTime: '12:00', title: 'Kegiatan Baru', description: '', loc: 'Ruang Rapat 1', status: 'Otomatis', pic: '', partnerCategory: 'Internal' }]);
-    showToastPopup('Jadwal berhasil ditambahkan');
+    setEditingSchedule({ id: Date.now(), date: today, startTime: '09:00', endTime: '12:00', title: '', description: '', loc: '', status: 'Otomatis', pic: '', partnerCategory: 'Internal' });
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleEditSchedule = (schedule) => {
+    setEditingSchedule({ ...schedule });
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleSaveModalSchedule = () => {
+    if (!editingSchedule.title) {
+      Swal.fire('Error', 'Nama Kegiatan harus diisi', 'error');
+      return;
+    }
+    const exists = localSchedules.find(s => s.id === editingSchedule.id);
+    if (exists) {
+      setLocalSchedules(localSchedules.map(s => s.id === editingSchedule.id ? editingSchedule : s));
+    } else {
+      setLocalSchedules([...localSchedules, editingSchedule]);
+    }
+    setIsScheduleModalOpen(false);
+    setEditingSchedule(null);
+    showToastPopup('Jadwal berhasil disimpan');
   };
 
   const updateSchedule = (id, field, value) => {
@@ -273,6 +303,25 @@ function AdminDashboard() {
     setScheduleSpeed(localScheduleSpeed);
     showSuccessPopup('Jadwal berhasil disimpan dan diperbarui di layar TV!');
   };
+
+  const schedulesWithDynamicStatus = localSchedules.map(s => ({ ...s, dynamicStatus: getDynamicStatus(s) }));
+  
+  const filteredSchedulesView = schedulesWithDynamicStatus.filter(s => {
+    const matchSearch = !scheduleSearch || (s.title && s.title.toLowerCase().includes(scheduleSearch.toLowerCase()));
+    const matchDateFrom = !scheduleDateFrom || s.date >= scheduleDateFrom;
+    const matchDateTo = !scheduleDateTo || s.date <= scheduleDateTo;
+    return matchSearch && matchDateFrom && matchDateTo;
+  }).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  const activeSchedulesList = filteredSchedulesView.filter(s => s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Berlangsung' || s.dynamicStatus === 'Otomatis');
+  const historySchedulesList = filteredSchedulesView.filter(s => s.dynamicStatus === 'Selesai' || s.dynamicStatus === 'Dibatalkan').sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+
 
   const handleAddSlide = () => {
     setLocalSlides([...localSlides, {
@@ -453,6 +502,13 @@ function AdminDashboard() {
             </h1>
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <div style={{ position: 'relative', cursor: 'pointer' }}>
+              <Bell size={20} color="#67748e" />
+              <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', background: '#ea0606', borderRadius: '50%', border: '2px solid white' }}></span>
+            </div>
+            <div style={{ cursor: 'pointer' }}>
+              <Cog size={20} color="#67748e" />
+            </div>
             <a href="/" target="_blank" className="view-btn">Lihat Layar TV</a>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid #e2e8f0', paddingLeft: '1.5rem' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
@@ -598,7 +654,7 @@ function AdminDashboard() {
 
           {/* SETTINGS */}
           {activeTab === 'settings' && (
-            <div className="card" style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
+            <div className="card" className="card-narrow" style={{ maxWidth: "800px", margin: "0 auto 2rem" }}>
               <h3>Pengaturan Identitas & Kecepatan Layar</h3>
               <div className="form-group">
                 <label>Teks Selamat Datang (Nama Fakultas / Institusi)</label>
@@ -617,291 +673,420 @@ function AdminDashboard() {
 
           {/* ANNOUNCEMENTS */}
           {activeTab === 'announcements' && (
-            <div className="card" style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
-              <div className="card-header" style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-                <h3 style={{ flex: 1, minWidth: '200px' }}>Daftar Pengumuman (Teks Berjalan)</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button className="btn-delete" style={{ background: selectedAnnouncements.length > 0 ? '#ef4444' : '#f1f5f9', color: selectedAnnouncements.length > 0 ? 'white' : '#94a3b8', padding: '0.5rem 1rem' }} onClick={handleDeleteSelectedAnnouncements} disabled={selectedAnnouncements.length === 0}>
-                    Hapus Terpilih ({selectedAnnouncements.length})
-                  </button>
-                  <button className="btn-delete" style={{ background: localAnnouncements.length > 0 ? '#ef4444' : '#f1f5f9', color: localAnnouncements.length > 0 ? 'white' : '#94a3b8', padding: '0.5rem 1rem' }} onClick={handleDeleteAllAnnouncements} disabled={localAnnouncements.length === 0}>
-                    Hapus Semua
-                  </button>
-                  <button className="btn-add" onClick={handleAddAnnouncement}><Plus size={16} /> Tambah</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              
+              {/* BAGIAN ATAS: LIVE PREVIEW & SPEED */}
+              <div className="card" style={{ padding: '2rem' }}>
+                <div className="card-header" style={{ marginBottom: '1.5rem', borderBottom: 'none', paddingBottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, color: '#344767' }}>
+                      <MonitorPlay size={22} color="#cb0c9f" /> Pratinjau Layar TV
+                    </h3>
+                    <p style={{ color: '#64748b', fontWeight: 500, fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: 0 }}>
+                      Simulasi tampilan teks berjalan pada layar utama.
+                    </p>
+                  </div>
+                  
+                  {/* SPEED CONTROL */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#f8f9fa', padding: '0.5rem 1rem', borderRadius: '0.75rem', border: '1px solid #e9ecef' }}>
+                    <Activity size={18} color="#8392ab" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', fontWeight: 600 }}>Kecepatan (Detik):</span>
+                    <input 
+                      type="number" 
+                      value={localMarqueeSpeed} 
+                      onChange={(e) => setLocalMarqueeSpeed(Number(e.target.value))} 
+                      min="5" max="60"
+                      className="admin-input"
+                      style={{ width: '70px', padding: '0.35rem 0.5rem', textAlign: 'center', fontWeight: 800, color: '#cb0c9f' }}
+                    />
+                  </div>
+                </div>
+                
+                {/* TV SIMULATOR */}
+                <div style={{ background: '#f8fafc', borderRadius: '1rem', padding: '2rem', position: 'relative', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)', marginTop: '1rem' }}>
+                  
+                  <div style={{ display: 'flex', background: 'rgba(255,255,255,0.95)', height: '55px', borderRadius: '0.5rem', overflow: 'hidden', alignItems: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}>
+                    {/* BLUE BADGE */}
+                    <div style={{ background: 'linear-gradient(310deg, #2152ff 0%, #21d4fd 100%)', color: 'white', fontWeight: 800, padding: '0 1.5rem', height: '100%', display: 'flex', alignItems: 'center', zIndex: 10, letterSpacing: '1px', fontSize: '0.9rem', boxShadow: '2px 0 10px rgba(0,0,0,0.1)' }}>
+                      PENGUMUMAN
+                    </div>
+                    {/* SCROLLING TEXT */}
+                    <div style={{ flex: 1, overflow: 'hidden', position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}>
+                      <div style={{ 
+                        whiteSpace: 'nowrap', 
+                        display: 'inline-block',
+                        animation: `scroll ${localMarqueeSpeed}s linear infinite`,
+                        color: '#344767',
+                        fontWeight: 700,
+                        fontSize: '1.15rem',
+                        paddingLeft: '100%'
+                      }}>
+                        {localAnnouncements.length > 0 ? localAnnouncements.map(a => typeof a === 'string' ? a : a.text).join(' • ') : 'Tidak ada pengumuman aktif...'}
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
-              <div className="form-group" style={{ marginBottom: '2rem' }}>
-                <label>Waktu Putar Teks Bawah (Detik, makin kecil makin cepat)</label>
-                <input 
-                  type="number" 
-                  value={localMarqueeSpeed} 
-                  onChange={(e) => setLocalMarqueeSpeed(Number(e.target.value))} 
-                  className="admin-input"
-                  min="5"
-                  style={{ maxWidth: '200px' }}
-                />
-              </div>
-              <div className="list-group">
-                {localAnnouncements.map((ann, i) => {
-                  const text = typeof ann === 'string' ? ann : ann.text;
-                  const expiry = typeof ann === 'string' ? '' : ann.expiryDate;
-                  return (
-                  <div key={i} className="list-item" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <input 
-                      type="checkbox"
-                      checked={selectedAnnouncements.includes(i)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedAnnouncements(prev => [...prev, i]);
-                        else setSelectedAnnouncements(prev => prev.filter(idx => idx !== i));
-                      }}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                    />
-                    <div style={{ flex: 1, minWidth: '300px' }}>
-                      <input 
-                        type="text" 
-                        value={text} 
-                        onChange={(e) => updateAnnouncement(i, 'text', e.target.value)}
-                        className="admin-input"
-                        placeholder="Teks pengumuman..."
-                      />
-                    </div>
-                    <div style={{ width: '220px' }}>
-                      <input 
-                        type="datetime-local" 
-                        value={expiry || ''} 
-                        onChange={(e) => updateAnnouncement(i, 'expiryDate', e.target.value)}
-                        className="admin-input"
-                        title="Waktu Berakhir"
-                      />
-                    </div>
-                    <button className="btn-delete" onClick={() => deleteAnnouncement(i)}><Trash2 size={16} /></button>
+
+              {/* BAGIAN BAWAH: LIST PENGUMUMAN */}
+              <div className="card" style={{ padding: '2rem' }}>
+                <div className="card-header" style={{ marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e9ecef', paddingBottom: '1.5rem' }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: '#344767' }}>Manajemen Daftar Pengumuman</h3>
+                    <p style={{ color: '#64748b', fontWeight: 500, fontSize: '0.9rem', marginTop: '0.25rem', marginBottom: 0 }}>Atur teks pengumuman yang akan ditampilkan di layar bawah TV.</p>
                   </div>
-                  );
-                })}
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button className="btn-delete" onClick={handleDeleteSelectedAnnouncements} disabled={selectedAnnouncements.length === 0} style={{ opacity: selectedAnnouncements.length === 0 ? 0.5 : 1 }}>
+                      Hapus Pilihan ({selectedAnnouncements.length})
+                    </button>
+                    <button className="btn-add" onClick={handleAddAnnouncement}>
+                      <Plus size={16} /> Tambah Baru
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="list-group" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {localAnnouncements.length === 0 ? (
+                    <div style={{ padding: '4rem 1rem', textAlign: 'center', color: '#64748b', fontWeight: 500, background: '#f8f9fa', borderRadius: '1rem', border: '2px dashed #e9ecef' }}>
+                      <MessageSquare size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem', color: '#344767' }}>Belum ada pengumuman.</p>
+                      <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Klik tombol "Tambah Baru" di atas untuk mulai membuat teks berjalan.</p>
+                    </div>
+                  ) : (
+                    localAnnouncements.map((ann, i) => {
+                      const text = typeof ann === 'string' ? ann : ann.text;
+                      const expiry = typeof ann === 'string' ? '' : ann.expiryDate;
+                      return (
+                      <div key={i} className="list-item" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', background: '#fff', padding: '1.25rem 1.5rem', borderRadius: '1rem', border: '1px solid #e9ecef', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', transition: 'all 0.2s' }}>
+                        
+                        {/* Checkbox */}
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <input 
+                            type="checkbox"
+                            checked={selectedAnnouncements.includes(i)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedAnnouncements(prev => [...prev, i]);
+                              else setSelectedAnnouncements(prev => prev.filter(idx => idx !== i));
+                            }}
+                            style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#cb0c9f' }}
+                          />
+                        </div>
+
+                        {/* Input Teks */}
+                        <div style={{ flex: 2 }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', fontWeight: 500, textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Isi Pengumuman</label>
+                          <input 
+                            type="text" 
+                            value={text} 
+                            onChange={(e) => updateAnnouncement(i, 'text', e.target.value)}
+                            className="admin-input"
+                            placeholder="Tuliskan teks pengumuman di sini..."
+                            style={{ fontWeight: 600, color: '#344767', width: '100%' }}
+                          />
+                        </div>
+
+                        {/* Input Expiry Date */}
+                        <div style={{ flex: 1, minWidth: '250px' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', fontWeight: 500, textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <Calendar size={12} /> Tanggal Berakhir (Opsional)
+                          </label>
+                          <input 
+                            type="datetime-local" 
+                            value={expiry || ''} 
+                            onChange={(e) => updateAnnouncement(i, 'expiryDate', e.target.value)}
+                            className="admin-input"
+                            style={{ width: '100%', color: '#475569', fontWeight: 600 }}
+                          />
+                        </div>
+
+                        {/* Action Button */}
+                        <div style={{ display: 'flex', alignItems: 'flex-end', paddingTop: '1.5rem' }}>
+                          <button className="btn-delete" onClick={() => deleteAnnouncement(i)} style={{ padding: '0.75rem' }} title="Hapus Pengumuman">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+
+                      </div>
+                      );
+                    })
+                  )}
+                </div>
+                
+                <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e9ecef' }}>
+                  <button className="btn-save" onClick={handleSaveAnnouncements} style={{ padding: '0.85rem 2rem', fontSize: '0.95rem' }}>
+                    <Save size={18} /> Simpan Pengumuman ke TV
+                  </button>
+                </div>
               </div>
-              <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
-                <button className="btn-save" onClick={handleSaveAnnouncements}><Save size={16} /> Simpan Pengumuman</button>
-              </div>
+
             </div>
           )}
 
           {/* SCHEDULES */}
           {activeTab === 'schedules' && (
-            <div className="card" style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
-              <div className="card-header" style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-                <h3 style={{ flex: 1, minWidth: '200px' }}>Jadwal Kegiatan</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button className="btn-delete" style={{ background: selectedSchedules.length > 0 ? '#ef4444' : '#f1f5f9', color: selectedSchedules.length > 0 ? 'white' : '#94a3b8', padding: '0.5rem 1rem' }} onClick={handleDeleteSelectedSchedules} disabled={selectedSchedules.length === 0}>
-                    Hapus Terpilih ({selectedSchedules.length})
+            <div className="card" style={{ maxWidth: '100%', margin: '0 auto 2rem', background: 'transparent', boxShadow: 'none', padding: 0 }}>
+              
+              {/* HEADER & TOGGLES */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '1.5rem', alignItems: 'flex-end', marginBottom: '2rem' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#0f172a' }}>Jadwal & Agenda</h3>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Kelola semua aktivitas operasional dan jadwal di satu tempat.</p>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', background: 'white', borderRadius: '999px', padding: '0.3rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0' }}>
+                    <button onClick={() => setScheduleView('daftar')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem', borderRadius: '999px', background: scheduleView === 'daftar' ? '#3b82f6' : 'transparent', color: scheduleView === 'daftar' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}><List size={16} /> Timeline</button>
+                    <button onClick={() => setScheduleView('kalender')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem', borderRadius: '999px', background: scheduleView === 'kalender' ? '#3b82f6' : 'transparent', color: scheduleView === 'kalender' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}><Calendar size={16} /> Kalender</button>
+                    <button onClick={() => setScheduleView('grid')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem', borderRadius: '999px', background: scheduleView === 'grid' ? '#3b82f6' : 'transparent', color: scheduleView === 'grid' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}><LayoutGrid size={16} /> Kanvas</button>
+                  </div>
+                  <button onClick={handleAddSchedule} style={{ padding: '0.85rem 1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Plus size={18} /> Entri Baru
                   </button>
-                  <button className="btn-delete" style={{ background: localSchedules.length > 0 ? '#ef4444' : '#f1f5f9', color: localSchedules.length > 0 ? 'white' : '#94a3b8', padding: '0.5rem 1rem' }} onClick={handleDeleteAllSchedules} disabled={localSchedules.length === 0}>
-                    Hapus Semua
-                  </button>
-                  <button className="btn-add" onClick={handleAddSchedule}><Plus size={16} /> Tambah</button>
                 </div>
               </div>
-              <div className="form-group" style={{ marginBottom: '2rem' }}>
-                <label>Kecepatan Auto-Scroll Jadwal (Pengali, Normal = 1. Semakin besar semakin cepat)</label>
-                <input 
-                  type="number" 
-                  value={localScheduleSpeed} 
-                  onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
-                  className="admin-input"
-                  min="0.1"
-                  step="0.1"
-                  style={{ maxWidth: '200px' }}
-                />
+
+              {/* MODERN FILTER BAR */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem', background: 'white', padding: '1rem', borderRadius: '1rem', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', alignItems: 'center' }}>
+                <div style={{ flex: '2 1 250px', position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}><Search size={18} /></div>
+                  <input type="text" value={scheduleSearch} onChange={(e) => setScheduleSearch(e.target.value)} placeholder="Cari judul kegiatan, PIC, atau ruangan..." style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.8rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: '#f8fafc', outline: 'none', fontSize: '0.95rem', color: '#1e293b', transition: 'border-color 0.2s' }} onFocus={e => e.target.style.borderColor = '#3b82f6'} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px' }}>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <input type="date" value={scheduleDateFrom} onChange={(e) => setScheduleDateFrom(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: '#f8fafc', outline: 'none', fontSize: '0.9rem', color: '#475569' }} />
+                    <span style={{ position: 'absolute', top: '-8px', left: '12px', background: 'white', padding: '0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#64748b', borderRadius: '4px' }}>Mulai</span>
+                  </div>
+                  <span style={{ color: '#cbd5e1' }}>—</span>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <input type="date" value={scheduleDateTo} onChange={(e) => setScheduleDateTo(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: '#f8fafc', outline: 'none', fontSize: '0.9rem', color: '#475569' }} />
+                    <span style={{ position: 'absolute', top: '-8px', left: '12px', background: 'white', padding: '0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#64748b', borderRadius: '4px' }}>Akhir</span>
+                  </div>
+                </div>
               </div>
-              <div className="list-group">
-                {localSchedules.map((schedule) => {
-                  const locOptions = [
-                    'TGCL - Podcast',
-                    'TGCL - Meetingroom',
-                    'TGCL - Event & Training Area',
-                    'Studio Gurindam 12',
-                    'Ruang Pertemuan/Meeting Room',
-                    'Ruang Diskusi (Max 15 orang)',
-                    'Ruang Diskusi (Max 8 orang)',
-                    ''
-                  ];
-                  const isCustomLoc = schedule.isCustomLoc !== undefined ? schedule.isCustomLoc : !locOptions.includes(schedule.loc || '');
 
-                  const picOptions = [
-                    'Evi Susanti, S.Si., M.I.Kom.', 
-                    'Gusti Maya Sari, S. IP.', 
-                    'Yuliastuti, S.IP.', 
-                    'Anton Yuliarto, S.Kom.', 
-                    'H. Thamrin Hasan, M.Pd.', 
-                    'Listya Oktaviana, S.Sos.', 
-                    ''
-                  ];
-                  const isCustomPic = schedule.isCustomPic !== undefined ? schedule.isCustomPic : !picOptions.includes(schedule.pic || '');
+              {/* VIEW: DAFTAR (TIMELINE LAYOUT) */}
+              {scheduleView === 'daftar' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                   
-                  const partnerOptions = ['Internal'];
-                  const isCustomPartner = schedule.isCustomPartner !== undefined ? schedule.isCustomPartner : !partnerOptions.includes(schedule.partnerCategory || 'Internal');
-
-                  return (
-                  <div key={schedule.id} className="list-item complex-item" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', padding: '1.5rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '0.75rem', marginBottom: '1rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', transition: 'all 0.2s ease' }}>
-                    <div style={{ paddingTop: '1.5rem' }}>
-                    <input 
-                      type="checkbox"
-                      checked={selectedSchedules.includes(schedule.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedSchedules(prev => [...prev, schedule.id]);
-                        else setSelectedSchedules(prev => prev.filter(id => id !== schedule.id));
-                      }}
-                      style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0, accentColor: '#2563eb' }}
-                    />
+                  {/* ACTIVE SCHEDULES */}
+                  <section>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                      <div style={{ width: '8px', height: '24px', background: '#3b82f6', borderRadius: '4px' }}></div>
+                      <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.25rem' }}>Aktivitas Mendatang & Berlangsung</h4>
+                      <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{activeSchedulesList.length}</span>
                     </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem 0' }}>
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                        <div style={{ flex: 2 }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nama Kegiatan</label>
-                          <input type="text" value={schedule.title || ''} onChange={(e) => updateSchedule(schedule.id, 'title', e.target.value)} placeholder="Contoh: Rapat Koordinasi..." className="admin-input" style={{ fontWeight: '600', fontSize: '1rem' }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
-                          <select value={schedule.status === 'Dibatalkan' ? 'Dibatalkan' : 'Otomatis'} onChange={(e) => updateSchedule(schedule.id, 'status', e.target.value)} className="admin-input" style={{ fontWeight: '500' }}>
-                            <option value="Otomatis">Otomatis (Sesuai Waktu)</option>
-                            <option value="Dibatalkan">Dibatalkan</option>
-                          </select>
-                        </div>
-                        <div style={{ paddingTop: '1.4rem' }}>
-                           <button className="btn-delete" onClick={() => deleteSchedule(schedule.id)} title="Hapus Kegiatan" style={{ padding: '0.6rem', borderRadius: '0.5rem' }}><Trash2 size={18} /></button>
-                        </div>
-                      </div>
 
-                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                        <div style={{ flex: '1 1 140px' }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tanggal</label>
-                          <input type="date" value={schedule.date || ''} onChange={(e) => updateSchedule(schedule.id, 'date', e.target.value)} className="admin-input" />
-                        </div>
-                        <div style={{ flex: '1 1 200px', display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Waktu</label>
-                            <input type="time" value={schedule.startTime || ''} onChange={(e) => updateSchedule(schedule.id, 'startTime', e.target.value)} className="admin-input" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {activeSchedulesList.map((s) => (
+                        <div key={s.id} style={{ display: 'flex', alignItems: 'center', background: 'white', padding: '1.25rem 1.5rem', borderRadius: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', transition: 'transform 0.2s, box-shadow 0.2s', position: 'relative', overflow: 'hidden' }} onMouseOver={e => {e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.05)';}} onMouseOut={e => {e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';}}>
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: s.dynamicStatus === 'Berlangsung' ? '#10b981' : '#3b82f6' }}></div>
+                          
+                          <div style={{ width: '160px', paddingLeft: '0.5rem' }}>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.2rem', letterSpacing: '-0.5px' }}>{s.startTime}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500 }}>s/d {s.endTime}</div>
                           </div>
-                          <span style={{ paddingBottom: '0.6rem', color: '#cbd5e1', fontWeight: 'bold' }}>—</span>
+                          
                           <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'transparent', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px', userSelect: 'none' }}>Waktu</label>
-                            <input type="time" value={schedule.endTime || ''} onChange={(e) => updateSchedule(schedule.id, 'endTime', e.target.value)} className="admin-input" />
+                            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>{s.title}</h4>
+                            <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={14}/> {s.date}</span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><LayoutGrid size={14}/> {s.loc || '-'}</span>
+                              {s.pic && <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><User size={14}/> {s.pic}</span>}
+                            </div>
+                          </div>
+
+                          <div style={{ width: '130px', textAlign: 'center' }}>
+                             <span style={{ padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#ecfdf5' : '#eff6ff', color: s.dynamicStatus === 'Berlangsung' ? '#059669' : '#2563eb', border: `1px solid ${s.dynamicStatus === 'Berlangsung' ? '#a7f3d0' : '#bfdbfe'}`, display: 'inline-block' }}>
+                              {s.dynamicStatus}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                            <button onClick={() => handleEditSchedule(s)} style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.2s' }} title="Edit" onMouseOver={e => {e.currentTarget.style.background = '#e2e8f0';}} onMouseOut={e => {e.currentTarget.style.background = '#f8fafc';}}><Edit size={16} /></button>
+                            <button onClick={() => deleteSchedule(s.id)} style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer', transition: 'all 0.2s' }} title="Hapus" onMouseOver={e => {e.currentTarget.style.background = '#fee2e2';}} onMouseOut={e => {e.currentTarget.style.background = '#fef2f2';}}><Trash2 size={16} /></button>
                           </div>
                         </div>
-                        <div style={{ flex: '2 1 200px' }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ruangan</label>
-                          <select
-                            value={isCustomLoc ? 'Lainnya' : (schedule.loc || '')}
-                            onChange={(e) => {
-                              if (e.target.value === 'Lainnya') {
-                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomLoc: true, loc: '' } : s));
-                              } else {
-                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomLoc: false, loc: e.target.value } : s));
-                              }
-                            }}
-                            className="admin-input"
-                          >
-                            <option value="">Pilih Ruangan...</option>
-                            <option value="TGCL - Podcast">TGCL - Podcast</option>
-                            <option value="TGCL - Meetingroom">TGCL - Meetingroom</option>
-                            <option value="TGCL - Event & Training Area">TGCL - Event & Training Area</option>
-                            <option value="Studio Gurindam 12">Studio Gurindam 12</option>
-                            <option value="Ruang Pertemuan/Meeting Room">Ruang Pertemuan/Meeting Room</option>
-                            <option value="Ruang Diskusi (Max 15 orang)">Ruang Diskusi (Max 15 orang)</option>
-                            <option value="Ruang Diskusi (Max 8 orang)">Ruang Diskusi (Max 8 orang)</option>
-                            <option value="Lainnya">Lainnya (Isi Sendiri)...</option>
-                          </select>
-                          {isCustomLoc && (
-                            <input 
-                              type="text" 
-                              value={schedule.loc || ''} 
-                              onChange={(e) => updateSchedule(schedule.id, 'loc', e.target.value)} 
-                              className="admin-input" 
-                              placeholder="Ketik nama ruangan..." 
-                              style={{ marginTop: '0.5rem' }}
-                            />
-                          )}
+                      ))}
+                      {activeSchedulesList.length === 0 && (
+                        <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px dashed #cbd5e1' }}>
+                          <Calendar size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
+                          <h4 style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>Belum ada aktivitas baru.</h4>
                         </div>
-                      </div>
+                      )}
+                    </div>
+                  </section>
 
-                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                        <div style={{ flex: '1 1 200px' }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PIC Kegiatan</label>
-                          <select
-                            value={isCustomPic ? 'Lainnya' : (schedule.pic || '')}
-                            onChange={(e) => {
-                              if (e.target.value === 'Lainnya') {
-                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomPic: true, pic: '' } : s));
-                              } else {
-                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomPic: false, pic: e.target.value } : s));
-                              }
-                            }}
-                            className="admin-input"
-                          >
-                            <option value="">Pilih PIC...</option>
-                            <option value="Evi Susanti, S.Si., M.I.Kom.">Evi Susanti, S.Si., M.I.Kom.</option>
-                            <option value="Gusti Maya Sari, S. IP.">Gusti Maya Sari, S. IP.</option>
-                            <option value="Yuliastuti, S.IP.">Yuliastuti, S.IP.</option>
-                            <option value="Anton Yuliarto, S.Kom.">Anton Yuliarto, S.Kom.</option>
-                            <option value="H. Thamrin Hasan, M.Pd.">H. Thamrin Hasan, M.Pd.</option>
-                            <option value="Listya Oktaviana, S.Sos.">Listya Oktaviana, S.Sos.</option>
-                            <option value="Lainnya">Lainnya (Isi Sendiri)...</option>
-                          </select>
-                          {isCustomPic && (
-                            <input 
-                              type="text" 
-                              value={schedule.pic || ''} 
-                              onChange={(e) => updateSchedule(schedule.id, 'pic', e.target.value)} 
-                              className="admin-input" 
-                              placeholder="Ketik nama PIC..." 
-                              style={{ marginTop: '0.5rem' }}
-                            />
-                          )}
-                        </div>
-                        <div style={{ flex: '1 1 200px' }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kategori Mitra</label>
-                          <select
-                            value={isCustomPartner ? 'Eksternal' : (schedule.partnerCategory || 'Internal')}
-                            onChange={(e) => {
-                              if (e.target.value === 'Eksternal') {
-                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomPartner: true, partnerCategory: '' } : s));
-                              } else {
-                                setLocalSchedules(localSchedules.map(s => s.id === schedule.id ? { ...s, isCustomPartner: false, partnerCategory: e.target.value } : s));
-                              }
-                            }}
-                            className="admin-input"
-                          >
-                            <option value="Internal">Internal</option>
-                            <option value="Eksternal">Eksternal (Isi Nama Mitra)...</option>
-                          </select>
-                          {isCustomPartner && (
-                            <input 
-                              type="text" 
-                              value={schedule.partnerCategory || ''} 
-                              onChange={(e) => updateSchedule(schedule.id, 'partnerCategory', e.target.value)} 
-                              className="admin-input" 
-                              placeholder="Ketik nama mitra..." 
-                              style={{ marginTop: '0.5rem' }}
-                            />
-                          )}
-                        </div>
-                      </div>
+                  {/* HISTORY LOG */}
+                  <section>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', opacity: 0.8 }}>
+                      <div style={{ width: '8px', height: '24px', background: '#94a3b8', borderRadius: '4px' }}></div>
+                      <h4 style={{ margin: 0, color: '#475569', fontSize: '1.25rem' }}>Log Historis</h4>
+                      <span style={{ background: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{historySchedulesList.length}</span>
+                    </div>
 
-                      <div>
-                        <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', marginBottom: '0.35rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deskripsi Tambahan <span style={{ textTransform: 'none', fontWeight: 'normal', color: '#94a3b8' }}>(Opsional)</span></label>
-                        <input type="text" value={schedule.description || ''} onChange={(e) => updateSchedule(schedule.id, 'description', e.target.value)} placeholder="Tambahkan keterangan singkat tentang kegiatan..." className="admin-input" />
+                    <div style={{ position: 'relative', paddingLeft: '1.5rem' }}>
+                      {/* Timeline line */}
+                      <div style={{ position: 'absolute', left: '7px', top: '10px', bottom: '10px', width: '2px', background: '#e2e8f0' }}></div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {historySchedulesList.map((s) => (
+                          <div key={s.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'transparent', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', transition: 'all 0.2s', opacity: 0.75 }} onMouseOver={e => e.currentTarget.style.opacity = 1} onMouseOut={e => e.currentTarget.style.opacity = 0.75}>
+                            {/* Timeline dot */}
+                            <div style={{ position: 'absolute', left: '-22px', top: '50%', transform: 'translateY(-50%)', width: '12px', height: '12px', borderRadius: '50%', background: s.dynamicStatus === 'Selesai' ? '#cbd5e1' : '#fca5a5', border: '2px solid white', zIndex: 2 }}></div>
+                            
+                            <div style={{ width: '120px' }}>
+                              <div style={{ fontWeight: 600, color: '#475569', fontSize: '0.95rem' }}>{s.date}</div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{s.startTime}</div>
+                            </div>
+                            
+                            <div style={{ flex: 1 }}>
+                              <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '1rem', color: '#334155', fontWeight: 600 }}>{s.title}</h4>
+                              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{s.loc}</div>
+                            </div>
+
+                            <div style={{ width: '110px', textAlign: 'center' }}>
+                               <span style={{ padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.7rem', fontWeight: 600, backgroundColor: s.dynamicStatus === 'Selesai' ? '#f1f5f9' : '#fef2f2', color: s.dynamicStatus === 'Selesai' ? '#64748b' : '#dc2626' }}>
+                                {s.dynamicStatus}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.25rem', marginLeft: '1rem' }}>
+                              <button onClick={() => handleEditSchedule(s)} style={{ padding: '0.4rem', background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer' }}><Edit size={14} /></button>
+                              <button onClick={() => deleteSchedule(s.id)} style={{ padding: '0.4rem', background: 'transparent', color: '#f87171', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                            </div>
+                          </div>
+                        ))}
+                        {historySchedulesList.length === 0 && (
+                          <div style={{ padding: '2rem', color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                            Riwayat bersih.
+                          </div>
+                        )}
                       </div>
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* VIEW: GRID (KANVAS) */}
+              {scheduleView === 'grid' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
+                  {filteredSchedulesView.map(s => (
+                    <div key={s.id} style={{ position: 'relative', background: 'white', borderRadius: '1.25rem', padding: '1.75rem', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01)', border: '1px solid rgba(226, 232, 240, 0.8)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'default' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-6px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                      {/* Decorative Gradient Blob */}
+                      <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '120px', height: '120px', background: s.dynamicStatus === 'Berlangsung' ? 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(255,255,255,0) 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', borderRadius: '50%', zIndex: 0 }}></div>
+                      
+                      <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                        <span style={{ padding: '0.35rem 0.85rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#10b981' : s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Otomatis' ? '#3b82f6' : s.dynamicStatus === 'Selesai' ? '#94a3b8' : '#ef4444', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                          {s.dynamicStatus}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Calendar size={12} /> {s.date}</span>
+                      </div>
+                      
+                      <h4 style={{ position: 'relative', zIndex: 1, margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#0f172a', lineHeight: 1.3, fontWeight: 800 }}>{s.title}</h4>
+                      
+                      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '2rem', fontSize: '0.9rem', color: '#475569' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '0.5rem', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><Activity size={14} /></div>
+                          <span style={{ fontWeight: 600, color: '#334155' }}>{s.startTime} - {s.endTime}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: '28px', height: '28px', borderRadius: '0.5rem', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><LayoutGrid size={14} /></div>
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.loc || 'Belum diatur'}</span>
+                        </div>
+                      </div>
+                      
+                      <div style={{ marginTop: 'auto', position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.25rem', borderTop: '1px dashed #e2e8f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#64748b' }}>
+                          <User size={14} />
+                          <span style={{ fontWeight: 500, maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.pic || 'Tanpa PIC'}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => handleEditSchedule(s)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f1f5f9', color: '#475569', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#e2e8f0'} onMouseOut={e => e.currentTarget.style.background = '#f1f5f9'}><Edit size={14} /></button>
+                          <button onClick={() => deleteSchedule(s.id)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#fef2f2', color: '#ef4444', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fee2e2'} onMouseOut={e => e.currentTarget.style.background = '#fef2f2'}><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {filteredSchedulesView.length === 0 && (
+                    <div style={{ gridColumn: '1 / -1', padding: '4rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px dashed #cbd5e1' }}>
+                      <LayoutGrid size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
+                      <h4 style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>Kanvas kosong. Tidak ada data.</h4>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* VIEW: KALENDER (MODERN) */}
+              {scheduleView === 'kalender' && (
+                <div style={{ background: 'white', borderRadius: '1.25rem', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 2rem', background: 'linear-gradient(to right, #f8fafc, #ffffff)', borderBottom: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.2rem' }}>{currentMonth.getFullYear()}</span>
+                      <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.75rem', fontWeight: 800 }}>{currentMonth.toLocaleString('id-ID', { month: 'long' })}</h3>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={prevMonth} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#475569', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s' }} onMouseOver={e => {e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform='scale(1.05)'}} onMouseOut={e => {e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform='scale(1)'}}><ChevronLeft size={20} /></button>
+                      <button onClick={nextMonth} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#475569', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s' }} onMouseOver={e => {e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform='scale(1.05)'}} onMouseOut={e => {e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform='scale(1)'}}><ChevronRight size={20} /></button>
                     </div>
                   </div>
-                  );
-                })}
-              </div>
-              <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
-                <button className="btn-save" onClick={handleSaveSchedules}><Save size={16} /> Simpan Jadwal</button>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #f1f5f9', background: '#fafaf9' }}>
+                    {['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map((day, idx) => (
+                      <div key={day} style={{ padding: '1rem 0.5rem', textAlign: 'center', fontWeight: 700, color: idx === 0 || idx === 6 ? '#94a3b8' : '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{day.substring(0,3)}</div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f8fafc', gap: '1px' }}>
+                    {Array.from({ length: getFirstDayOfMonth(currentMonth.getFullYear(), currentMonth.getMonth()) }).map((_, i) => (
+                      <div key={'empty-'+i} style={{ padding: '1rem', minHeight: '140px', background: '#f8fafc' }}></div>
+                    ))}
+                    {Array.from({ length: getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth()) }).map((_, i) => {
+                      const day = i + 1;
+                      const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const daySchedules = localSchedules.filter(s => s.date === dateStr);
+                      const isToday = dateStr === new Date().toISOString().split('T')[0];
+                      return (
+                        <div key={day} style={{ padding: '0.75rem', minHeight: '140px', background: isToday ? '#f0fdfa' : 'white', position: 'relative', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = isToday ? '#f0fdfa' : '#f8fafc'} onMouseOut={e => e.currentTarget.style.background = isToday ? '#f0fdfa' : 'white'}>
+                          <div style={{ fontWeight: 800, color: isToday ? '#0d9488' : '#334155', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ background: isToday ? '#14b8a6' : 'transparent', color: isToday ? 'white' : 'inherit', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '1rem' }}>{day}</span>
+                            {daySchedules.length > 0 && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', marginTop: '6px' }}></span>}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            {daySchedules.map(s => (
+                              <div key={s.id} onClick={() => handleEditSchedule(s)} style={{ padding: '0.35rem 0.5rem', background: s.dynamicStatus === 'Berlangsung' ? '#dcfce7' : s.dynamicStatus === 'Selesai' ? '#f1f5f9' : '#eff6ff', color: s.dynamicStatus === 'Berlangsung' ? '#166534' : s.dynamicStatus === 'Selesai' ? '#64748b' : '#1e40af', fontSize: '0.75rem', borderRadius: '0.35rem', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600, borderLeft: `3px solid ${s.dynamicStatus === 'Berlangsung' ? '#10b981' : s.dynamicStatus === 'Selesai' ? '#94a3b8' : '#3b82f6'}`, boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }} title={s.title}>
+                                {s.startTime} {s.title}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* FLOATING SAVE BAR */}
+              <div style={{ position: 'sticky', bottom: '2rem', left: 0, right: 0, marginTop: '3rem', zIndex: 10 }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(12px)', padding: '1rem 1.5rem', borderRadius: '1rem', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Kecepatan Scroll TV (Normal=1):</label>
+                    <input 
+                      type="number" 
+                      value={localScheduleSpeed} 
+                      onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
+                      className="admin-input"
+                      min="0.1"
+                      step="0.1"
+                      style={{ width: '80px', padding: '0.4rem', margin: 0, borderRadius: '0.5rem', textAlign: 'center', fontWeight: 700 }}
+                    />
+                  </div>
+                  <button onClick={handleSaveSchedules} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Save size={16} /> Publikasikan ke Layar TV
+                  </button>
+                </div>
               </div>
             </div>
           )}
-
-          {/* SLIDES */}
+{/* SLIDES */}
           {activeTab === 'slides' && (
             <div className="card">
               <div className="card-header" style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
@@ -1203,7 +1388,99 @@ function AdminDashboard() {
 
         </main>
       </div>
-      {croppingImage && (
+            {isScheduleModalOpen && editingSchedule && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease' }}>
+          <div className="modal-content" style={{ background: 'white', borderRadius: '0.75rem', width: '100%', maxWidth: '650px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>{localSchedules.find(s => s.id === editingSchedule.id) ? 'Ubah Kegiatan' : 'Tambah Kegiatan Baru'}</h3>
+              <button onClick={() => { setIsScheduleModalOpen(false); setEditingSchedule(null); }} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.5rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nama Kegiatan</label>
+                <input type="text" value={editingSchedule.title} onChange={(e) => setEditingSchedule({...editingSchedule, title: e.target.value})} className="admin-input" placeholder="Misal: Rapat Koordinasi..." />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tanggal</label>
+                  <input type="date" value={editingSchedule.date} onChange={(e) => setEditingSchedule({...editingSchedule, date: e.target.value})} className="admin-input" />
+                </div>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
+                  <select value={editingSchedule.status === 'Dibatalkan' ? 'Dibatalkan' : 'Otomatis'} onChange={(e) => setEditingSchedule({...editingSchedule, status: e.target.value})} className="admin-input">
+                    <option value="Otomatis">Otomatis (Sesuai Waktu)</option>
+                    <option value="Dibatalkan">Dibatalkan</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Waktu Mulai</label>
+                  <input type="time" value={editingSchedule.startTime} onChange={(e) => setEditingSchedule({...editingSchedule, startTime: e.target.value})} className="admin-input" />
+                </div>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Waktu Selesai</label>
+                  <input type="time" value={editingSchedule.endTime} onChange={(e) => setEditingSchedule({...editingSchedule, endTime: e.target.value})} className="admin-input" />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ruangan</label>
+                <select value={['TGCL - Podcast', 'TGCL - Meetingroom', 'TGCL - Event & Training Area', 'Studio Gurindam 12', 'Ruang Pertemuan/Meeting Room', 'Ruang Diskusi (Max 15 orang)', 'Ruang Diskusi (Max 8 orang)'].includes(editingSchedule.loc) ? editingSchedule.loc : (editingSchedule.loc ? 'Lainnya' : '')} onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value === 'Lainnya' ? '' : e.target.value})} className="admin-input">
+                  <option value="">Pilih Ruangan...</option>
+                  <option value="TGCL - Podcast">TGCL - Podcast</option>
+                  <option value="TGCL - Meetingroom">TGCL - Meetingroom</option>
+                  <option value="TGCL - Event & Training Area">TGCL - Event & Training Area</option>
+                  <option value="Studio Gurindam 12">Studio Gurindam 12</option>
+                  <option value="Ruang Pertemuan/Meeting Room">Ruang Pertemuan/Meeting Room</option>
+                  <option value="Ruang Diskusi (Max 15 orang)">Ruang Diskusi (Max 15 orang)</option>
+                  <option value="Ruang Diskusi (Max 8 orang)">Ruang Diskusi (Max 8 orang)</option>
+                  <option value="Lainnya">Lainnya (Isi Sendiri)...</option>
+                </select>
+                {!['TGCL - Podcast', 'TGCL - Meetingroom', 'TGCL - Event & Training Area', 'Studio Gurindam 12', 'Ruang Pertemuan/Meeting Room', 'Ruang Diskusi (Max 15 orang)', 'Ruang Diskusi (Max 8 orang)', ''].includes(editingSchedule.loc) && (
+                  <input type="text" value={editingSchedule.loc} onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value})} className="admin-input" placeholder="Ketik nama ruangan..." style={{ marginTop: '0.5rem' }} />
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PIC Kegiatan</label>
+                  <select value={['Evi Susanti, S.Si., M.I.Kom.', 'Gusti Maya Sari, S. IP.', 'Yuliastuti, S.IP.', 'Anton Yuliarto, S.Kom.', 'H. Thamrin Hasan, M.Pd.', 'Listya Oktaviana, S.Sos.'].includes(editingSchedule.pic) ? editingSchedule.pic : (editingSchedule.pic ? 'Lainnya' : '')} onChange={(e) => setEditingSchedule({...editingSchedule, pic: e.target.value === 'Lainnya' ? '' : e.target.value})} className="admin-input">
+                    <option value="">Pilih PIC...</option>
+                    <option value="Evi Susanti, S.Si., M.I.Kom.">Evi Susanti, S.Si., M.I.Kom.</option>
+                    <option value="Gusti Maya Sari, S. IP.">Gusti Maya Sari, S. IP.</option>
+                    <option value="Yuliastuti, S.IP.">Yuliastuti, S.IP.</option>
+                    <option value="Anton Yuliarto, S.Kom.">Anton Yuliarto, S.Kom.</option>
+                    <option value="H. Thamrin Hasan, M.Pd.">H. Thamrin Hasan, M.Pd.</option>
+                    <option value="Listya Oktaviana, S.Sos.">Listya Oktaviana, S.Sos.</option>
+                    <option value="Lainnya">Lainnya (Isi Sendiri)...</option>
+                  </select>
+                  {!['Evi Susanti, S.Si., M.I.Kom.', 'Gusti Maya Sari, S. IP.', 'Yuliastuti, S.IP.', 'Anton Yuliarto, S.Kom.', 'H. Thamrin Hasan, M.Pd.', 'Listya Oktaviana, S.Sos.', ''].includes(editingSchedule.pic) && (
+                    <input type="text" value={editingSchedule.pic} onChange={(e) => setEditingSchedule({...editingSchedule, pic: e.target.value})} className="admin-input" placeholder="Ketik nama PIC..." style={{ marginTop: '0.5rem' }} />
+                  )}
+                </div>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kategori Mitra</label>
+                  <select value={editingSchedule.partnerCategory === 'Internal' ? 'Internal' : 'Eksternal'} onChange={(e) => setEditingSchedule({...editingSchedule, partnerCategory: e.target.value === 'Eksternal' ? '' : 'Internal'})} className="admin-input">
+                    <option value="Internal">Internal</option>
+                    <option value="Eksternal">Eksternal (Isi Nama Mitra)...</option>
+                  </select>
+                  {editingSchedule.partnerCategory !== 'Internal' && (
+                    <input type="text" value={editingSchedule.partnerCategory} onChange={(e) => setEditingSchedule({...editingSchedule, partnerCategory: e.target.value})} className="admin-input" placeholder="Ketik nama mitra..." style={{ marginTop: '0.5rem' }} />
+                  )}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deskripsi Tambahan</label>
+                <textarea value={editingSchedule.description} onChange={(e) => setEditingSchedule({...editingSchedule, description: e.target.value})} className="admin-input" placeholder="Tambahkan keterangan singkat tentang kegiatan..." rows="2"></textarea>
+              </div>
+            </div>
+            <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#f8fafc', borderRadius: '0 0 0.75rem 0.75rem' }}>
+              <button onClick={() => { setIsScheduleModalOpen(false); setEditingSchedule(null); }} style={{ padding: '0.6rem 1.25rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, color: '#475569' }}>Batal</button>
+              <button onClick={handleSaveModalSchedule} style={{ padding: '0.6rem 1.25rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, display: 'flex', gap: '0.5rem', alignItems: 'center' }}><Save size={16} /> Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+{croppingImage && (
         <ImageCropper 
           imageSrc={croppingImage.src}
           initialAspect={croppingImage.aspect}
