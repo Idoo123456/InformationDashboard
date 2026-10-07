@@ -756,3 +756,100 @@ body {
   color: var(--primary-blue);
   opacity: 0.8;
 }
+
+/* ----------------- TV LAYOUTS ----------------- */
+.layout-full-media .main-content {
+  grid-template-columns: 1fr;
+}
+
+.layout-agenda-focus .main-content {
+  grid-template-columns: 1fr 600px;
+}
+
+/* TEMA TU (TATA USAHA) */
+.layout-tu {
+  background-color: #fffbeb;
+  background-image: radial-gradient(circle at 0% 0%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 100% 100%, rgba(234, 88, 12, 0.1) 0%, transparent 50%);
+}
+.layout-tu .main-content {
+  grid-template-columns: 1fr; /* Full width untuk daftar kegiatan */
+}
+.layout-tu .schedule-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+.layout-tu .header {
+  border-bottom: 4px solid #f59e0b;
+}
+.layout-tu .logo-text h1 {
+  color: #ea580c;
+}
+.layout-tu .title-section h3 {
+  color: #d97706;
+}
+.layout-tu .schedule-item-modern, .layout-tu .schedule-item {
+  border-left: 4px solid #f59e0b;
+  border-radius: 0.75rem;
+}
+.layout-tu .card-header {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 1px solid #fcd34d;
+}
+.layout-tu .card-header h4 {
+  color: #b45309;
+}
+.layout-tu .announcement-label {
+  background: #f59e0b;
+}
+
+/* TEMA ADMIN (PROFESIONAL) */
+.layout-admin {
+  background-color: #f1f5f9;
+  background-image: radial-gradient(circle at top right, rgba(15, 23, 42, 0.1) 0%, transparent 60%),
+                    radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.1) 0%, transparent 60%);
+}
+.layout-admin .main-content {
+  grid-template-columns: 550px 1fr;
+}
+.layout-admin .header {
+  background: #0f172a;
+  border: 1px solid #334155;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.layout-admin .logo-text h1, .layout-admin .title-section h3 {
+  color: #f8fafc;
+}
+.layout-admin .title-section h2, .layout-admin .date-display, .layout-admin .logo-text p {
+  color: #94a3b8;
+}
+.layout-admin .time-display {
+  color: #e2e8f0;
+}
+.layout-admin .welcome-container {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.layout-admin .schedule-item-modern, .layout-admin .schedule-item {
+  border-radius: 0;
+  border-left: 4px solid #38bdf8;
+  border-right: none;
+  border-top: none;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: none;
+}
+.layout-admin .schedule-item-modern:hover, .layout-admin .schedule-item:hover {
+  transform: none;
+  background: #f8fafc;
+}
+.layout-admin .card-header {
+  background: #1e293b;
+  color: white;
+}
+.layout-admin .card-header h4 {
+  color: white;
+}
+.layout-admin .announcement-label {
+  background: #0f172a;
+}

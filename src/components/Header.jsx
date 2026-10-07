@@ -4,7 +4,7 @@ import logoUnri from '../assets/logounri.png';
 
 const Header = () => {
   const [time, setTime] = useState(new Date());
-  const { facultyName } = useDashboard();
+  const { facultyName, tagline } = useDashboard();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -28,7 +28,11 @@ const Header = () => {
 
       <div className="title-section">
         <h2>{facultyName.toUpperCase()}</h2>
-        <h3>Pusat Informasi <span className="highlight-text">Terpadu</span></h3>
+        {tagline ? (
+          <h3>{tagline}</h3>
+        ) : (
+          <h3>Pusat Informasi <span className="highlight-text">Terpadu</span></h3>
+        )}
         <div className="welcome-container">
           <div className="welcome-text-wrapper">
             <div className="welcome-text-item">Selamat Datang</div>

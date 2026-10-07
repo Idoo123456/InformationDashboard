@@ -2,7 +2,14 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const DashboardContext = createContext();
 
-const defaultFacultyName = "Universitas Riau";
+const defaultTagline = "Jantung Hati Masyarakat Riau";
+const defaultPrimaryColor = "#3b82f6";
+const defaultTvLayout = "standard";
+const defaultLanguage = "id";
+const defaultTimezone = "WIB";
+const defaultTimeOn = "06:00";
+const defaultTimeOff = "22:00";
+const defaultAutoRefresh = true;
 
 const defaultSchedules = [
   { id: 1, date: '2026-09-22', startTime: '09:00', endTime: '12:00', title: 'Rapat IKU Triwulan III', description: 'Evaluasi kinerja triwulan', loc: 'Studio (Lt.1)', status: 'Berlangsung', pic: 'Biro Umum', partnerCategory: 'Internal' },
@@ -57,16 +64,17 @@ const defaultSlides = [
   }
 ];
 
-export function DashboardProvider({ children }) {
+export function DashboardProvider({ children, prefix = 'main', defaultFacultyNameOverride = 'Universitas Riau' }) {
+  const getKey = (key) => prefix === 'main' ? key : `${prefix}_${key}`;
+
   const loadState = (key, defaultValue) => {
-    const saved = localStorage.getItem(key);
+    const saved = localStorage.getItem(getKey(key));
     if (!saved) return defaultValue;
     try {
       const parsed = JSON.parse(saved);
       
       // Data Migration
       if (key === 'announcements' && Array.isArray(parsed)) {
-        // Jika data lama masih berupa string, ubah jadi object
         return parsed.map((item, idx) => {
           if (typeof item === 'string') {
             return { id: Date.now() + idx, text: item, expiryDate: getNextMonthDate() };
@@ -84,7 +92,6 @@ export function DashboardProvider({ children }) {
       }
 
       if (key === 'slides' && Array.isArray(parsed)) {
-        // Fallback for corrupted slide data from previous version
         if (parsed.length > 0 && !parsed[0].bg) return defaultValue;
         return parsed.map(item => ({
           ...item,
@@ -99,7 +106,15 @@ export function DashboardProvider({ children }) {
     }
   };
 
-  const [facultyName, setFacultyName] = useState(() => loadState('facultyName', defaultFacultyName));
+  const [facultyName, setFacultyName] = useState(() => loadState('facultyName', defaultFacultyNameOverride));
+  const [tagline, setTagline] = useState(() => loadState('tagline', defaultTagline));
+  const [primaryColor, setPrimaryColor] = useState(() => loadState('primaryColor', defaultPrimaryColor));
+  const [tvLayout, setTvLayout] = useState(() => loadState('tvLayout', defaultTvLayout));
+  const [language, setLanguage] = useState(() => loadState('language', defaultLanguage));
+  const [timezone, setTimezone] = useState(() => loadState('timezone', defaultTimezone));
+  const [timeOn, setTimeOn] = useState(() => loadState('timeOn', defaultTimeOn));
+  const [timeOff, setTimeOff] = useState(() => loadState('timeOff', defaultTimeOff));
+  const [autoRefresh, setAutoRefresh] = useState(() => loadState('autoRefresh', defaultAutoRefresh));
   const [schedules, setSchedules] = useState(() => loadState('schedules', defaultSchedules));
   const [announcements, setAnnouncements] = useState(() => loadState('announcements', defaultAnnouncements));
   const [slides, setSlides] = useState(() => loadState('slides', defaultSlides));
@@ -108,36 +123,60 @@ export function DashboardProvider({ children }) {
   const [marqueeSpeed, setMarqueeSpeed] = useState(() => loadState('marqueeSpeed', 20));
   const [scheduleSpeed, setScheduleSpeed] = useState(() => loadState('scheduleSpeed', 1));
 
-  useEffect(() => localStorage.setItem('facultyName', JSON.stringify(facultyName)), [facultyName]);
-  useEffect(() => localStorage.setItem('schedules', JSON.stringify(schedules)), [schedules]);
-  useEffect(() => localStorage.setItem('announcements', JSON.stringify(announcements)), [announcements]);
-  useEffect(() => localStorage.setItem('slides', JSON.stringify(slides)), [slides]);
-  useEffect(() => localStorage.setItem('isAuthenticated', JSON.stringify(isAuthenticated)), [isAuthenticated]);
-  useEffect(() => localStorage.setItem('slideDuration', JSON.stringify(slideDuration)), [slideDuration]);
-  useEffect(() => localStorage.setItem('marqueeSpeed', JSON.stringify(marqueeSpeed)), [marqueeSpeed]);
-  useEffect(() => localStorage.setItem('scheduleSpeed', JSON.stringify(scheduleSpeed)), [scheduleSpeed]);
+  useEffect(() => localStorage.setItem(getKey('facultyName'), JSON.stringify(facultyName)), [facultyName, prefix]);
+  useEffect(() => localStorage.setItem(getKey('tagline'), JSON.stringify(tagline)), [tagline, prefix]);
+  useEffect(() => localStorage.setItem(getKey('primaryColor'), JSON.stringify(primaryColor)), [primaryColor, prefix]);
+  useEffect(() => localStorage.setItem(getKey('tvLayout'), JSON.stringify(tvLayout)), [tvLayout, prefix]);
+  useEffect(() => localStorage.setItem(getKey('language'), JSON.stringify(language)), [language, prefix]);
+  useEffect(() => localStorage.setItem(getKey('timezone'), JSON.stringify(timezone)), [timezone, prefix]);
+  useEffect(() => localStorage.setItem(getKey('timeOn'), JSON.stringify(timeOn)), [timeOn, prefix]);
+  useEffect(() => localStorage.setItem(getKey('timeOff'), JSON.stringify(timeOff)), [timeOff, prefix]);
+  useEffect(() => localStorage.setItem(getKey('autoRefresh'), JSON.stringify(autoRefresh)), [autoRefresh, prefix]);
+  useEffect(() => localStorage.setItem(getKey('schedules'), JSON.stringify(schedules)), [schedules, prefix]);
+  useEffect(() => localStorage.setItem(getKey('announcements'), JSON.stringify(announcements)), [announcements, prefix]);
+  useEffect(() => localStorage.setItem(getKey('slides'), JSON.stringify(slides)), [slides, prefix]);
+  useEffect(() => localStorage.setItem(getKey('isAuthenticated'), JSON.stringify(isAuthenticated)), [isAuthenticated, prefix]);
+  useEffect(() => localStorage.setItem(getKey('slideDuration'), JSON.stringify(slideDuration)), [slideDuration, prefix]);
+  useEffect(() => localStorage.setItem(getKey('marqueeSpeed'), JSON.stringify(marqueeSpeed)), [marqueeSpeed, prefix]);
+  useEffect(() => localStorage.setItem(getKey('scheduleSpeed'), JSON.stringify(scheduleSpeed)), [scheduleSpeed, prefix]);
 
-  // Auto-cleanup was intentionally removed so admin can see history of past activities.
-
-  // Listen to local storage changes from other tabs (Admin Dashboard)
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'facultyName' && e.newValue) setFacultyName(JSON.parse(e.newValue));
-      if (e.key === 'schedules' && e.newValue) setSchedules(JSON.parse(e.newValue));
-      if (e.key === 'announcements' && e.newValue) setAnnouncements(JSON.parse(e.newValue));
-      if (e.key === 'slides' && e.newValue) setSlides(JSON.parse(e.newValue));
-      if (e.key === 'isAuthenticated' && e.newValue !== null) setIsAuthenticated(JSON.parse(e.newValue));
-      if (e.key === 'slideDuration' && e.newValue) setSlideDuration(JSON.parse(e.newValue));
-      if (e.key === 'marqueeSpeed' && e.newValue) setMarqueeSpeed(JSON.parse(e.newValue));
-      if (e.key === 'scheduleSpeed' && e.newValue) setScheduleSpeed(JSON.parse(e.newValue));
+      if (e.key === getKey('facultyName') && e.newValue) setFacultyName(JSON.parse(e.newValue));
+      if (e.key === getKey('tagline') && e.newValue) setTagline(JSON.parse(e.newValue));
+      if (e.key === getKey('primaryColor') && e.newValue) setPrimaryColor(JSON.parse(e.newValue));
+      if (e.key === getKey('tvLayout') && e.newValue) setTvLayout(JSON.parse(e.newValue));
+      if (e.key === getKey('language') && e.newValue) setLanguage(JSON.parse(e.newValue));
+      if (e.key === getKey('timezone') && e.newValue) setTimezone(JSON.parse(e.newValue));
+      if (e.key === getKey('timeOn') && e.newValue) setTimeOn(JSON.parse(e.newValue));
+      if (e.key === getKey('timeOff') && e.newValue) setTimeOff(JSON.parse(e.newValue));
+      if (e.key === getKey('autoRefresh') && e.newValue !== null) setAutoRefresh(JSON.parse(e.newValue));
+      if (e.key === getKey('schedules') && e.newValue) setSchedules(JSON.parse(e.newValue));
+      if (e.key === getKey('announcements') && e.newValue) setAnnouncements(JSON.parse(e.newValue));
+      if (e.key === getKey('slides') && e.newValue) setSlides(JSON.parse(e.newValue));
+      if (e.key === getKey('isAuthenticated') && e.newValue !== null) setIsAuthenticated(JSON.parse(e.newValue));
+      if (e.key === getKey('slideDuration') && e.newValue) setSlideDuration(JSON.parse(e.newValue));
+      if (e.key === getKey('marqueeSpeed') && e.newValue) setMarqueeSpeed(JSON.parse(e.newValue));
+      if (e.key === getKey('scheduleSpeed') && e.newValue) setScheduleSpeed(JSON.parse(e.newValue));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [prefix]);
+
+  const basePath = prefix === 'main' ? '' : `/${prefix}`;
 
   return (
     <DashboardContext.Provider value={{
+      basePath, prefix,
       facultyName, setFacultyName,
+      tagline, setTagline,
+      primaryColor, setPrimaryColor,
+      tvLayout, setTvLayout,
+      language, setLanguage,
+      timezone, setTimezone,
+      timeOn, setTimeOn,
+      timeOff, setTimeOff,
+      autoRefresh, setAutoRefresh,
       schedules, setSchedules,
       announcements, setAnnouncements,
       slides, setSlides,

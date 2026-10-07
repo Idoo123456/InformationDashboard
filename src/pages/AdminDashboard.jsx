@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid } from 'lucide-react';
+import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import '../admin.css';
@@ -54,7 +54,16 @@ const showConfirmDelete = (onConfirm) => {
 function AdminDashboard() {
   const [croppingImage, setCroppingImage] = useState(null);
   const { 
+    basePath,
     facultyName, setFacultyName, 
+    tagline, setTagline,
+    primaryColor, setPrimaryColor,
+    tvLayout, setTvLayout,
+    language, setLanguage,
+    timezone, setTimezone,
+    timeOn, setTimeOn,
+    timeOff, setTimeOff,
+    autoRefresh, setAutoRefresh,
     schedules, setSchedules, 
     announcements, setAnnouncements, 
     slides, setSlides,
@@ -67,6 +76,7 @@ function AdminDashboard() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');
+  const [overviewLayout, setOverviewLayout] = useState('modern');
 
   // Schedule Views & Modal States
   const [scheduleView, setScheduleView] = useState('daftar');
@@ -149,17 +159,33 @@ function AdminDashboard() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    navigate('/login');
+    navigate(`${basePath}/login`);
   };
 
   // local states for editing
   const [localFaculty, setLocalFaculty] = useState(facultyName);
+  const [localTagline, setLocalTagline] = useState(tagline || "");
+  const [localPrimaryColor, setLocalPrimaryColor] = useState(primaryColor || "#3b82f6");
+  const [localTvLayout, setLocalTvLayout] = useState(tvLayout || "standard");
+  const [localLanguage, setLocalLanguage] = useState(language || "id");
+  const [localTimezone, setLocalTimezone] = useState(timezone || "WIB");
+  const [localTimeOn, setLocalTimeOn] = useState(timeOn || "06:00");
+  const [localTimeOff, setLocalTimeOff] = useState(timeOff || "22:00");
+  const [localAutoRefresh, setLocalAutoRefresh] = useState(autoRefresh ?? true);
   const [localSlideDuration, setLocalSlideDuration] = useState(slideDuration);
   const [localMarqueeSpeed, setLocalMarqueeSpeed] = useState(marqueeSpeed);
   const [localScheduleSpeed, setLocalScheduleSpeed] = useState(scheduleSpeed);
   
   const handleSaveSettings = () => {
     setFacultyName(localFaculty);
+    setTagline(localTagline);
+    setPrimaryColor(localPrimaryColor);
+    setTvLayout(localTvLayout);
+    setLanguage(localLanguage);
+    setTimezone(localTimezone);
+    setTimeOn(localTimeOn);
+    setTimeOff(localTimeOff);
+    setAutoRefresh(localAutoRefresh);
     showSuccessPopup('Pengaturan Umum berhasil disimpan!');
   };
 
@@ -480,7 +506,10 @@ function AdminDashboard() {
             <Activity size={18} /> Laporan Agenda
           </button>
         </nav>
-        <div className="admin-nav-footer" style={{ padding: '1.5rem 1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="admin-nav-footer" style={{ padding: '1.5rem 1rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <button onClick={() => window.open(basePath || '/', '_blank')} className="nav-btn" style={{ color: '#3b82f6' }}>
+            <MonitorPlay size={18} /> Lihat TV Display
+          </button>
           <button onClick={handleLogout} className="nav-btn" style={{ color: '#ef4444' }}>
             <LogOut size={18} /> Keluar Dasbor
           </button>
@@ -526,147 +555,390 @@ function AdminDashboard() {
 
           {/* OVERVIEW */}
           {activeTab === 'overview' && (
-            <>
-              <div className="overview-grid">
-                <div className="stat-card">
-                  <div className="stat-icon blue"><MonitorPlay /></div>
-                  <div className="stat-details">
-                    <h4>Total Slide Aktif</h4>
-                    <p>{slides.length}</p>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon green"><Calendar /></div>
-                  <div className="stat-details">
-                    <h4>Kegiatan Hari Ini</h4>
-                    <p>{schedules.filter(s => s.date === new Date().toISOString().split('T')[0]).length}</p>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon orange"><MessageSquare /></div>
-                  <div className="stat-details">
-                    <h4>Total Kegiatan Bulan Ini</h4>
-                    <p>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</p>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}><Activity /></div>
-                  <div className="stat-details">
-                    <h4>Status Sistem</h4>
-                    <p style={{ fontSize: '1.2rem', color: '#10b981' }}>Online & Tersinkron</p>
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* Layout Selector */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '1rem 1.5rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><LayoutDashboard size={18} color="#3b82f6"/> Tampilan Dasbor</h3>
+                <div style={{ display: 'inline-flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.25rem' }}>
+                  <button 
+                    onClick={() => setOverviewLayout('modern')}
+                    style={{ padding: '0.4rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.85rem', fontWeight: 600, background: overviewLayout === 'modern' ? 'white' : 'transparent', color: overviewLayout === 'modern' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', boxShadow: overviewLayout === 'modern' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  ><LayoutGrid size={16} /> Modern</button>
+                  <button 
+                    onClick={() => setOverviewLayout('compact')}
+                    style={{ padding: '0.4rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.85rem', fontWeight: 600, background: overviewLayout === 'compact' ? 'white' : 'transparent', color: overviewLayout === 'compact' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', boxShadow: overviewLayout === 'compact' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  ><List size={16} /> Kompak</button>
+                  <button 
+                    onClick={() => setOverviewLayout('analytics')}
+                    style={{ padding: '0.4rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.85rem', fontWeight: 600, background: overviewLayout === 'analytics' ? 'white' : 'transparent', color: overviewLayout === 'analytics' ? '#3b82f6' : '#64748b', border: 'none', cursor: 'pointer', boxShadow: overviewLayout === 'analytics' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  ><Activity size={16} /> Analitik</button>
                 </div>
               </div>
 
-              {/* STATISTIK GRAFIK */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-                <div className="card" style={{ padding: '1.5rem', margin: 0 }}>
-                  <h3 style={{ marginBottom: '1.5rem', color: '#1e293b' }}>Kegiatan Berdasarkan Status</h3>
-                  <div style={{ width: '100%', height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={[
-                          { name: 'Akan Datang', count: computedSchedules.filter(s => s.status === 'Akan Datang').length },
-                          { name: 'Berlangsung', count: computedSchedules.filter(s => s.status === 'Berlangsung').length },
-                          { name: 'Selesai', count: computedSchedules.filter(s => s.status === 'Selesai').length },
-                          { name: 'Dibatalkan', count: computedSchedules.filter(s => s.status === 'Dibatalkan').length },
-                        ]}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                        <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
-                        <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                        <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40}>
-                          {
-                            [
-                              { name: 'Akan Datang', count: computedSchedules.filter(s => s.status === 'Akan Datang').length },
-                              { name: 'Berlangsung', count: computedSchedules.filter(s => s.status === 'Berlangsung').length },
-                              { name: 'Selesai', count: computedSchedules.filter(s => s.status === 'Selesai').length },
-                              { name: 'Dibatalkan', count: computedSchedules.filter(s => s.status === 'Dibatalkan').length },
-                            ].map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.name === 'Akan Datang' ? '#3b82f6' : entry.name === 'Berlangsung' ? '#10b981' : entry.name === 'Selesai' ? '#8b5cf6' : '#ef4444'} />
-                            ))
-                          }
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+              {/* ==============================================
+                  LAYOUT 1: MODERN (Default) 
+                  ============================================== */}
+              {overviewLayout === 'modern' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem 1.5rem', background: 'linear-gradient(to right, #eff6ff, #ffffff)', borderLeft: '4px solid #3b82f6', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)' }}>
+                    <div style={{ padding: '0.75rem', background: '#3b82f6', borderRadius: '50%', color: 'white' }}>
+                      <Activity size={24} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: '0 0 0.25rem 0', color: '#1e293b', fontSize: '1rem' }}>Ringkasan Bulan Ini</h3>
+                      <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>
+                        Terdapat <strong>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length} kegiatan</strong> {' '}
+                        ({schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory === 'Internal').length} Internal, {schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory === 'Eksternal').length} Eksternal). 
+                        Saat ini <strong>{schedules.filter(s => s.status === 'Berlangsung').length} kegiatan</strong> sedang berlangsung.
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="card" style={{ padding: '1.5rem', margin: 0 }}>
-                  <h3 style={{ marginBottom: '1.5rem', color: '#1e293b' }}>Mitra Kegiatan</h3>
-                  <div style={{ width: '100%', height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={Object.entries(computedSchedules.reduce((acc, curr) => {
-                            const cat = curr.partnerCategory || 'Internal';
-                            acc[cat] = (acc[cat] || 0) + 1;
-                            return acc;
-                          }, {})).map(([name, value]) => ({ name, value }))}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={90}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {
-                            Object.entries(schedules.reduce((acc, curr) => {
-                              const cat = curr.partnerCategory || 'Internal';
-                              acc[cat] = (acc[cat] || 0) + 1;
-                              return acc;
-                            }, {})).map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'][index % 5]} />
-                            ))
-                          }
-                        </Pie>
-                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                    <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MonitorPlay size={24} /></div>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Slide Aktif</p>
+                        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{slides.length}</h3>
+                      </div>
+                    </div>
+                    <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={24} /></div>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Kegiatan Hari Ini</p>
+                        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date === new Date().toISOString().split('T')[0]).length}</h3>
+                      </div>
+                    </div>
+                    <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fff7ed', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MessageSquare size={24} /></div>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Kegiatan Bulan Ini</p>
+                        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</h3>
+                      </div>
+                    </div>
+                    <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f8fafc', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Shield size={24} /></div>
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Status Sistem</p>
+                        <h3 style={{ margin: 0, color: '#10b981', fontSize: '1.1rem', fontWeight: 700 }}>Online</h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                    <div className="card" style={{ padding: '1.5rem', margin: 0, border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.1rem' }}>Kegiatan Berdasarkan Status</h3>
+                      </div>
+                      <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={[
+                            { name: 'Akan Datang', count: computedSchedules.filter(s => s.status === 'Akan Datang').length },
+                            { name: 'Berlangsung', count: computedSchedules.filter(s => s.status === 'Berlangsung').length },
+                            { name: 'Selesai', count: computedSchedules.filter(s => s.status === 'Selesai').length },
+                            { name: 'Dibatalkan', count: computedSchedules.filter(s => s.status === 'Dibatalkan').length },
+                          ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                            <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 12 }} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                            <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={40}>
+                              {[{ name: 'Akan Datang' }, { name: 'Berlangsung' }, { name: 'Selesai' }, { name: 'Dibatalkan' }].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.name === 'Akan Datang' ? '#3b82f6' : entry.name === 'Berlangsung' ? '#10b981' : entry.name === 'Selesai' ? '#8b5cf6' : '#ef4444'} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="card" style={{ padding: '1.5rem', margin: 0, border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.1rem' }}>Mitra Kegiatan</h3>
+                      </div>
+                      <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={Object.entries(computedSchedules.reduce((acc, curr) => { const cat = curr.partnerCategory || 'Internal'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).map(([name, value]) => ({ name, value }))} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
+                              {Object.entries(schedules.reduce((acc, curr) => { const cat = curr.partnerCategory || 'Internal'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'][index % 5]} />
+                              ))}
+                            </Pie>
+                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="card" style={{ margin: 0, border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '1.1rem' }}>Akses Cepat</h3>
+                      <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>Pilih menu di bawah untuk langsung memperbarui konten layar TV.</p>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                      <button onClick={() => setActiveTab('slides')} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', color: '#1e293b', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe'; }} onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}><ImageIcon size={20} color="#3b82f6" /> Kelola Slide</button>
+                      <button onClick={() => setActiveTab('schedules')} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', color: '#1e293b', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = '#ecfdf5'; e.currentTarget.style.borderColor = '#a7f3d0'; }} onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}><Calendar size={20} color="#10b981" /> Update Jadwal</button>
+                      <button onClick={() => setActiveTab('announcements')} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', color: '#1e293b', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = '#fff7ed'; e.currentTarget.style.borderColor = '#fed7aa'; }} onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}><MessageSquare size={20} color="#f59e0b" /> Teks Berjalan</button>
+                      <button onClick={() => setActiveTab('reports')} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', color: '#1e293b', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = '#faf5ff'; e.currentTarget.style.borderColor = '#e9d5ff'; }} onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}><Activity size={20} color="#8b5cf6" /> Lihat Laporan</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--primary-blue)', color: 'white' }}>
-                <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>Laporan Singkat (One-Line Report)</h3>
-                <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: 0, opacity: 0.9 }}>
-                  Bulan ini terdapat <strong>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length} kegiatan</strong> 
-                  ({schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory === 'Internal').length} Internal, {schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory === 'Eksternal').length} Eksternal) 
-                  dengan <strong>{schedules.filter(s => s.status === 'Berlangsung').length} kegiatan</strong> sedang berlangsung saat ini.
-                </p>
-              </div>
-              
-              <div className="card" style={{ marginBottom: '2rem' }}>
-                <h3>Akses Cepat</h3>
-                <p style={{ color: 'var(--admin-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Pilih menu di bawah untuk langsung memperbarui konten layar TV.</p>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                  <button className="btn-save" onClick={() => setActiveTab('slides')} style={{ background: 'white', color: '#1e293b', border: '1px solid #e2e8f0', boxShadow: 'none' }}>Kelola Slide Foto</button>
-                  <button className="btn-save" onClick={() => setActiveTab('schedules')} style={{ background: 'white', color: '#1e293b', border: '1px solid #e2e8f0', boxShadow: 'none' }}>Update Jadwal Rapat</button>
-                  <button className="btn-save" onClick={() => setActiveTab('announcements')} style={{ background: 'white', color: '#1e293b', border: '1px solid #e2e8f0', boxShadow: 'none' }}>Ganti Teks Berjalan</button>
-                  <button className="btn-save" onClick={() => setActiveTab('reports')} style={{ background: 'white', color: '#1e293b', border: '1px solid #e2e8f0', boxShadow: 'none' }}>Lihat Laporan</button>
+              )}
+
+              {/* ==============================================
+                  LAYOUT 2: COMPACT
+                  ============================================== */}
+              {overviewLayout === 'compact' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                    <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none' }}>
+                       <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Total Slide</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{slides.length}</h3></div>
+                       <MonitorPlay size={24} color="#3b82f6" />
+                    </div>
+                    <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none' }}>
+                       <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Aktivitas Hari Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date === new Date().toISOString().split('T')[0]).length}</h3></div>
+                       <Calendar size={24} color="#10b981" />
+                    </div>
+                    <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none' }}>
+                       <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Bulan Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</h3></div>
+                       <MessageSquare size={24} color="#f59e0b" />
+                    </div>
+                    <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none', background: '#ecfdf5' }}>
+                       <div><p style={{ margin: '0 0 0.2rem 0', color: '#065f46', fontSize: '0.8rem', textTransform: 'uppercase' }}>Sistem</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#065f46' }}>Online</h3></div>
+                       <Shield size={24} color="#10b981" />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+                    <div className="card" style={{ padding: '1rem', margin: 0, border: '1px solid #e2e8f0', boxShadow: 'none' }}>
+                      <h3 style={{ margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1rem' }}>Status Kegiatan</h3>
+                      <div style={{ width: '100%', height: 220 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={[{ name: 'Akan Datang', count: computedSchedules.filter(s => s.status === 'Akan Datang').length }, { name: 'Berlangsung', count: computedSchedules.filter(s => s.status === 'Berlangsung').length }, { name: 'Selesai', count: computedSchedules.filter(s => s.status === 'Selesai').length }, { name: 'Dibatalkan', count: computedSchedules.filter(s => s.status === 'Dibatalkan').length }]} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                            <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px', padding: '4px 8px' }} />
+                            <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={24}>
+                              {[{ name: 'Akan Datang' }, { name: 'Berlangsung' }, { name: 'Selesai' }, { name: 'Dibatalkan' }].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.name === 'Akan Datang' ? '#3b82f6' : entry.name === 'Berlangsung' ? '#10b981' : entry.name === 'Selesai' ? '#8b5cf6' : '#ef4444'} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    <div className="card" style={{ padding: '1rem', margin: 0, border: '1px solid #e2e8f0', boxShadow: 'none', display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1rem' }}>Mitra</h3>
+                      <div style={{ flex: 1 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={Object.entries(computedSchedules.reduce((acc, curr) => { const cat = curr.partnerCategory || 'Internal'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).map(([name, value]) => ({ name, value }))} cx="50%" cy="45%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
+                              {Object.entries(schedules.reduce((acc, curr) => { const cat = curr.partnerCategory || 'Internal'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'][index % 5]} />
+                              ))}
+                            </Pie>
+                            <Tooltip contentStyle={{ borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px', padding: '4px 8px' }} />
+                            <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#64748b' }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </>
+              )}
+
+              {/* ==============================================
+                  LAYOUT 3: ANALYTICS
+                  ============================================== */}
+              {overviewLayout === 'analytics' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                  <div style={{ display: 'flex', gap: '2rem' }}>
+                    <div className="card" style={{ flex: 2, margin: 0, padding: '2rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ marginBottom: '2rem' }}>
+                        <h2 style={{ margin: '0 0 0.5rem 0', color: '#0f172a' }}>Kinerja Kegiatan</h2>
+                        <p style={{ color: '#64748b', margin: 0 }}>Analisis status kegiatan keseluruhan dari jadwal yang tersimpan.</p>
+                      </div>
+                      <div style={{ width: '100%', height: 350 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={[{ name: 'Akan Datang', count: computedSchedules.filter(s => s.status === 'Akan Datang').length }, { name: 'Berlangsung', count: computedSchedules.filter(s => s.status === 'Berlangsung').length }, { name: 'Selesai', count: computedSchedules.filter(s => s.status === 'Selesai').length }, { name: 'Dibatalkan', count: computedSchedules.filter(s => s.status === 'Dibatalkan').length }]} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 13, fontWeight: 500 }} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
+                            <YAxis allowDecimals={false} tick={{ fill: '#475569', fontSize: 13 }} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} />
+                            <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={60}>
+                              {[{ name: 'Akan Datang' }, { name: 'Berlangsung' }, { name: 'Selesai' }, { name: 'Dibatalkan' }].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.name === 'Akan Datang' ? '#3b82f6' : entry.name === 'Berlangsung' ? '#10b981' : entry.name === 'Selesai' ? '#8b5cf6' : '#ef4444'} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      <div className="card" style={{ padding: '1.5rem', margin: 0, border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: 'white' }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', fontWeight: 500, opacity: 0.9 }}>Total Kegiatan Selesai</h4>
+                        <h1 style={{ margin: 0, fontSize: '3rem' }}>{computedSchedules.filter(s => s.status === 'Selesai').length}</h1>
+                      </div>
+                      <div className="card" style={{ padding: '1.5rem', margin: 0, border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>Distribusi Mitra</h4>
+                        <div style={{ flex: 1 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={Object.entries(computedSchedules.reduce((acc, curr) => { const cat = curr.partnerCategory || 'Internal'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).map(([name, value]) => ({ name, value }))} cx="50%" cy="40%" innerRadius={60} outerRadius={85} paddingAngle={5} dataKey="value">
+                                {Object.entries(schedules.reduce((acc, curr) => { const cat = curr.partnerCategory || 'Internal'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'][index % 5]} />
+                                ))}
+                              </Pie>
+                              <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                              <Legend verticalAlign="bottom" height={24} iconType="circle" wrapperStyle={{ fontSize: '13px' }} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-
           {/* SETTINGS */}
           {activeTab === 'settings' && (
-            <div className="card" className="card-narrow" style={{ maxWidth: "800px", margin: "0 auto 2rem" }}>
-              <h3>Pengaturan Identitas & Kecepatan Layar</h3>
-              <div className="form-group">
-                <label>Teks Selamat Datang (Nama Fakultas / Institusi)</label>
-                <input 
-                  type="text" 
-                  value={localFaculty} 
-                  onChange={(e) => setLocalFaculty(e.target.value)} 
-                  className="admin-input"
-                />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
+              
+              {/* Identitas Institusi */}
+              <div className="card" style={{ margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ImageIcon size={18} />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Identitas Institusi</h3>
+                </div>
+                <div className="form-group">
+                  <label>Nama Fakultas / Institusi Utama</label>
+                  <input 
+                    type="text" 
+                    value={localFaculty} 
+                    onChange={(e) => setLocalFaculty(e.target.value)} 
+                    className="admin-input"
+                    placeholder="Contoh: UNIVERSITAS RIAU"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Slogan / Tagline (Opsional)</label>
+                  <input type="text" value={localTagline} onChange={(e) => setLocalTagline(e.target.value)} className="admin-input" placeholder="Contoh: Jantung Hati Masyarakat Riau" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Logo Instansi</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <img src={logoUnri} alt="Logo" style={{ width: '60px', height: '60px', objectFit: 'contain', background: '#f8fafc', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }} />
+                    <button className="btn-save" style={{ background: '#f1f5f9', color: '#475569', boxShadow: 'none' }}><Upload size={14} /> Ganti Logo</button>
+                  </div>
+                </div>
               </div>
-              <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
-                <button className="btn-save" onClick={handleSaveSettings}><Save size={16} /> Simpan Pengaturan</button>
+
+              {/* Preferensi Tampilan */}
+              <div className="card" style={{ margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#fdf4ff', color: '#d946ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <LayoutDashboard size={18} />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Preferensi Tampilan TV</h3>
+                </div>
+                <div className="form-group">
+                  <label>Tema Warna Utama</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#0f172a'].map(color => (
+                      <div 
+                        key={color} 
+                        onClick={() => setLocalPrimaryColor(color)}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', background: color, cursor: 'pointer', border: color === localPrimaryColor ? '3px solid #bfdbfe' : 'none', boxShadow: color === localPrimaryColor ? '0 0 0 2px white' : 'none', transform: color === localPrimaryColor ? 'scale(1.1)' : 'scale(1)', transition: 'all 0.2s' }}
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Layout Layar Utama</label>
+                  <select className="admin-input" value={localTvLayout} onChange={(e) => setLocalTvLayout(e.target.value)}>
+                    <option value="standard">Standard (Slide Kiri, Agenda Kanan)</option>
+                    <option value="full-media">Full Media (Slide Full Screen)</option>
+                    <option value="agenda-focus">Fokus Agenda (Agenda Lebar, Slide Kecil)</option>
+                    <option value="tu">Tema TU (Sidebar Kanan, Aksen Hangat)</option>
+                    <option value="admin">Tema Admin (Profesional, Sidebar Lebar)</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Bahasa Tampilan</label>
+                  <select className="admin-input" value={localLanguage} onChange={(e) => setLocalLanguage(e.target.value)}>
+                    <option value="id">Bahasa Indonesia</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Jam Operasional */}
+              <div className="card" style={{ margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clock size={18} />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Operasional & Waktu</h3>
+                </div>
+                <div className="form-group">
+                  <label>Zona Waktu</label>
+                  <select className="admin-input" value={localTimezone} onChange={(e) => setLocalTimezone(e.target.value)}>
+                    <option value="WIB">WIB (Waktu Indonesia Barat)</option>
+                    <option value="WITA">WITA (Waktu Indonesia Tengah)</option>
+                    <option value="WIT">WIT (Waktu Indonesia Timur)</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ display: 'flex', gap: '1rem', marginBottom: 0 }}>
+                  <div style={{ flex: 1 }}>
+                    <label>Layar Nyala (On)</label>
+                    <input type="time" value={localTimeOn} onChange={(e) => setLocalTimeOn(e.target.value)} className="admin-input" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label>Layar Mati (Standby)</label>
+                    <input type="time" value={localTimeOff} onChange={(e) => setLocalTimeOff(e.target.value)} className="admin-input" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Keamanan & Sistem */}
+              <div className="card" style={{ margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Shield size={18} />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Keamanan & Sistem</h3>
+                </div>
+                <div className="form-group">
+                  <label>Ubah Password Admin</label>
+                  <input type="password" placeholder="Masukkan password baru" className="admin-input" />
+                </div>
+                <div className="form-group">
+                  <label>Konfirmasi Password</label>
+                  <input type="password" placeholder="Ulangi password baru" className="admin-input" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, color: '#475569', fontSize: '0.85rem' }}>
+                    <input type="checkbox" checked={localAutoRefresh} onChange={(e) => setLocalAutoRefresh(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#db2777' }} />
+                    Auto-refresh data tiap 5 menit
+                  </label>
+                </div>
+              </div>
+
+              {/* Floating Save Bar */}
+              <div style={{ gridColumn: '1 / -1', position: 'sticky', bottom: '2rem', display: 'flex', justifyContent: 'center', marginTop: '1rem', zIndex: 10, pointerEvents: 'none' }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(16px)', padding: '0.75rem 1rem', borderRadius: '999px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
+                  <button onClick={handleSaveSettings} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Save size={18} /> Simpan Semua Pengaturan
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1086,36 +1358,47 @@ function AdminDashboard() {
               </div>
             </div>
           )}
-{/* SLIDES */}
+          {/* SLIDES */}
           {activeTab === 'slides' && (
-            <div className="card">
-              <div className="card-header" style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-                <h3 style={{ flex: 1, minWidth: '200px' }}>Daftar Slide Konten</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button className="btn-delete" style={{ background: selectedSlides.length > 0 ? '#ef4444' : '#f1f5f9', color: selectedSlides.length > 0 ? 'white' : '#94a3b8', padding: '0.5rem 1rem' }} onClick={handleDeleteSelectedSlides} disabled={selectedSlides.length === 0}>
-                    Hapus Terpilih ({selectedSlides.length})
+            <div className="card" style={{ maxWidth: '100%', margin: '0 auto 2rem', background: 'transparent', boxShadow: 'none', padding: 0 }}>
+              
+              {/* HEADER */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '1.5rem', alignItems: 'flex-end', marginBottom: '2rem' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#0f172a' }}>Manajemen Slide Konten</h3>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Atur tampilan gambar, video, dan pesan utama di layar TV Anda.</p>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', padding: '0.5rem 0.75rem 0.5rem 1rem', borderRadius: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                     <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                       <Activity size={16} color="#64748b" /> Durasi / Slide:
+                     </label>
+                     <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '0.5rem', padding: '0.2rem 0.4rem', gap: '0.25rem' }}>
+                       <input 
+                          type="number" 
+                          value={localSlideDuration} 
+                          onChange={(e) => setLocalSlideDuration(Number(e.target.value))} 
+                          min="1"
+                          style={{ width: '40px', border: 'none', background: 'transparent', outline: 'none', fontWeight: 800, color: '#3b82f6', textAlign: 'center', fontSize: '0.9rem', padding: 0 }}
+                        />
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>dtk</span>
+                     </div>
+                  </div>
+
+                  <button onClick={handleDeleteSelectedSlides} disabled={selectedSlides.length === 0} style={{ padding: '0.75rem 1.25rem', background: selectedSlides.length > 0 ? '#fef2f2' : 'white', color: selectedSlides.length > 0 ? '#ef4444' : '#cbd5e1', border: `1px solid ${selectedSlides.length > 0 ? '#fecaca' : '#e2e8f0'}`, borderRadius: '999px', cursor: selectedSlides.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
+                    <Trash2 size={16} /> Hapus ({selectedSlides.length})
                   </button>
-                  <button className="btn-delete" style={{ background: localSlides.length > 0 ? '#ef4444' : '#f1f5f9', color: localSlides.length > 0 ? 'white' : '#94a3b8', padding: '0.5rem 1rem' }} onClick={handleDeleteAllSlides} disabled={localSlides.length === 0}>
-                    Hapus Semua
+                  <button onClick={handleAddSlide} style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Plus size={18} /> Tambah Slide
                   </button>
-                  <button className="btn-add" onClick={handleAddSlide}><Plus size={16} /> Tambah Slide</button>
                 </div>
               </div>
-              <div className="form-group" style={{ marginBottom: '2rem' }}>
-                <label>Durasi Tampil per Slide (Detik)</label>
-                <input 
-                  type="number" 
-                  value={localSlideDuration} 
-                  onChange={(e) => setLocalSlideDuration(Number(e.target.value))} 
-                  className="admin-input"
-                  min="1"
-                  style={{ maxWidth: '200px' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                {localSlides.map((slide) => (
+
+              <div className="slide-grid">
+                {localSlides.map((slide, index) => (
                   <div key={slide.id} className="slide-card-admin">
-                    <div className="slide-card-header" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div className="slide-card-header">
                       <input 
                         type="checkbox"
                         checked={selectedSlides.includes(slide.id)}
@@ -1123,97 +1406,103 @@ function AdminDashboard() {
                           if (e.target.checked) setSelectedSlides(prev => [...prev, slide.id]);
                           else setSelectedSlides(prev => prev.filter(id => id !== slide.id));
                         }}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#3b82f6' }}
                       />
-                      <h4 style={{ margin: 0 }}>Slide #{localSlides.indexOf(slide) + 1}</h4>
-                      <button className="btn-delete-text" style={{ marginLeft: 'auto' }} onClick={() => deleteSlide(slide.id)}><Trash2 size={16} /> Hapus</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                        <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>Slide #{index + 1}</h4>
+                        <span style={{ padding: '0.2rem 0.6rem', borderRadius: '0.25rem', background: slide.mediaType === 'video' ? '#fef08a' : slide.mediaType === 'image' ? '#dcfce7' : '#e0e7ff', color: slide.mediaType === 'video' ? '#854d0e' : slide.mediaType === 'image' ? '#166534' : '#3730a3', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                          {slide.mediaType === 'none' ? 'Teks & Warna' : slide.mediaType}
+                        </span>
+                      </div>
+                      <button onClick={() => deleteSlide(slide.id)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.4rem', borderRadius: '0.35rem', transition: 'all 0.2s' }} onMouseOver={e => {e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fef2f2';}} onMouseOut={e => {e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent';}} title="Hapus Slide">
+                        <Trash2 size={16} />
+                      </button>
                     </div>
+
                     <div className="slide-card-body">
-                      {/* Kiri: Urusan Teks */}
-                      <div className="slide-section-text">
+                      {/* Konten Teks */}
+                      <div className="slide-section">
+                        <div className="slide-section-title"><MessageSquare size={14} /> KONTEN TEKS</div>
                         <div className="form-group">
-                          <label>Label Tag</label>
-                          <input type="text" value={slide.tag} onChange={(e) => updateSlide(slide.id, 'tag', e.target.value)} className="admin-input" />
+                          <label>Label Tag (Contoh: PENGUMUMAN)</label>
+                          <input type="text" value={slide.tag} onChange={(e) => updateSlide(slide.id, 'tag', e.target.value)} className="admin-input" style={{ background: 'white' }} />
                         </div>
                         <div className="form-group">
-                          <label>Judul (Bisa tag HTML)</label>
-                          <textarea value={typeof slide.title === 'string' ? slide.title : slide.title.props?.children?.join('') || 'Judul'} onChange={(e) => updateSlide(slide.id, 'title', e.target.value)} className="admin-input" rows="2" style={{ minHeight: '44px' }} />
+                          <label>Judul Utama</label>
+                          <textarea value={typeof slide.title === 'string' ? slide.title : slide.title.props?.children?.join('') || 'Judul'} onChange={(e) => updateSlide(slide.id, 'title', e.target.value)} className="admin-input" rows="2" style={{ background: 'white', minHeight: '60px', resize: 'vertical' }} />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label>Deskripsi</label>
-                          <textarea value={slide.desc} onChange={(e) => updateSlide(slide.id, 'desc', e.target.value)} className="admin-input" rows="4" style={{ minHeight: '110px' }} />
+                          <label>Deskripsi Tambahan</label>
+                          <textarea value={slide.desc} onChange={(e) => updateSlide(slide.id, 'desc', e.target.value)} className="admin-input" rows="3" style={{ background: 'white', minHeight: '80px', resize: 'vertical' }} />
                         </div>
                       </div>
 
-                      {/* Kanan: Urusan Media */}
-                      <div className="slide-section-media">
-                        <div className="form-group" style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                          <label>Tipe Latar Belakang (Media)</label>
+                      {/* Konten Media */}
+                      <div className="slide-section">
+                        <div className="slide-section-title"><ImageIcon size={14} /> MEDIA & LATAR BELAKANG</div>
+                        
+                        <div className="form-group">
+                          <label>Tipe Latar Belakang</label>
                           <select 
                             value={slide.mediaType || 'none'} 
                             onChange={(e) => updateSlide(slide.id, 'mediaType', e.target.value)} 
                             className="admin-input" 
-                            style={{ marginBottom: '1rem' }}
+                            style={{ background: 'white', fontWeight: 600, color: '#3b82f6' }}
                           >
-                            <option value="none">Warna / Gradien Saja (Kosong)</option>
-                            <option value="image">Gambar Berita / Cover</option>
-                            <option value="video">Video Latar (Auto-play)</option>
+                            <option value="none">Hanya Warna / Gradien</option>
+                            <option value="image">Gambar (JPG/PNG)</option>
+                            <option value="video">Video Latar (MP4/WebM)</option>
                           </select>
+                        </div>
 
-                          {slide.mediaType !== 'none' && (
-                            <div style={{ marginBottom: '1rem' }}>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155', fontWeight: 500 }}>
-                                <input 
-                                  type="checkbox" 
-                                  checked={slide.isMediaOnly || false} 
-                                  onChange={(e) => updateSlide(slide.id, 'isMediaOnly', e.target.checked)} 
-                                  style={{ width: '16px', height: '16px' }}
-                                />
-                                Tampilkan Media Penuh (Sembunyikan teks & QR Code)
-                              </label>
+                        {slide.mediaType !== 'none' && (
+                          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f1f5f9', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#334155', fontWeight: 600, margin: 0 }}>
+                              <input 
+                                type="checkbox" 
+                                checked={slide.isMediaOnly || false} 
+                                onChange={(e) => updateSlide(slide.id, 'isMediaOnly', e.target.checked)} 
+                                style={{ width: '18px', height: '18px', accentColor: '#3b82f6' }}
+                              />
+                              Mode Full-Screen Media (Sembunyikan Teks)
+                            </label>
+                          </div>
+                        )}
+
+                        {slide.mediaType === 'none' ? (
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>Pilih Warna Latar</label>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                              <input 
+                                type="color" 
+                                value={slide.bg.startsWith('#') ? slide.bg.slice(0, 7) : '#2f5597'} 
+                                onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
+                                style={{ width: '40px', height: '40px', border: 'none', borderRadius: '0.25rem', cursor: 'pointer', padding: 0 }}
+                              />
+                              <input 
+                                type="text" 
+                                value={slide.bg} 
+                                onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
+                                className="admin-input" 
+                                style={{ border: 'none', boxShadow: 'none', background: 'transparent' }} 
+                              />
                             </div>
-                          )}
-
-                          {slide.mediaType === 'none' && (
-                            <>
-                              <label>Warna Latar (Hex/URL Lama)</label>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="form-group">
+                              <label>Upload File Media</label>
                               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
-                                  <input 
-                                    type="color" 
-                                    value={slide.bg.startsWith('#') ? slide.bg.slice(0, 7) : '#2f5597'} 
-                                    onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
-                                    style={{ position: 'absolute', left: '10px', width: '30px', height: '30px', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0 }}
-                                  />
-                                  <input 
-                                    type="text" 
-                                    value={slide.bg} 
-                                    onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
-                                    className="admin-input" 
-                                    style={{ width: '100%', paddingLeft: '50px' }} 
-                                  />
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {slide.mediaType !== 'none' && (
-                            <>
-                              <label>URL / File {slide.mediaType === 'video' ? 'Video (MP4/WebM)' : 'Gambar (JPG/PNG)'}</label>
-                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
                                 <input 
                                   type="text" 
-                                  value={slide.mediaUrl?.startsWith('localforage:') ? '[File tersimpan di perangkat lokal]' : (slide.mediaUrl || '')} 
-                                  onChange={(e) => {
-                                    // if user types, overwrite the localforage tag
-                                    updateSlide(slide.id, 'mediaUrl', e.target.value);
-                                  }} 
+                                  value={slide.mediaUrl?.startsWith('localforage:') ? '[File tersimpan secara lokal]' : (slide.mediaUrl || '')} 
+                                  onChange={(e) => updateSlide(slide.id, 'mediaUrl', e.target.value)} 
                                   className="admin-input" 
-                                  style={{ flex: 1 }}
-                                  placeholder="Masukkan Link URL atau Upload dari Galeri..." 
+                                  style={{ background: 'white', flex: 1, fontSize: '0.8rem' }}
+                                  placeholder="Link URL gambar/video..." 
                                 />
-                                <label className="btn-save" style={{ cursor: 'pointer', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#3b82f6', boxShadow: 'none' }}>
-                                  <Upload size={16} /> Pilih File
+                                <label style={{ cursor: 'pointer', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#3b82f6', color: 'white', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#2563eb'} onMouseOut={e => e.currentTarget.style.background = '#3b82f6'}>
+                                  <Upload size={16} /> Browse
                                   <input 
                                     type="file" 
                                     accept={slide.mediaType === 'video' ? 'video/*' : 'image/*'} 
@@ -1222,55 +1511,90 @@ function AdminDashboard() {
                                   />
                                 </label>
                               </div>
-                              
-                              <label>Skala / Potongan Background</label>
+                            </div>
+                            
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                              <label>Mode Tampilan Media</label>
                               <select 
                                 value={slide.mediaFit || 'cover'} 
                                 onChange={(e) => updateSlide(slide.id, 'mediaFit', e.target.value)} 
                                 className="admin-input" 
-                                style={{ marginBottom: '1rem' }}
+                                style={{ background: 'white' }}
                               >
-                                <option value="cover">Cover (Penuhi Layar - Tepian mungkin terpotong)</option>
-                                <option value="contain">Contain (Ukuran Asli - Presisi & tidak terpotong)</option>
-                                <option value="fill">Fill (Tarik Penuh - Gambar mungkin melebar/memanjang)</option>
+                                <option value="cover">Penuhi Layar (Cover)</option>
+                                <option value="contain">Ukuran Asli (Contain)</option>
+                                <option value="fill">Tarik Penuh (Fill)</option>
                               </select>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
 
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label>Gambar QR Code (Upload/URL)</label>
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <input type="text" value={slide.qr} onChange={(e) => updateSlide(slide.id, 'qr', e.target.value)} className="admin-input" style={{ flex: 1 }} placeholder="Masukkan link gambar QR..." />
-                            <label className="btn-save" style={{ cursor: 'pointer', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#3b82f6', boxShadow: 'none' }}>
-                              <Upload size={16} /> Pilih QR
+                      {/* QR Code */}
+                      <div className="slide-section" style={{ background: '#fdf4ff', borderColor: '#fbcfe8' }}>
+                        <div className="slide-section-title" style={{ color: '#d946ef' }}><ImageIcon size={14} /> KODE QR (OPSIONAL)</div>
+                        <div className="form-group">
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #fbcfe8' }}>
+                            <input 
+                                type="text" 
+                                value={slide.qr} 
+                                onChange={(e) => updateSlide(slide.id, 'qr', e.target.value)} 
+                                className="admin-input" 
+                                style={{ border: 'none', boxShadow: 'none', flex: 1 }} 
+                                placeholder="Link gambar QR..." 
+                            />
+                            <label style={{ cursor: 'pointer', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#d946ef', color: 'white', borderRadius: '0.35rem', fontWeight: 600, fontSize: '0.8rem' }}>
+                              <Upload size={14} /> Upload QR
                               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload(slide.id, e.target.files[0], 'qr')} />
                             </label>
                           </div>
-                          
-                          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '0.85rem' }}>Ukuran QR (px)</label>
-                              <input type="number" value={slide.qrSize || 240} onChange={(e) => updateSlide(slide.id, 'qrSize', parseInt(e.target.value))} className="admin-input" />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '0.85rem' }}>Potongan QR</label>
-                              <select value={slide.qrFit || 'cover'} onChange={(e) => updateSlide(slide.id, 'qrFit', e.target.value)} className="admin-input">
-                                <option value="cover">Cover</option>
-                                <option value="contain">Contain</option>
-                                <option value="fill">Fill</option>
-                              </select>
-                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a21caf', marginBottom: '0.25rem', display: 'block' }}>Ukuran (px)</label>
+                            <input type="number" value={slide.qrSize || 240} onChange={(e) => updateSlide(slide.id, 'qrSize', parseInt(e.target.value))} className="admin-input" style={{ background: 'white', borderColor: '#fbcfe8' }} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a21caf', marginBottom: '0.25rem', display: 'block' }}>Potongan QR</label>
+                            <select value={slide.qrFit || 'cover'} onChange={(e) => updateSlide(slide.id, 'qrFit', e.target.value)} className="admin-input" style={{ background: 'white', borderColor: '#fbcfe8' }}>
+                              <option value="cover">Cover</option>
+                              <option value="contain">Contain</option>
+                              <option value="fill">Fill</option>
+                            </select>
                           </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
-                <button className="btn-save" onClick={handleSaveSlides}><Save size={16} /> Simpan Slide</button>
+
+              {localSlides.length === 0 && (
+                <div style={{ padding: '5rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1.5rem', border: '2px dashed #cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#94a3b8' }}>
+                    <ImageIcon size={40} />
+                  </div>
+                  <h3 style={{ color: '#334155', margin: '0 0 0.5rem 0' }}>Belum ada slide</h3>
+                  <p style={{ color: '#64748b', margin: '0 0 1.5rem 0' }}>Mulai buat slide pertama Anda untuk ditampilkan di layar TV.</p>
+                  <button onClick={handleAddSlide} style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}>
+                    <Plus size={18} /> Buat Slide Baru
+                  </button>
+                </div>
+              )}
+
+              {/* FLOATING SAVE BAR */}
+              <div style={{ position: 'sticky', bottom: '2rem', display: 'flex', justifyContent: 'center', marginTop: '3rem', zIndex: 10, pointerEvents: 'none' }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(16px)', padding: '0.75rem 1rem', borderRadius: '999px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', alignItems: 'center', gap: '1rem', pointerEvents: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.5rem', borderRight: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>Total: {localSlides.length} Slide</span>
+                  </div>
+                  <button onClick={handleSaveSlides} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Save size={18} /> Publikasikan ke TV
+                  </button>
+                </div>
               </div>
+
             </div>
           )}
 
