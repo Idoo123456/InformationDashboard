@@ -19,33 +19,40 @@ const Header = () => {
   };
 
   return (
-    <header className="header">
-      <div className="logo-section">
-        <div className="logo-icon">
-          <img src={logoUnri} alt="Logo UNRI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+    <header className="header glass-panel">
+      {/* LEFT: BRAND IDENTITY */}
+      <div className="header-brand">
+        <div className="header-logo-wrap">
+          <img src={logoUnri} alt="Logo UNRI" className="header-logo-img" />
+        </div>
+        <div className="header-brand-divider" />
+        <div className="header-brand-text">
+          <span className="header-sub-brand">UNIVERSITAS RIAU</span>
+          <h2 className="header-main-brand" title={facultyName}>{facultyName}</h2>
         </div>
       </div>
 
-      <div className="title-section">
-        <h2>{facultyName.toUpperCase()}</h2>
-        {tagline ? (
-          <h3>{tagline}</h3>
-        ) : (
-          <h3>Pusat Informasi <span className="highlight-text">Terpadu</span></h3>
-        )}
-        <div className="welcome-container">
-          <div className="welcome-text-wrapper">
-            <div className="welcome-text-item">Selamat Datang</div>
-            <div className="welcome-text-item">{facultyName}</div>
-            <div className="welcome-text-item">Selamat Datang</div>
-          </div>
+      {/* CENTER: TAGLINE & LIVE SYSTEM STATUS */}
+      <div className="header-center">
+        <h1 className="header-tagline">
+          {tagline || "Jantung Hati Masyarakat Riau"}
+        </h1>
+        <div className="header-status-pill">
+          <span className="header-status-dot" />
+          <span className="header-status-text">Pusat Informasi & Layanan Terpadu</span>
         </div>
       </div>
 
-      <div className="time-section">
-        <div className="day-badge">{days[time.getDay()]}</div>
-        <div className="time-display">{formatTime(time)}</div>
-        <div className="date-display">{`${time.getDate()} ${months[time.getMonth()]} ${time.getFullYear()}`}</div>
+      {/* RIGHT: TIME & DATE WIDGET */}
+      <div className="header-time-widget">
+        <div className="header-clock-row">
+          <span className="header-clock">{formatTime(time)}</span>
+          <span className="header-tz-badge">WIB</span>
+        </div>
+        <div className="header-date-row">
+          <span className="header-day-tag">{days[time.getDay()]}</span>
+          <span className="header-date-text">{`${time.getDate()} ${months[time.getMonth()]} ${time.getFullYear()}`}</span>
+        </div>
       </div>
     </header>
   );

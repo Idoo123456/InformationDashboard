@@ -5,19 +5,56 @@ const DashboardContext = createContext();
 const defaultTagline = "Jantung Hati Masyarakat Riau";
 const defaultPrimaryColor = "#3b82f6";
 const defaultTvLayout = "standard";
+const defaultTemplateColors = {
+  standard: "#3b82f6",
+  tu: "#f59e0b",
+  "agenda-focus": "#3b82f6",
+  "full-media": "#3b82f6",
+  admin: "#0f172a"
+};
 const defaultLanguage = "id";
 const defaultTimezone = "WIB";
 const defaultTimeOn = "06:00";
 const defaultTimeOff = "22:00";
 const defaultAutoRefresh = true;
 
+const getRelativeDate = (offsetDays) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 const defaultSchedules = [
-  { id: 1, date: '2026-09-22', startTime: '09:00', endTime: '12:00', title: 'Rapat IKU Triwulan III', description: 'Evaluasi kinerja triwulan', loc: 'Studio (Lt.1)', status: 'Berlangsung', pic: 'Biro Umum', partnerCategory: 'Internal' },
-  { id: 2, date: '2026-09-22', startTime: '10:00', endTime: '11:00', title: 'Rapat IKU', description: 'Lanjutan evaluasi', loc: 'Ruang Rapat Senat (Lt.5)', status: 'Akan Datang', pic: 'Bagian Keuangan', partnerCategory: 'Internal' },
-  { id: 3, date: '2026-09-22', startTime: '13:00', endTime: '15:00', title: 'Rapat Koordinasi Distribusi Pengadaan 2026', description: 'Persiapan distribusi alat', loc: 'Studio (Lt.1)', status: 'Akan Datang', pic: 'Tim Pengadaan', partnerCategory: 'Eksternal' },
-  { id: 4, date: '2026-09-23', startTime: '07:30', endTime: '10:00', title: 'VAKSIN', description: 'Vaksinasi booster', loc: 'Ruang Rapat Lobi', status: 'Akan Datang', pic: 'Dinas Kesehatan', partnerCategory: 'Eksternal' },
-  { id: 5, date: '2026-09-23', startTime: '08:30', endTime: '12:00', title: 'Rapat Rutin Dan Persiapan AMI Profesi Dokter', description: 'Rapat rutin bulanan', loc: 'Ruang Rapat Senat (Lt.5)', status: 'Akan Datang', pic: 'Fakultas Kedokteran', partnerCategory: 'Internal' },
-  { id: 6, date: '2026-09-23', startTime: '09:40', endTime: '11:40', title: 'Kuliah Sp.KKLP', description: 'Kuliah umum', loc: 'Kuantan Lt.1', status: 'Akan Datang', pic: 'Program Studi', partnerCategory: 'Internal' }
+  // MINGGU INI (12 KEGIATAN: 2 HALAMAN SLIDE DENGAN GRID 3x2)
+  { id: 1, date: getRelativeDate(0), startTime: '08:30', endTime: '10:30', title: 'Rapat IKU Triwulan III', description: 'Evaluasi kinerja triwulan & capaian sasaran', loc: 'Studio (Lt.1)', status: 'Berlangsung', pic: 'Biro Umum', partnerCategory: 'Internal' },
+  { id: 2, date: getRelativeDate(0), startTime: '11:00', endTime: '12:30', title: 'Koordinasi Sarana Prasarana', description: 'Review kebutuhan logistik & inventaris', loc: 'Ruang Senat (Lt.5)', status: 'Akan Datang', pic: 'Bagian Umum', partnerCategory: 'Internal' },
+  { id: 3, date: getRelativeDate(0), startTime: '13:30', endTime: '15:30', title: 'Distribusi Pengadaan Lab 2026', description: 'Persiapan distribusi alat riset terpadu', loc: 'Gedung Rektorat', status: 'Akan Datang', pic: 'Tim Pengadaan', partnerCategory: 'Eksternal' },
+  { id: 4, date: getRelativeDate(1), startTime: '08:30', endTime: '11:00', title: 'Rapat Rutin Persiapan AMI', description: 'Audit mutu internal akademik fakultas', loc: 'Ruang Rapat Senat', status: 'Akan Datang', pic: 'Fakultas Kedokteran', partnerCategory: 'Internal' },
+  { id: 5, date: getRelativeDate(1), startTime: '13:00', endTime: '15:00', title: 'Sosialisasi Tata Tertib Kampus', description: 'Pembinaan karakter civitas akademika', loc: 'Auditorium FKIP', status: 'Akan Datang', pic: 'BEM & DPM', partnerCategory: 'Internal' },
+  { id: 6, date: getRelativeDate(2), startTime: '09:00', endTime: '11:30', title: 'Kuliah Tamu Spesialis KKLP', description: 'Kuliah umum pakar kedokteran keluarga', loc: 'Kuantan Lt.1', status: 'Akan Datang', pic: 'Program Studi', partnerCategory: 'Internal' },
+  { id: 7, date: getRelativeDate(2), startTime: '13:30', endTime: '15:00', title: 'FGD Hilirisasi Riset Sawit', description: 'Pengembangan inovasi riset hilirisasi', loc: 'LPPM UNRI', status: 'Akan Datang', pic: 'Pusat Studi Riset', partnerCategory: 'Eksternal' },
+  { id: 8, date: getRelativeDate(3), startTime: '08:00', endTime: '10:30', title: 'Bimtek Penulisan Jurnal Scopus', description: 'Pelatihan publikasi artikel ilmiah', loc: 'Lab Komputer Lt.2', status: 'Akan Datang', pic: 'Lembaga Publikasi', partnerCategory: 'Internal' },
+  { id: 9, date: getRelativeDate(4), startTime: '09:00', endTime: '11:00', title: 'Evaluasi Pembelajaran UTS', description: 'Rapat koordinasi dosen pengampu MK', loc: 'Ruang Sidang Lt.3', status: 'Akan Datang', pic: 'Wakil Dekan I', partnerCategory: 'Internal' },
+  { id: 10, date: getRelativeDate(4), startTime: '13:30', endTime: '15:30', title: 'Workshop Akreditasi Program Studi', description: 'Sinkronisasi borang pemenuhan mutu LAM', loc: 'Ruang Rapat Senat', status: 'Akan Datang', pic: 'Badan Penjamin Mutu', partnerCategory: 'Internal' },
+  { id: 11, date: getRelativeDate(5), startTime: '07:30', endTime: '09:30', title: 'Senam Pagi & Silaturahmi Dosen', description: 'Kegiatan kebugaran jasmani civitas', loc: 'Lapangan Rektorat', status: 'Akan Datang', pic: 'Biro Kemahasiswaan', partnerCategory: 'Internal' },
+  { id: 12, date: getRelativeDate(6), startTime: '08:30', endTime: '12:00', title: 'Donor Darah Sukarela KSR PMI', description: 'Aksi sosial kemanusiaan kampus terpadu', loc: 'Gedung PKM Gobah', status: 'Akan Datang', pic: 'KSR PMI UNRI', partnerCategory: 'Eksternal' },
+
+  // YANG AKAN DATANG (12 KEGIATAN: 2 HALAMAN SLIDE DENGAN GRID 3x2)
+  { id: 13, date: getRelativeDate(7), startTime: '08:00', endTime: '12:00', title: 'Vaksinasi Booster & MCU Pegawai', description: 'Pemeriksaan kesehatan berkala civitas', loc: 'Lobi Utama Rektorat', status: 'Akan Datang', pic: 'Klinik & Dinkes', partnerCategory: 'Eksternal' },
+  { id: 14, date: getRelativeDate(7), startTime: '13:30', endTime: '15:30', title: 'Koordinasi Penerimaan Maba', description: 'Persiapan jalur seleksi nasional SNBP', loc: 'Ruang Senat Rektorat', status: 'Akan Datang', pic: 'Biro Akademik', partnerCategory: 'Internal' },
+  { id: 15, date: getRelativeDate(8), startTime: '09:00', endTime: '15:00', title: 'Lokakarya Kurikulum Berbasis OBE', description: 'Penyusunan kurikulum capaian luaran', loc: 'Hotel Grand Central', status: 'Akan Datang', pic: 'LPPMP UNRI', partnerCategory: 'Internal' },
+  { id: 16, date: getRelativeDate(8), startTime: '13:00', endTime: '15:00', title: 'MoU Kemitraan Industri Energi', description: 'Nota kesepahaman program magang riset', loc: 'Ruang Rapat Pimpinan', status: 'Akan Datang', pic: 'Bagian Kerjasama', partnerCategory: 'Eksternal' },
+  { id: 17, date: getRelativeDate(9), startTime: '10:00', endTime: '12:00', title: 'Seminar Nasional Sains Teknologi', description: 'Diseminasi hasil riset terapan unggulan', loc: 'Gedung PKM UNRI', status: 'Akan Datang', pic: 'Fakultas Teknik', partnerCategory: 'Internal' },
+  { id: 18, date: getRelativeDate(10), startTime: '08:30', endTime: '11:30', title: 'Pelatihan Auditor Mutu Internal', description: 'Sertifikasi kompetensi auditor kampus', loc: 'Ruang Multimedia', status: 'Akan Datang', pic: 'Badan Mutu UNRI', partnerCategory: 'Internal' },
+  { id: 19, date: getRelativeDate(11), startTime: '13:30', endTime: '16:00', title: 'Rapat Pagu Anggaran RKA-KL 2027', description: 'Sinkronisasi usulan pagu prioritas', loc: 'Ruang Senat (Lt.5)', status: 'Akan Datang', pic: 'Biro Perencanaan', partnerCategory: 'Internal' },
+  { id: 20, date: getRelativeDate(14), startTime: '09:00', endTime: '12:00', title: 'Wisuda Pascasarjana & Sarjana', description: 'Prosesi wisuda periode wisudawan 2026', loc: 'Gedung PKM Gobah', status: 'Akan Datang', pic: 'Panitia Wisuda', partnerCategory: 'Internal' },
+  { id: 21, date: getRelativeDate(18), startTime: '08:30', endTime: '14:30', title: 'Audit Eksternal ISO 9001:2015', description: 'Surveillance audit manajemen mutu', loc: 'Seluruh Unit Kerja', status: 'Akan Datang', pic: 'Badan Sertifikasi', partnerCategory: 'Eksternal' },
+  { id: 22, date: getRelativeDate(21), startTime: '10:00', endTime: '12:30', title: 'Kuliah Umum Hubungan Diplomatik', description: 'Studium generale kerjasama global', loc: 'Auditorium Rektorat', status: 'Akan Datang', pic: 'Biro Kerjasama Luar Negeri', partnerCategory: 'Eksternal' },
+  { id: 23, date: getRelativeDate(25), startTime: '08:30', endTime: '16:00', title: 'Pekan Ilmiah Mahasiswa 2026', description: 'Kompetisi karya tulis dan prototipe inovasi', loc: 'Gedung PKM Gobah', status: 'Akan Datang', pic: 'Biro Kemahasiswaan', partnerCategory: 'Internal' },
+  { id: 24, date: getRelativeDate(28), startTime: '09:00', endTime: '12:00', title: 'Rapat Koordinasi Evaluasi Tahunan', description: 'Pleno laporan kinerja akhir tahun', loc: 'Ruang Senat (Lt.5)', status: 'Akan Datang', pic: 'Rektorat', partnerCategory: 'Internal' }
 ];
 
 const getNextMonthDate = () => {
@@ -84,11 +121,22 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       }
       
       if (key === 'schedules' && Array.isArray(parsed)) {
-        return parsed.map(item => ({
-          ...item,
-          pic: item.pic || '-',
-          partnerCategory: item.partnerCategory || 'Internal'
-        }));
+        if (parsed.length < 24) {
+          return defaultSchedules;
+        }
+        return parsed.map((item, idx) => {
+          let itemDate = item.date;
+          if (itemDate === '2026-09-22' || itemDate === '2026-09-23') {
+            const offsets = [0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 5, 6, 7, 7, 8, 8, 9, 10, 11, 14, 18, 21, 25, 28];
+            itemDate = getRelativeDate(offsets[idx % offsets.length]);
+          }
+          return {
+            ...item,
+            date: itemDate,
+            pic: item.pic || '-',
+            partnerCategory: item.partnerCategory || 'Internal'
+          };
+        });
       }
 
       if (key === 'slides' && Array.isArray(parsed)) {
@@ -109,6 +157,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   const [facultyName, setFacultyName] = useState(() => loadState('facultyName', defaultFacultyNameOverride));
   const [tagline, setTagline] = useState(() => loadState('tagline', defaultTagline));
   const [primaryColor, setPrimaryColor] = useState(() => loadState('primaryColor', defaultPrimaryColor));
+  const [templateColors, setTemplateColors] = useState(() => loadState('templateColors', defaultTemplateColors));
   const [tvLayout, setTvLayout] = useState(() => loadState('tvLayout', defaultTvLayout));
   const [language, setLanguage] = useState(() => loadState('language', defaultLanguage));
   const [timezone, setTimezone] = useState(() => loadState('timezone', defaultTimezone));
@@ -126,6 +175,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   useEffect(() => localStorage.setItem(getKey('facultyName'), JSON.stringify(facultyName)), [facultyName, prefix]);
   useEffect(() => localStorage.setItem(getKey('tagline'), JSON.stringify(tagline)), [tagline, prefix]);
   useEffect(() => localStorage.setItem(getKey('primaryColor'), JSON.stringify(primaryColor)), [primaryColor, prefix]);
+  useEffect(() => localStorage.setItem(getKey('templateColors'), JSON.stringify(templateColors)), [templateColors, prefix]);
   useEffect(() => localStorage.setItem(getKey('tvLayout'), JSON.stringify(tvLayout)), [tvLayout, prefix]);
   useEffect(() => localStorage.setItem(getKey('language'), JSON.stringify(language)), [language, prefix]);
   useEffect(() => localStorage.setItem(getKey('timezone'), JSON.stringify(timezone)), [timezone, prefix]);
@@ -145,6 +195,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       if (e.key === getKey('facultyName') && e.newValue) setFacultyName(JSON.parse(e.newValue));
       if (e.key === getKey('tagline') && e.newValue) setTagline(JSON.parse(e.newValue));
       if (e.key === getKey('primaryColor') && e.newValue) setPrimaryColor(JSON.parse(e.newValue));
+      if (e.key === getKey('templateColors') && e.newValue) setTemplateColors(JSON.parse(e.newValue));
       if (e.key === getKey('tvLayout') && e.newValue) setTvLayout(JSON.parse(e.newValue));
       if (e.key === getKey('language') && e.newValue) setLanguage(JSON.parse(e.newValue));
       if (e.key === getKey('timezone') && e.newValue) setTimezone(JSON.parse(e.newValue));
@@ -171,6 +222,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       facultyName, setFacultyName,
       tagline, setTagline,
       primaryColor, setPrimaryColor,
+      templateColors, setTemplateColors,
       tvLayout, setTvLayout,
       language, setLanguage,
       timezone, setTimezone,

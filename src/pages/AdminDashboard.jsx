@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield } from 'lucide-react';
+import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield, Palette, Check, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import '../admin.css';
@@ -8,6 +8,7 @@ import logoUnri from '../assets/LogoUnri2.png';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import localforage from 'localforage';
 import ImageCropper from '../components/ImageCropper';
+import { PRESET_COLORS, TEMPLATE_LIST } from '../utils/themeUtils';
 
 const showSuccessPopup = (message) => {
   Swal.fire({
@@ -58,6 +59,7 @@ function AdminDashboard() {
     facultyName, setFacultyName, 
     tagline, setTagline,
     primaryColor, setPrimaryColor,
+    templateColors, setTemplateColors,
     tvLayout, setTvLayout,
     language, setLanguage,
     timezone, setTimezone,
@@ -166,6 +168,14 @@ function AdminDashboard() {
   const [localFaculty, setLocalFaculty] = useState(facultyName);
   const [localTagline, setLocalTagline] = useState(tagline || "");
   const [localPrimaryColor, setLocalPrimaryColor] = useState(primaryColor || "#3b82f6");
+  const [localTemplateColors, setLocalTemplateColors] = useState(templateColors || {
+    standard: '#3b82f6',
+    tu: '#f59e0b',
+    'agenda-focus': '#3b82f6',
+    'full-media': '#3b82f6',
+    admin: '#0f172a'
+  });
+  const [selectedTemplateTab, setSelectedTemplateTab] = useState('all'); // 'all', 'tu', 'standard', 'agenda-focus', 'full-media', 'admin'
   const [localTvLayout, setLocalTvLayout] = useState(tvLayout || "standard");
   const [localLanguage, setLocalLanguage] = useState(language || "id");
   const [localTimezone, setLocalTimezone] = useState(timezone || "WIB");
@@ -175,18 +185,57 @@ function AdminDashboard() {
   const [localSlideDuration, setLocalSlideDuration] = useState(slideDuration);
   const [localMarqueeSpeed, setLocalMarqueeSpeed] = useState(marqueeSpeed);
   const [localScheduleSpeed, setLocalScheduleSpeed] = useState(scheduleSpeed);
+
+  const activeWorkingColor = selectedTemplateTab === 'all'
+    ? localPrimaryColor
+    : (localTemplateColors?.[selectedTemplateTab] || localPrimaryColor);
+
+  const handleColorChange = (color) => {
+    if (!color) return;
+    if (selectedTemplateTab === 'all') {
+      setLocalPrimaryColor(color);
+      setLocalTemplateColors({
+        standard: color,
+        tu: color,
+        'agenda-focus': color,
+        'full-media': color,
+        admin: color
+      });
+    } else {
+      setLocalTemplateColors(prev => ({
+        ...prev,
+        [selectedTemplateTab]: color
+      }));
+      if (selectedTemplateTab === localTvLayout) {
+        setLocalPrimaryColor(color);
+      }
+    }
+  };
+
+  const handleApplyColorToAll = (color) => {
+    setLocalPrimaryColor(color);
+    setLocalTemplateColors({
+      standard: color,
+      tu: color,
+      'agenda-focus': color,
+      'full-media': color,
+      admin: color
+    });
+    showToastPopup(`Warna berhasil diterapkan ke semua template!`);
+  };
   
   const handleSaveSettings = () => {
     setFacultyName(localFaculty);
     setTagline(localTagline);
     setPrimaryColor(localPrimaryColor);
+    setTemplateColors(localTemplateColors);
     setTvLayout(localTvLayout);
     setLanguage(localLanguage);
     setTimezone(localTimezone);
     setTimeOn(localTimeOn);
     setTimeOff(localTimeOff);
     setAutoRefresh(localAutoRefresh);
-    showSuccessPopup('Pengaturan Umum berhasil disimpan!');
+    showSuccessPopup('Pengaturan Umum & Warna Template berhasil disimpan!');
   };
 
   const [localAnnouncements, setLocalAnnouncements] = useState(announcements);
@@ -207,6 +256,18 @@ function AdminDashboard() {
   useEffect(() => {
     setLocalSlides(slides);
   }, [slides]);
+
+  useEffect(() => {
+    if (primaryColor) setLocalPrimaryColor(primaryColor);
+  }, [primaryColor]);
+
+  useEffect(() => {
+    if (templateColors) setLocalTemplateColors(templateColors);
+  }, [templateColors]);
+
+  useEffect(() => {
+    if (tvLayout) setLocalTvLayout(tvLayout);
+  }, [tvLayout]);
 
   const handleDeleteSelectedAnnouncements = () => {
     if (selectedAnnouncements.length === 0) return;
@@ -849,25 +910,154 @@ function AdminDashboard() {
                   </div>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Preferensi Tampilan TV</h3>
                 </div>
-                <div className="form-group">
-                  <label>Tema Warna Utama</label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#0f172a'].map(color => (
-                      <div 
-                        key={color} 
-                        onClick={() => setLocalPrimaryColor(color)}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', background: color, cursor: 'pointer', border: color === localPrimaryColor ? '3px solid #bfdbfe' : 'none', boxShadow: color === localPrimaryColor ? '0 0 0 2px white' : 'none', transform: color === localPrimaryColor ? 'scale(1.1)' : 'scale(1)', transition: 'all 0.2s' }}
-                      ></div>
-                    ))}
+                {/* PENGATURAN WARNA SEMUA TEMPLATE */}
+                <div className="form-group" style={{ background: '#f8fafc', padding: '1.15rem', borderRadius: '0.85rem', border: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontWeight: '700', color: '#1e293b', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.15rem' }}>
+                        <Palette size={17} style={{ color: activeWorkingColor }} />
+                        Tema & Kustomisasi Warna
+                      </label>
+                      <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                        Pilih sasaran template untuk menyesuaikan warna:
+                      </span>
+                    </div>
+                    {selectedTemplateTab !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => handleApplyColorToAll(activeWorkingColor)}
+                        className="btn-secondary"
+                        style={{ fontSize: '0.73rem', padding: '0.3rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}
+                        title="Terapkan warna ini ke seluruh template"
+                      >
+                        <Sparkles size={13} />
+                        Terapkan ke Semua
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Template Selector Tabs / Pill Buttons */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateTab('all')}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '999px',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        border: selectedTemplateTab === 'all' ? '1.5px solid #2f5597' : '1px solid #cbd5e1',
+                        background: selectedTemplateTab === 'all' ? '#2f5597' : '#ffffff',
+                        color: selectedTemplateTab === 'all' ? '#ffffff' : '#475569',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      🌟 Semua Template (Global)
+                    </button>
+                    {TEMPLATE_LIST.map(tmpl => {
+                      const tmplColor = localTemplateColors?.[tmpl.id] || localPrimaryColor;
+                      const isSelected = selectedTemplateTab === tmpl.id;
+                      return (
+                        <button
+                          key={tmpl.id}
+                          type="button"
+                          onClick={() => setSelectedTemplateTab(tmpl.id)}
+                          style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '999px',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            border: isSelected ? `2px solid ${tmplColor}` : '1px solid #cbd5e1',
+                            background: '#ffffff',
+                            color: isSelected ? '#1e293b' : '#64748b',
+                            boxShadow: isSelected ? `0 2px 6px ${tmplColor}40` : 'none',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: tmplColor, display: 'inline-block' }} />
+                          {tmpl.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Color Presets Palette */}
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '0.45rem' }}>
+                      Palet Warna Populer:
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {PRESET_COLORS.map(colorItem => {
+                        const isColorActive = (activeWorkingColor || '').toLowerCase() === colorItem.hex.toLowerCase();
+                        return (
+                          <div 
+                            key={colorItem.hex}
+                            onClick={() => handleColorChange(colorItem.hex)}
+                            title={`${colorItem.name} (${colorItem.hex})`}
+                            style={{ 
+                              width: '32px', 
+                              height: '32px', 
+                              borderRadius: '50%', 
+                              background: colorItem.hex, 
+                              cursor: 'pointer', 
+                              position: 'relative',
+                              border: isColorActive ? '3px solid #ffffff' : '2px solid #ffffff', 
+                              boxShadow: isColorActive ? `0 0 0 2px ${colorItem.hex}, 0 4px 8px rgba(0,0,0,0.18)` : '0 1px 3px rgba(0,0,0,0.1)', 
+                              transform: isColorActive ? 'scale(1.15)' : 'scale(1)', 
+                              transition: 'all 0.2s' 
+                            }}
+                          >
+                            {isColorActive && (
+                              <Check size={14} color="#ffffff" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Color Input & Hex Code */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#ffffff', padding: '0.6rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input 
+                        type="color" 
+                        value={activeWorkingColor} 
+                        onChange={(e) => handleColorChange(e.target.value)} 
+                        style={{ width: '38px', height: '34px', border: 'none', borderRadius: '0.35rem', cursor: 'pointer', padding: 0, background: 'transparent' }} 
+                      />
+                      <span style={{ fontSize: '0.78rem', fontWeight: '600', color: '#475569' }}>Kustom Bebas:</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={activeWorkingColor} 
+                      onChange={(e) => handleColorChange(e.target.value)} 
+                      placeholder="#RRGGBB"
+                      maxLength={7}
+                      className="admin-input" 
+                      style={{ width: '105px', padding: '0.3rem 0.5rem', fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: '700', textAlign: 'center', height: '32px' }} 
+                    />
+
+                    {/* Live Mini Preview badge */}
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem', background: `${activeWorkingColor}18`, padding: '0.3rem 0.65rem', borderRadius: '999px', border: `1px solid ${activeWorkingColor}44` }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: activeWorkingColor }} />
+                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: activeWorkingColor }}>
+                        Preview Tema
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div className="form-group">
                   <label>Layout Layar Utama</label>
                   <select className="admin-input" value={localTvLayout} onChange={(e) => setLocalTvLayout(e.target.value)}>
-                    <option value="standard">Standard (Slide Kiri, Agenda Kanan)</option>
+                    <option value="standard">Standard (Kegiatan Kiri, Slide Kanan)</option>
                     <option value="full-media">Full Media (Slide Full Screen)</option>
                     <option value="agenda-focus">Fokus Agenda (Agenda Lebar, Slide Kecil)</option>
-                    <option value="tu">Tema TU (Sidebar Kanan, Aksen Hangat)</option>
+                    <option value="tu">Tema TU (2 Slide: Kegiatan Minggu Ini & Mendatang)</option>
                     <option value="admin">Tema Admin (Profesional, Sidebar Lebar)</option>
                   </select>
                 </div>

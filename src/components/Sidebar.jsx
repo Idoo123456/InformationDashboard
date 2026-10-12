@@ -143,7 +143,7 @@ const Sidebar = () => {
               {item.loc}
             </span>
           </div>
-          <div className="schedule-meta-row" style={{ marginTop: '0.25rem', borderTop: '1px dashed #e2e8f0', paddingTop: '0.5rem' }}>
+          <div className="schedule-meta-row" style={{ marginTop: '0.25rem', borderTop: '1px solid rgba(226, 232, 240, 0.7)', paddingTop: '0.5rem' }}>
             <span className="meta-item" style={{ color: '#475569' }}>
               <User size={12} className="meta-icon" /> 
               {item.pic || '-'}
@@ -310,27 +310,27 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className="glass-panel" style={{ padding: '1rem 1.25rem', background: 'rgba(255, 255, 255, 0.95)', color: '#334155', borderRadius: '1rem', marginTop: '1rem', border: '1px solid rgba(255, 255, 255, 0.5)' }}>
-        <h4 style={{ textAlign: 'center', marginBottom: '0.75rem', fontSize: '1rem', fontWeight: '800', color: '#1e293b' }}>Kualitas Udara {weather.loc}</h4>
-        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-          <div style={{ background: aqiStatus.color, borderRadius: '0.75rem', width: '65px', height: '65px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: '800', lineHeight: '1', textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>{weather.aqi}</span>
-            <span style={{ fontSize: '0.65rem', fontWeight: '700', marginTop: '2px', letterSpacing: '0.5px' }}>AQI US</span>
+      <div className="weather-glass-card glass-panel">
+        <h4 className="weather-card-title">Kualitas Udara {weather.loc}</h4>
+        <div className="weather-main-row">
+          <div className="weather-aqi-box" style={{ background: aqiStatus.color }}>
+            <span className="weather-aqi-num">{weather.aqi}</span>
+            <span className="weather-aqi-lbl">AQI US</span>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ background: aqiStatus.color, color: '#fff', padding: '0.2rem 0.6rem', borderRadius: '0.5rem', display: 'inline-block', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <div className="weather-info-col">
+            <div className="weather-status-tag" style={{ background: aqiStatus.color }}>
               {aqiStatus.label}
             </div>
-            <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.9rem', fontWeight: '700', color: '#475569', alignItems: 'center' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Wind size={16} style={{color: '#94a3b8'}}/> PM2.5 <span style={{ fontWeight: 'normal', color: '#64748b' }}>{weather.pm25}</span></span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Thermometer size={16} style={{color: '#ef4444'}}/> {weather.temp} °C</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Droplets size={16} style={{color: '#0ea5e9'}}/> {weather.humidity} %</span>
+            <div className="weather-metrics-row">
+              <span className="metric-pill"><Wind size={15} className="metric-icon-wind"/> PM2.5 <span className="metric-val">{weather.pm25}</span></span>
+              <span className="metric-pill"><Thermometer size={15} className="metric-icon-temp"/> {weather.temp} °C</span>
+              <span className="metric-pill"><Droplets size={15} className="metric-icon-drop"/> {weather.humidity} %</span>
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', fontSize: '0.75rem', color: '#94a3b8', fontWeight: '500' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Clock size={12}/> {weather.timestamp || 'Memuat...'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Radio size={12}/> Sumber: IQAir</span>
+        <div className="weather-footer-row">
+          <span><Clock size={12}/> {weather.timestamp || 'Memuat...'}</span>
+          <span><Radio size={12}/> Sumber: IQAir</span>
         </div>
       </div>
     </aside>

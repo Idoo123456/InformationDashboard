@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDashboard } from '../context/DashboardContext';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import Slider from '../components/Slider';
 import Footer from '../components/Footer';
+import TUSlider from '../components/TUSlider';
+import { applyThemeColors } from '../utils/themeUtils';
 
 function TVDisplay() {
-  const { primaryColor, tvLayout, timeOn, timeOff } = useDashboard();
+  const { primaryColor, templateColors, tvLayout, timeOn, timeOff } = useDashboard();
+  const [searchParams] = useSearchParams();
+  const activeLayout = searchParams.get('layout') || tvLayout;
   const [isStandby, setIsStandby] = useState(false);
 
+  // Layout-specific color theme with fallback to primaryColor
+  const layoutColor = templateColors?.[activeLayout] || primaryColor || '#3b82f6';
+
   useEffect(() => {
-    if (primaryColor) {
-      document.documentElement.style.setProperty('--primary-blue', primaryColor);
-      document.documentElement.style.setProperty('--admin-primary', primaryColor);
-    }
-  }, [primaryColor]);
+    applyThemeColors(layoutColor);
+  }, [layoutColor]);
 
   useEffect(() => {
     const checkStandby = () => {
@@ -51,26 +56,32 @@ function TVDisplay() {
     );
   }
 
-  let contentLayout = (
-    <>
-      <Sidebar />
-      <Slider />
-    </>
-  );
+  let contentLayout;
 
-  if (tvLayout === 'full-media') {
+  if (activeLayout === 'full-media') {
+    // 1. FULL MEDIA: Slide Layar Penuh (100% tanpa Sidebar)
     contentLayout = <Slider />;
-  } else if (tvLayout === 'agenda-focus') {
+  } else if (activeLayout === 'agenda-focus') {
+    // 2. FOKUS AGENDA: Agenda Lebar di Kiri (Hero), Slide Kompak di Kanan
     contentLayout = (
       <>
-        <Slider />
         <Sidebar />
+        <Slider />
       </>
     );
-  } else if (tvLayout === 'tu') {
-    // Tema TU hanya menampilkan Agenda/Kegiatan saja (Sidebar = Komponen Agenda)
-    contentLayout = <Sidebar />;
-  } else if (tvLayout === 'admin') {
+  } else if (activeLayout === 'tu') {
+    // 3. TEMA TU: 2 Slide Khusus Tata Usaha (Pekan Ini & Yang Akan Datang)
+    contentLayout = <TUSlider />;
+  } else if (activeLayout === 'admin') {
+    // 4. TEMA ADMIN: Sidebar Lebar Eksekutif di Kiri, Slide di Kanan
+    contentLayout = (
+      <>
+        <Sidebar />
+        <Slider />
+      </>
+    );
+  } else {
+    // 5. STANDARD (Default): Kegiatan di Kiri, Slide di Kanan
     contentLayout = (
       <>
         <Sidebar />
@@ -80,7 +91,7 @@ function TVDisplay() {
   }
 
   return (
-    <div className={`dashboard-container layout-${tvLayout}`}>
+    <div className={`dashboard-container layout-${activeLayout}`}>
       <Header />
       <main className="main-content">
         {contentLayout}
