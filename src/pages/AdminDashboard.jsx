@@ -57,6 +57,10 @@ function AdminDashboard() {
   const { 
     basePath,
     facultyName, setFacultyName, 
+    subUnitName, setSubUnitName,
+    accreditation, setAccreditation,
+    campusLocation, setCampusLocation,
+    operationalHours, setOperationalHours,
     tagline, setTagline,
     primaryColor, setPrimaryColor,
     templateColors, setTemplateColors,
@@ -72,7 +76,8 @@ function AdminDashboard() {
     setIsAuthenticated,
     slideDuration, setSlideDuration,
     marqueeSpeed, setMarqueeSpeed,
-    scheduleSpeed, setScheduleSpeed
+    scheduleSpeed, setScheduleSpeed,
+    scheduleScrollType, setScheduleScrollType
   } = useDashboard();
   
   const navigate = useNavigate();
@@ -166,14 +171,18 @@ function AdminDashboard() {
 
   // local states for editing
   const [localFaculty, setLocalFaculty] = useState(facultyName);
+  const [localSubUnit, setLocalSubUnit] = useState(subUnitName || "UPA Perpustakaan");
+  const [localAccreditation, setLocalAccreditation] = useState(accreditation || "Akreditasi Unggul");
+  const [localCampusLocation, setLocalCampusLocation] = useState(campusLocation || "Kampus Bina Widya");
+  const [localOperationalHours, setLocalOperationalHours] = useState(operationalHours || "08:00 - 16:00 WIB");
   const [localTagline, setLocalTagline] = useState(tagline || "");
   const [localPrimaryColor, setLocalPrimaryColor] = useState(primaryColor || "#3b82f6");
   const [localTemplateColors, setLocalTemplateColors] = useState(templateColors || {
-    standard: '#3b82f6',
-    tu: '#f59e0b',
-    'agenda-focus': '#3b82f6',
-    'full-media': '#3b82f6',
-    admin: '#0f172a'
+    standard: '#1e40af',
+    tu: '#1e40af',
+    'agenda-focus': '#1e40af',
+    'full-media': '#1e40af',
+    admin: '#1e40af'
   });
   const [selectedTemplateTab, setSelectedTemplateTab] = useState('all'); // 'all', 'tu', 'standard', 'agenda-focus', 'full-media', 'admin'
   const [localTvLayout, setLocalTvLayout] = useState(tvLayout || "standard");
@@ -185,6 +194,7 @@ function AdminDashboard() {
   const [localSlideDuration, setLocalSlideDuration] = useState(slideDuration);
   const [localMarqueeSpeed, setLocalMarqueeSpeed] = useState(marqueeSpeed);
   const [localScheduleSpeed, setLocalScheduleSpeed] = useState(scheduleSpeed);
+  const [localScheduleScrollType, setLocalScheduleScrollType] = useState(scheduleScrollType || 'step');
 
   const activeWorkingColor = selectedTemplateTab === 'all'
     ? localPrimaryColor
@@ -226,6 +236,10 @@ function AdminDashboard() {
   
   const handleSaveSettings = () => {
     setFacultyName(localFaculty);
+    setSubUnitName(localSubUnit);
+    setAccreditation(localAccreditation);
+    setCampusLocation(localCampusLocation);
+    setOperationalHours(localOperationalHours);
     setTagline(localTagline);
     setPrimaryColor(localPrimaryColor);
     setTemplateColors(localTemplateColors);
@@ -235,6 +249,8 @@ function AdminDashboard() {
     setTimeOn(localTimeOn);
     setTimeOff(localTimeOff);
     setAutoRefresh(localAutoRefresh);
+    setScheduleSpeed(localScheduleSpeed);
+    setScheduleScrollType(localScheduleScrollType);
     showSuccessPopup('Pengaturan Umum & Warna Template berhasil disimpan!');
   };
 
@@ -268,6 +284,14 @@ function AdminDashboard() {
   useEffect(() => {
     if (tvLayout) setLocalTvLayout(tvLayout);
   }, [tvLayout]);
+
+  useEffect(() => {
+    if (scheduleSpeed) setLocalScheduleSpeed(scheduleSpeed);
+  }, [scheduleSpeed]);
+
+  useEffect(() => {
+    if (scheduleScrollType) setLocalScheduleScrollType(scheduleScrollType);
+  }, [scheduleScrollType]);
 
   const handleDeleteSelectedAnnouncements = () => {
     if (selectedAnnouncements.length === 0) return;
@@ -388,6 +412,7 @@ function AdminDashboard() {
   const handleSaveSchedules = () => {
     setSchedules(localSchedules);
     setScheduleSpeed(localScheduleSpeed);
+    setScheduleScrollType(localScheduleScrollType);
     showSuccessPopup('Jadwal berhasil disimpan dan diperbarui di layar TV!');
   };
 
@@ -411,25 +436,39 @@ function AdminDashboard() {
 
 
   const handleAddSlide = () => {
-    setLocalSlides([...localSlides, {
+    const newSlide = {
       id: Date.now(),
       mediaType: 'none',
       mediaUrl: '',
-      tag: "Tag Baru",
-      tagStyle: { background: "white", color: "#4a7bd1" },
+      tag: "Pengumuman",
+      tagStyle: { background: "rgba(255,255,255,0.2)", color: "white" },
       title: "Judul Slide Baru",
-      desc: "Deskripsi singkat slide baru.",
-      btnText: "Tombol Aksi",
-      btnStyle: { background: "white", color: "#2f5597" },
-      bg: "linear-gradient(135deg, #2f5597 0%, #4a7bd1 100%)",
+      desc: "Deskripsi singkat mengenai informasi slide ini.",
+      description: "Deskripsi singkat mengenai informasi slide ini.",
+      btnText: "",
+      btnStyle: { background: "white", color: "#1e40af" },
+      bg: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+      bgColor: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
       qr: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id",
-      qrLabel: "Scan QR"
-    }]);
+      qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id",
+      qrLabel: "Pindai QR"
+    };
+    setLocalSlides([...localSlides, newSlide]);
     showToastPopup('Slide berhasil ditambahkan');
   };
 
   const updateSlide = (id, field, value) => {
-    setLocalSlides(localSlides.map(s => s.id === id ? { ...s, [field]: value } : s));
+    setLocalSlides(localSlides.map(s => {
+      if (s.id !== id) return s;
+      const updated = { ...s, [field]: value };
+      if (field === 'bg') updated.bgColor = value;
+      if (field === 'bgColor') updated.bg = value;
+      if (field === 'desc') updated.description = value;
+      if (field === 'description') updated.desc = value;
+      if (field === 'qr') updated.qrUrl = value;
+      if (field === 'qrUrl') updated.qr = value;
+      return updated;
+    }));
   };
 
   const deleteSlide = (id) => {
@@ -535,7 +574,32 @@ function AdminDashboard() {
   };
 
   const handleSaveSlides = () => {
-    setSlides(localSlides);
+    const fallbackGradients = [
+      'linear-gradient(135deg, #1c7947 0%, #2a9d5c 100%)',
+      'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+      'linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)'
+    ];
+    const normalized = localSlides.map((s, idx) => {
+      const rawBg = s.bg || s.bgColor || '';
+      const isWhiteOrEmpty = !rawBg || rawBg.trim() === '' || rawBg.toLowerCase() === '#fff' || rawBg.toLowerCase() === '#ffffff' || rawBg.toLowerCase() === 'white';
+      const bgVal = isWhiteOrEmpty ? fallbackGradients[idx % fallbackGradients.length] : rawBg;
+      const descVal = s.desc !== undefined ? s.desc : (s.description || '');
+      const qrVal = s.qr !== undefined ? s.qr : (s.qrUrl || '');
+      return {
+        ...s,
+        id: s.id || Date.now() + idx,
+        bg: bgVal,
+        bgColor: bgVal,
+        desc: descVal,
+        description: descVal,
+        qr: qrVal,
+        qrUrl: qrVal,
+        mediaType: s.mediaType || 'none',
+        mediaUrl: s.mediaUrl || ''
+      };
+    });
+    setLocalSlides(normalized);
+    setSlides(normalized);
     setSlideDuration(localSlideDuration);
     showSuccessPopup('Slide berhasil disimpan dan diperbarui di layar TV!');
   };
@@ -880,14 +944,97 @@ function AdminDashboard() {
                   <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Identitas Institusi</h3>
                 </div>
                 <div className="form-group">
-                  <label>Nama Fakultas / Institusi Utama</label>
+                  <label>Pilih / Ketik Nama Fakultas (Universitas Riau)</label>
+                  <select 
+                    className="admin-input" 
+                    style={{ marginBottom: '0.5rem', background: '#f8fafc', fontWeight: 600 }}
+                    value={
+                      [
+                        'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)',
+                        'Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)',
+                        'Fakultas Ekonomi dan Bisnis (FEB)',
+                        'Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)',
+                        'Fakultas Teknik (FT)',
+                        'Fakultas Pertanian (FP)',
+                        'Fakultas Perikanan dan Kelautan (FPK)',
+                        'Fakultas Kedokteran (FK)',
+                        'Fakultas Hukum (FH)',
+                        'Fakultas Keperawatan (FKp)',
+                        'Pascasarjana UNRI'
+                      ].includes(localFaculty) ? localFaculty : 'custom'
+                    }
+                    onChange={(e) => {
+                      if (e.target.value !== 'custom') {
+                        setLocalFaculty(e.target.value);
+                      }
+                    }}
+                  >
+                    <option value="Fakultas Keguruan dan Ilmu Pendidikan (FKIP)">Fakultas Keguruan dan Ilmu Pendidikan (FKIP)</option>
+                    <option value="Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)">Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)</option>
+                    <option value="Fakultas Ekonomi dan Bisnis (FEB)">Fakultas Ekonomi dan Bisnis (FEB)</option>
+                    <option value="Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)">Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)</option>
+                    <option value="Fakultas Teknik (FT)">Fakultas Teknik (FT)</option>
+                    <option value="Fakultas Pertanian (FP)">Fakultas Pertanian (FP)</option>
+                    <option value="Fakultas Perikanan dan Kelautan (FPK)">Fakultas Perikanan dan Kelautan (FPK)</option>
+                    <option value="Fakultas Kedokteran (FK)">Fakultas Kedokteran (FK)</option>
+                    <option value="Fakultas Hukum (FH)">Fakultas Hukum (FH)</option>
+                    <option value="Fakultas Keperawatan (FKp)">Fakultas Keperawatan (FKp)</option>
+                    <option value="Pascasarjana UNRI">Pascasarjana UNRI</option>
+                    <option value="custom">-- Ketik Nama Fakultas Manual --</option>
+                  </select>
                   <input 
                     type="text" 
                     value={localFaculty} 
                     onChange={(e) => setLocalFaculty(e.target.value)} 
                     className="admin-input"
-                    placeholder="Contoh: UNIVERSITAS RIAU"
+                    placeholder="Contoh: Fakultas Keguruan dan Ilmu Pendidikan (FKIP)"
                   />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div className="form-group">
+                    <label>Nama Unit / Lembaga / UPA</label>
+                    <input 
+                      type="text" 
+                      value={localSubUnit} 
+                      onChange={(e) => setLocalSubUnit(e.target.value)} 
+                      className="admin-input" 
+                      placeholder="Contoh: UPA Perpustakaan" 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Status Akreditasi / Badge</label>
+                    <input 
+                      type="text" 
+                      value={localAccreditation} 
+                      onChange={(e) => setLocalAccreditation(e.target.value)} 
+                      className="admin-input" 
+                      placeholder="Contoh: Akreditasi Unggul" 
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div className="form-group">
+                    <label>Lokasi Kampus</label>
+                    <input 
+                      type="text" 
+                      value={localCampusLocation} 
+                      onChange={(e) => setLocalCampusLocation(e.target.value)} 
+                      className="admin-input" 
+                      placeholder="Contoh: Kampus Bina Widya" 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Jam Operasional Layanan</label>
+                    <input 
+                      type="text" 
+                      value={localOperationalHours} 
+                      onChange={(e) => setLocalOperationalHours(e.target.value)} 
+                      className="admin-input" 
+                      placeholder="Contoh: 08:00 - 16:00 WIB" 
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Slogan / Tagline (Opsional)</label>
@@ -1060,6 +1207,33 @@ function AdminDashboard() {
                     <option value="tu">Tema TU (2 Slide: Kegiatan Minggu Ini & Mendatang)</option>
                     <option value="admin">Tema Admin (Profesional, Sidebar Lebar)</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Tipe Auto Scroll Jadwal Kegiatan</label>
+                  <select className="admin-input" value={localScheduleScrollType} onChange={(e) => setLocalScheduleScrollType(e.target.value)}>
+                    <option value="step">Scroll Bertahap (Jeda beberapa detik per agenda, lalu bergulir mulus)</option>
+                    <option value="continuous">Scroll Mengalir Mulus (Continuous Marquee tanpa henti)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Kecepatan Scroll TV (Normal = 1)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <input 
+                      type="number" 
+                      min="0.1" 
+                      max="5" 
+                      step="0.1" 
+                      value={localScheduleSpeed} 
+                      onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
+                      className="admin-input"
+                      style={{ width: '90px', textAlign: 'center', fontWeight: 700 }}
+                    />
+                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                      {localScheduleScrollType === 'step' 
+                        ? `Waktu jeda per agenda: ± ${Math.round(4.5 / (localScheduleSpeed || 1) * 10) / 10} detik` 
+                        : `Kecepatan alir: ± ${Math.round(30 * (localScheduleSpeed || 1))} px/detik`}
+                    </span>
+                  </div>
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Bahasa Tampilan</label>
@@ -1528,20 +1702,42 @@ function AdminDashboard() {
 
               {/* FLOATING SAVE BAR */}
               <div style={{ position: 'sticky', bottom: '2rem', left: 0, right: 0, marginTop: '3rem', zIndex: 10 }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(12px)', padding: '1rem 1.5rem', borderRadius: '1rem', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Kecepatan Scroll TV (Normal=1):</label>
-                    <input 
-                      type="number" 
-                      value={localScheduleSpeed} 
-                      onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
-                      className="admin-input"
-                      min="0.1"
-                      step="0.1"
-                      style={{ width: '80px', padding: '0.4rem', margin: 0, borderRadius: '0.5rem', textAlign: 'center', fontWeight: 700 }}
-                    />
+                <div style={{ background: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(14px)', padding: '1rem 1.5rem', borderRadius: '1rem', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>Tipe Scroll:</label>
+                      <select 
+                        value={localScheduleScrollType} 
+                        onChange={(e) => setLocalScheduleScrollType(e.target.value)} 
+                        className="admin-input" 
+                        style={{ padding: '0.4rem 0.75rem', margin: 0, borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, width: 'auto' }}
+                      >
+                        <option value="step">Bertahap (Pause per Agenda)</option>
+                        <option value="continuous">Mengalir (Continuous Marquee)</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>Kecepatan TV:</label>
+                      <input 
+                        type="number" 
+                        value={localScheduleSpeed} 
+                        onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
+                        className="admin-input"
+                        min="0.1"
+                        max="5"
+                        step="0.1"
+                        style={{ width: '75px', padding: '0.4rem', margin: 0, borderRadius: '0.5rem', textAlign: 'center', fontWeight: 700 }}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                        {localScheduleScrollType === 'step' 
+                          ? `(Jeda ±${Math.round(4.5 / (localScheduleSpeed || 1) * 10) / 10}s)` 
+                          : `(±${Math.round(30 * (localScheduleSpeed || 1))} px/s)`}
+                      </span>
+                    </div>
                   </div>
-                  <button onClick={handleSaveSchedules} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+
+                  <button onClick={handleSaveSchedules} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)', transition: 'all 0.2s', marginLeft: 'auto' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                     <Save size={16} /> Publikasikan ke Layar TV
                   </button>
                 </div>
@@ -1581,6 +1777,9 @@ function AdminDashboard() {
                   </button>
                   <button onClick={handleAddSlide} style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                     <Plus size={18} /> Tambah Slide
+                  </button>
+                  <button onClick={handleSaveSlides} style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Save size={18} /> Publikasikan ke TV
                   </button>
                 </div>
               </div>
@@ -1623,7 +1822,7 @@ function AdminDashboard() {
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Deskripsi Tambahan</label>
-                          <textarea value={slide.desc} onChange={(e) => updateSlide(slide.id, 'desc', e.target.value)} className="admin-input" rows="3" style={{ background: 'white', minHeight: '80px', resize: 'vertical' }} />
+                          <textarea value={slide.desc !== undefined ? slide.desc : (slide.description || '')} onChange={(e) => updateSlide(slide.id, 'desc', e.target.value)} className="admin-input" rows="3" style={{ background: 'white', minHeight: '80px', resize: 'vertical' }} />
                         </div>
                       </div>
 
@@ -1665,13 +1864,13 @@ function AdminDashboard() {
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
                               <input 
                                 type="color" 
-                                value={slide.bg.startsWith('#') ? slide.bg.slice(0, 7) : '#2f5597'} 
+                                value={(slide.bg || slide.bgColor || '#1e40af').startsWith('#') ? (slide.bg || slide.bgColor || '#1e40af').slice(0, 7) : '#1e40af'} 
                                 onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
                                 style={{ width: '40px', height: '40px', border: 'none', borderRadius: '0.25rem', cursor: 'pointer', padding: 0 }}
                               />
                               <input 
                                 type="text" 
-                                value={slide.bg} 
+                                value={slide.bg || slide.bgColor || '#1e40af'} 
                                 onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
                                 className="admin-input" 
                                 style={{ border: 'none', boxShadow: 'none', background: 'transparent' }} 
@@ -1727,7 +1926,7 @@ function AdminDashboard() {
                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #fbcfe8' }}>
                             <input 
                                 type="text" 
-                                value={slide.qr} 
+                                value={slide.qr !== undefined ? slide.qr : (slide.qrUrl || '')} 
                                 onChange={(e) => updateSlide(slide.id, 'qr', e.target.value)} 
                                 className="admin-input" 
                                 style={{ border: 'none', boxShadow: 'none', flex: 1 }} 

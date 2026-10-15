@@ -3,14 +3,14 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const DashboardContext = createContext();
 
 const defaultTagline = "Jantung Hati Masyarakat Riau";
-const defaultPrimaryColor = "#3b82f6";
+const defaultPrimaryColor = "#1e40af";
 const defaultTvLayout = "standard";
 const defaultTemplateColors = {
-  standard: "#3b82f6",
-  tu: "#f59e0b",
-  "agenda-focus": "#3b82f6",
-  "full-media": "#3b82f6",
-  admin: "#0f172a"
+  standard: "#1e40af",
+  tu: "#1e40af",
+  "agenda-focus": "#1e40af",
+  "full-media": "#1e40af",
+  admin: "#1e40af"
 };
 const defaultLanguage = "id";
 const defaultTimezone = "WIB";
@@ -70,7 +70,7 @@ const defaultAnnouncements = [
   { id: 4, text: "Pengisian KRS Semester Ganjil 2026/2027 telah dibuka melalui portal akademik.", expiryDate: getNextMonthDate() }
 ];
 
-const defaultSlides = [
+export const defaultSlides = [
   {
     id: 1,
     mediaType: 'none',
@@ -140,21 +140,63 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       }
 
       if (key === 'slides' && Array.isArray(parsed)) {
-        if (parsed.length > 0 && !parsed[0].bg) return defaultValue;
-        return parsed.map(item => ({
-          ...item,
-          mediaType: item.mediaType || 'none',
-          mediaUrl: item.mediaUrl || ''
-        }));
+        if (!parsed.length) return defaultValue;
+        return parsed.map((item, idx) => {
+          const rawBg = item.bg || item.bgColor || '';
+          const isWhiteOrEmpty = !rawBg || rawBg.trim() === '' || rawBg.toLowerCase() === '#fff' || rawBg.toLowerCase() === '#ffffff' || rawBg.toLowerCase() === 'white';
+          const fallbackGradients = [
+            'linear-gradient(135deg, #1c7947 0%, #2a9d5c 100%)',
+            'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+            'linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)'
+          ];
+          const safeBg = isWhiteOrEmpty ? fallbackGradients[idx % fallbackGradients.length] : rawBg;
+          return {
+            ...item,
+            id: item.id || Date.now() + idx,
+            bg: safeBg,
+            bgColor: safeBg,
+            desc: item.desc !== undefined ? item.desc : (item.description || ''),
+            description: item.description !== undefined ? item.description : (item.desc || ''),
+            qr: item.qr !== undefined ? item.qr : (item.qrUrl || ''),
+            qrUrl: item.qrUrl !== undefined ? item.qrUrl : (item.qr || ''),
+            mediaType: item.mediaType || 'none',
+            mediaUrl: item.mediaUrl || ''
+          };
+        });
       }
-      
+
+      if (key === 'templateColors' && parsed && typeof parsed === 'object') {
+        const updated = { ...defaultTemplateColors, ...parsed };
+        if (updated.tu === '#f59e0b') updated.tu = '#1e40af';
+        if (updated.admin === '#0f172a') updated.admin = '#1e40af';
+        return updated;
+      }
+
+      if (key === 'primaryColor' && (parsed === '#3b82f6' || parsed === '#f59e0b')) {
+        return '#1e40af';
+      }
+
       return parsed;
     } catch (e) {
       return defaultValue;
     }
   };
 
-  const [facultyName, setFacultyName] = useState(() => loadState('facultyName', defaultFacultyNameOverride));
+  const getInitialFaculty = () => {
+    const saved = loadState('facultyName', null);
+    if (!saved || saved === 'Universitas Riau' || saved === 'UPA PERPUSTAKAAN UNIVERSITAS RIAU') {
+      return defaultFacultyNameOverride && defaultFacultyNameOverride !== 'Universitas Riau'
+        ? defaultFacultyNameOverride
+        : 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)';
+    }
+    return saved;
+  };
+
+  const [facultyName, setFacultyName] = useState(getInitialFaculty);
+  const [subUnitName, setSubUnitName] = useState(() => loadState('subUnitName', 'UPA Perpustakaan'));
+  const [accreditation, setAccreditation] = useState(() => loadState('accreditation', 'Akreditasi Unggul'));
+  const [campusLocation, setCampusLocation] = useState(() => loadState('campusLocation', 'Kampus Bina Widya'));
+  const [operationalHours, setOperationalHours] = useState(() => loadState('operationalHours', '08:00 - 16:00 WIB'));
   const [tagline, setTagline] = useState(() => loadState('tagline', defaultTagline));
   const [primaryColor, setPrimaryColor] = useState(() => loadState('primaryColor', defaultPrimaryColor));
   const [templateColors, setTemplateColors] = useState(() => loadState('templateColors', defaultTemplateColors));
@@ -171,8 +213,13 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   const [slideDuration, setSlideDuration] = useState(() => loadState('slideDuration', 8));
   const [marqueeSpeed, setMarqueeSpeed] = useState(() => loadState('marqueeSpeed', 20));
   const [scheduleSpeed, setScheduleSpeed] = useState(() => loadState('scheduleSpeed', 1));
+  const [scheduleScrollType, setScheduleScrollType] = useState(() => loadState('scheduleScrollType', 'step'));
 
   useEffect(() => localStorage.setItem(getKey('facultyName'), JSON.stringify(facultyName)), [facultyName, prefix]);
+  useEffect(() => localStorage.setItem(getKey('subUnitName'), JSON.stringify(subUnitName)), [subUnitName, prefix]);
+  useEffect(() => localStorage.setItem(getKey('accreditation'), JSON.stringify(accreditation)), [accreditation, prefix]);
+  useEffect(() => localStorage.setItem(getKey('campusLocation'), JSON.stringify(campusLocation)), [campusLocation, prefix]);
+  useEffect(() => localStorage.setItem(getKey('operationalHours'), JSON.stringify(operationalHours)), [operationalHours, prefix]);
   useEffect(() => localStorage.setItem(getKey('tagline'), JSON.stringify(tagline)), [tagline, prefix]);
   useEffect(() => localStorage.setItem(getKey('primaryColor'), JSON.stringify(primaryColor)), [primaryColor, prefix]);
   useEffect(() => localStorage.setItem(getKey('templateColors'), JSON.stringify(templateColors)), [templateColors, prefix]);
@@ -189,10 +236,15 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   useEffect(() => localStorage.setItem(getKey('slideDuration'), JSON.stringify(slideDuration)), [slideDuration, prefix]);
   useEffect(() => localStorage.setItem(getKey('marqueeSpeed'), JSON.stringify(marqueeSpeed)), [marqueeSpeed, prefix]);
   useEffect(() => localStorage.setItem(getKey('scheduleSpeed'), JSON.stringify(scheduleSpeed)), [scheduleSpeed, prefix]);
+  useEffect(() => localStorage.setItem(getKey('scheduleScrollType'), JSON.stringify(scheduleScrollType)), [scheduleScrollType, prefix]);
 
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === getKey('facultyName') && e.newValue) setFacultyName(JSON.parse(e.newValue));
+      if (e.key === getKey('subUnitName') && e.newValue) setSubUnitName(JSON.parse(e.newValue));
+      if (e.key === getKey('accreditation') && e.newValue) setAccreditation(JSON.parse(e.newValue));
+      if (e.key === getKey('campusLocation') && e.newValue) setCampusLocation(JSON.parse(e.newValue));
+      if (e.key === getKey('operationalHours') && e.newValue) setOperationalHours(JSON.parse(e.newValue));
       if (e.key === getKey('tagline') && e.newValue) setTagline(JSON.parse(e.newValue));
       if (e.key === getKey('primaryColor') && e.newValue) setPrimaryColor(JSON.parse(e.newValue));
       if (e.key === getKey('templateColors') && e.newValue) setTemplateColors(JSON.parse(e.newValue));
@@ -204,11 +256,44 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       if (e.key === getKey('autoRefresh') && e.newValue !== null) setAutoRefresh(JSON.parse(e.newValue));
       if (e.key === getKey('schedules') && e.newValue) setSchedules(JSON.parse(e.newValue));
       if (e.key === getKey('announcements') && e.newValue) setAnnouncements(JSON.parse(e.newValue));
-      if (e.key === getKey('slides') && e.newValue) setSlides(JSON.parse(e.newValue));
+      if (e.key === getKey('slides') && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSlides(parsed.map((item, idx) => {
+              const rawBg = item.bg || item.bgColor || '';
+              const isWhiteOrEmpty = !rawBg || rawBg.trim() === '' || rawBg.toLowerCase() === '#fff' || rawBg.toLowerCase() === '#ffffff' || rawBg.toLowerCase() === 'white';
+              const fallbackGradients = [
+                'linear-gradient(135deg, #1c7947 0%, #2a9d5c 100%)',
+                'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                'linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)'
+              ];
+              const safeBg = isWhiteOrEmpty ? fallbackGradients[idx % fallbackGradients.length] : rawBg;
+              return {
+                ...item,
+                id: item.id || Date.now() + idx,
+                bg: safeBg,
+                bgColor: safeBg,
+                desc: item.desc !== undefined ? item.desc : (item.description || ''),
+                description: item.description !== undefined ? item.description : (item.desc || ''),
+                qr: item.qr !== undefined ? item.qr : (item.qrUrl || ''),
+                qrUrl: item.qrUrl !== undefined ? item.qrUrl : (item.qr || ''),
+                mediaType: item.mediaType || 'none',
+                mediaUrl: item.mediaUrl || ''
+              };
+            }));
+          } else {
+            setSlides(defaultSlides);
+          }
+        } catch (err) {
+          console.error("Error parsing storage slides", err);
+        }
+      }
       if (e.key === getKey('isAuthenticated') && e.newValue !== null) setIsAuthenticated(JSON.parse(e.newValue));
       if (e.key === getKey('slideDuration') && e.newValue) setSlideDuration(JSON.parse(e.newValue));
       if (e.key === getKey('marqueeSpeed') && e.newValue) setMarqueeSpeed(JSON.parse(e.newValue));
       if (e.key === getKey('scheduleSpeed') && e.newValue) setScheduleSpeed(JSON.parse(e.newValue));
+      if (e.key === getKey('scheduleScrollType') && e.newValue) setScheduleScrollType(JSON.parse(e.newValue));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -220,6 +305,10 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
     <DashboardContext.Provider value={{
       basePath, prefix,
       facultyName, setFacultyName,
+      subUnitName, setSubUnitName,
+      accreditation, setAccreditation,
+      campusLocation, setCampusLocation,
+      operationalHours, setOperationalHours,
       tagline, setTagline,
       primaryColor, setPrimaryColor,
       templateColors, setTemplateColors,
@@ -235,7 +324,8 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       isAuthenticated, setIsAuthenticated,
       slideDuration, setSlideDuration,
       marqueeSpeed, setMarqueeSpeed,
-      scheduleSpeed, setScheduleSpeed
+      scheduleSpeed, setScheduleSpeed,
+      scheduleScrollType, setScheduleScrollType
     }}>
       {children}
     </DashboardContext.Provider>

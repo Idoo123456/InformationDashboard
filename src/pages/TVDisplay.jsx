@@ -15,7 +15,7 @@ function TVDisplay() {
   const [isStandby, setIsStandby] = useState(false);
 
   // Layout-specific color theme with fallback to primaryColor
-  const layoutColor = templateColors?.[activeLayout] || primaryColor || '#3b82f6';
+  const layoutColor = templateColors?.[activeLayout] || primaryColor || '#1e40af';
 
   useEffect(() => {
     applyThemeColors(layoutColor);

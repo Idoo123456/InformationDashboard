@@ -3,8 +3,8 @@
  */
 
 export const PRESET_COLORS = [
-  { name: 'Biru UNRI', hex: '#2f5597' },
-  { name: 'Biru Royal', hex: '#3b82f6' },
+  { name: 'Biru UNRI', hex: '#1e40af' },
+  { name: 'Biru Royal', hex: '#2563eb' },
   { name: 'Hijau Zamrud', hex: '#10b981' },
   { name: 'Hijau UNRI', hex: '#166534' },
   { name: 'Amber Emas', hex: '#f59e0b' },
@@ -24,13 +24,13 @@ export const TEMPLATE_LIST = [
 ];
 
 export function hexToRgb(hex) {
-  if (!hex) return { r: 59, g: 130, b: 246 };
+  if (!hex) return { r: 30, g: 64, b: 175 };
   let cleanHex = String(hex).replace('#', '').trim();
   if (cleanHex.length === 3) {
     cleanHex = cleanHex.split('').map(c => c + c).join('');
   }
   const num = parseInt(cleanHex, 16);
-  if (isNaN(num)) return { r: 59, g: 130, b: 246 };
+  if (isNaN(num)) return { r: 30, g: 64, b: 175 };
   return {
     r: (num >> 16) & 255,
     g: (num >> 8) & 255,
@@ -48,10 +48,9 @@ export function adjustBrightness(hex, percent) {
 }
 
 export function applyThemeColors(hexColor) {
-  if (!hexColor) hexColor = '#3b82f6';
+  if (!hexColor) hexColor = '#1e40af';
   const { r, g, b } = hexToRgb(hexColor);
-  const darkColor = adjustBrightness(hexColor, -25);
-  const deepDarkColor = adjustBrightness(hexColor, -55);
+  const darkColor = adjustBrightness(hexColor, -20);
   const lightColor = adjustBrightness(hexColor, 35);
 
   const root = document.documentElement;
@@ -60,9 +59,9 @@ export function applyThemeColors(hexColor) {
   root.style.setProperty('--theme-color', hexColor);
   root.style.setProperty('--theme-color-rgb', `${r}, ${g}, ${b}`);
   root.style.setProperty('--theme-dark', darkColor);
-  root.style.setProperty('--theme-deep-dark', deepDarkColor);
+  root.style.setProperty('--theme-deep-dark', '#0f172a'); // Always crisp, authoritative slate for headings
   root.style.setProperty('--theme-light', lightColor);
-  root.style.setProperty('--theme-bg-soft', `rgba(${r}, ${g}, ${b}, 0.08)`);
-  root.style.setProperty('--theme-border-soft', `rgba(${r}, ${g}, ${b}, 0.28)`);
-  root.style.setProperty('--theme-border-medium', `rgba(${r}, ${g}, ${b}, 0.5)`);
+  root.style.setProperty('--theme-bg-soft', `rgba(${r}, ${g}, ${b}, 0.05)`);
+  root.style.setProperty('--theme-border-soft', `rgba(${r}, ${g}, ${b}, 0.18)`);
+  root.style.setProperty('--theme-border-medium', `rgba(${r}, ${g}, ${b}, 0.35)`);
 }

@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import logoUnri from '../assets/logounri.png';
+import { Clock, Award, Building2, MapPin, Sparkles } from 'lucide-react';
 
 const Header = () => {
   const [time, setTime] = useState(new Date());
-  const { facultyName, tagline } = useDashboard();
+  const { 
+    facultyName, 
+    subUnitName, 
+    accreditation, 
+    campusLocation, 
+    operationalHours, 
+    tagline 
+  } = useDashboard();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -18,9 +26,16 @@ const Header = () => {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   };
 
+  // Pastikan nama fakultas selalu lengkap dan tampil dengan jelas
+  const displayFaculty = (!facultyName || facultyName === 'Universitas Riau' || facultyName.includes('UPA PERPUSTAKAAN'))
+    ? 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)'
+    : facultyName;
+
+  const displayUnit = subUnitName || (facultyName?.includes('PERPUSTAKAAN') ? 'UPA Perpustakaan' : 'Pusat Informasi & Layanan');
+
   return (
-    <header className="header glass-panel">
-      {/* LEFT: BRAND IDENTITY */}
+    <header className="header glass-panel header-grand">
+      {/* BAGIAN KIRI: LOGO RESMI & UNIT KERJA */}
       <div className="header-brand">
         <div className="header-logo-wrap">
           <img src={logoUnri} alt="Logo UNRI" className="header-logo-img" />
@@ -28,22 +43,50 @@ const Header = () => {
         <div className="header-brand-divider" />
         <div className="header-brand-text">
           <span className="header-sub-brand">UNIVERSITAS RIAU</span>
-          <h2 className="header-main-brand" title={facultyName}>{facultyName}</h2>
+          <h3 className="header-unit-title">{displayUnit}</h3>
+          <span className="header-campus-info">
+            <MapPin size={11} className="header-pin-icon" />
+            {campusLocation || 'Kampus Bina Widya, Pekanbaru'}
+          </span>
         </div>
       </div>
 
-      {/* CENTER: TAGLINE & LIVE SYSTEM STATUS */}
+      {/* BAGIAN TENGAH: NAMA FAKULTAS (HERO), TAGLINE, & METADATA RESMI */}
       <div className="header-center">
-        <h1 className="header-tagline">
-          {tagline || "Jantung Hati Masyarakat Riau"}
+        <div className="header-center-pretitle">
+          <span className="header-pretitle-line" />
+          <span className="header-pretitle-text">KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI • UNIVERSITAS RIAU</span>
+          <span className="header-pretitle-line" />
+        </div>
+
+        {/* NAMA FAKULTAS UTAMA DI TENGAH */}
+        <h1 className="header-faculty-hero" title={displayFaculty}>
+          {displayFaculty}
         </h1>
-        <div className="header-status-pill">
-          <span className="header-status-dot" />
-          <span className="header-status-text">Pusat Informasi & Layanan Terpadu</span>
+
+        {/* SLOGAN / TAGLINE */}
+        <p className="header-tagline-text">
+          "{tagline || "Jantung Hati Masyarakat Riau"}"
+        </p>
+
+        {/* BADGES ROW LENGKAP */}
+        <div className="header-meta-pills">
+          <div className="header-status-pill">
+            <span className="header-status-dot" />
+            <span className="header-status-text">Pusat Informasi & Layanan Terpadu</span>
+          </div>
+          <div className="header-accreditation-pill">
+            <Award size={12} className="chip-icon-gold" />
+            <span>{accreditation || 'Akreditasi Unggul'}</span>
+          </div>
+          <div className="header-hours-pill">
+            <Clock size={12} className="header-hours-icon" />
+            <span>Jam Layanan: {operationalHours || '08:00 - 16:00 WIB'}</span>
+          </div>
         </div>
       </div>
 
-      {/* RIGHT: TIME & DATE WIDGET */}
+      {/* BAGIAN KANAN: WIDGET JAM DIGITAL LIVE BESAR & TANGGAL LENGKAP */}
       <div className="header-time-widget">
         <div className="header-clock-row">
           <span className="header-clock">{formatTime(time)}</span>
