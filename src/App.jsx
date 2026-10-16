@@ -13,15 +13,22 @@ function ProtectedRoute({ children }) {
 }
 
 function DashboardRoutes() {
+  const { basePath } = useDashboard();
+  const adminTarget = basePath ? `${basePath}/admin` : '/admin';
+
   return (
     <Routes>
-      <Route path="/" element={<TVDisplay />} />
+      {/* Langsung ke halaman admin saat link dibuka */}
+      <Route path="/" element={<Navigate to={adminTarget} replace />} />
+      <Route path="tv" element={<TVDisplay />} />
+      <Route path="display" element={<TVDisplay />} />
       <Route path="login" element={<Login />} />
       <Route path="admin" element={
         <ProtectedRoute>
           <AdminDashboard />
         </ProtectedRoute>
       } />
+      <Route path="*" element={<Navigate to={adminTarget} replace />} />
     </Routes>
   );
 }
@@ -46,7 +53,7 @@ function FacultyWrapper({ presetFaculty }) {
   const facultyName = faculties[faculty?.toLowerCase()];
   
   if (!facultyName) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return (
@@ -62,17 +69,17 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Faculty Dashboards - Explicitly defined first */}
+        {facultyList.map(f => (
+          <Route key={f} path={`/${f}/*`} element={<FacultyWrapper presetFaculty={f} />} />
+        ))}
+
         {/* Main Dashboard (Universitas Riau) */}
         <Route path="/*" element={
           <DashboardProvider prefix="main" defaultFacultyNameOverride="Universitas Riau">
             <DashboardRoutes />
           </DashboardProvider>
         } />
-        
-        {/* Faculty Dashboards - Explicitly defined to prevent capturing /login */}
-        {facultyList.map(f => (
-          <Route key={f} path={`/${f}/*`} element={<FacultyWrapper presetFaculty={f} />} />
-        ))}
       </Routes>
     </Router>
   );

@@ -609,7 +609,7 @@ function AdminDashboard() {
       <div className="admin-sidebar">
         <div className="admin-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
           <img src={logoUnri} alt="Logo UNRI" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
-          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Admin Panel</h2>
+          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Dashboard</h2>
         </div>
         <nav className="admin-nav" style={{ flex: 1 }}>
           <button className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
@@ -631,11 +631,11 @@ function AdminDashboard() {
             <Activity size={18} /> Laporan Agenda
           </button>
         </nav>
-        <div className="admin-nav-footer" style={{ padding: '1.5rem 1rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <button onClick={() => window.open(basePath || '/', '_blank')} className="nav-btn" style={{ color: '#3b82f6' }}>
+        <div className="admin-nav-footer" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <button onClick={() => window.open(basePath ? `${basePath}/tv` : '/tv', '_blank')} className="nav-btn nav-btn-tv">
             <MonitorPlay size={18} /> Lihat TV Display
           </button>
-          <button onClick={handleLogout} className="nav-btn" style={{ color: '#ef4444' }}>
+          <button onClick={handleLogout} className="nav-btn nav-btn-logout">
             <LogOut size={18} /> Keluar Dasbor
           </button>
         </div>

@@ -2,8 +2,8 @@
 
 :root {
   --admin-bg: #f8f9fa;
-  --admin-sidebar-bg: linear-gradient(195deg, #323a54 0%, #1a2035 100%);
-  --admin-sidebar-text: #e9ecef;
+  --admin-sidebar-bg: #ffffff;
+  --admin-sidebar-text: #64748b;
   --admin-card-bg: #ffffff;
   --admin-text-main: #344767;
   --admin-text-muted: #8392ab;
@@ -54,7 +54,8 @@ body {
   z-index: 10;
   margin: 1rem 0 1rem 1rem;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
 }
 
 .admin-brand {
@@ -69,15 +70,15 @@ body {
   left: 10%;
   right: 10%;
   height: 1px;
-  background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  background: #f1f5f9;
 }
 
 .admin-brand h2 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
@@ -85,7 +86,7 @@ body {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
   flex: 1;
   overflow-y: auto;
 }
@@ -103,33 +104,51 @@ body {
   color: var(--admin-sidebar-text);
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   font-weight: 600;
 }
 
 .nav-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
 .nav-btn.active {
   background: var(--admin-primary);
   color: #ffffff;
-  box-shadow: var(--shadow-primary);
+  box-shadow: 0 4px 14px rgba(203, 12, 159, 0.35);
   transform: translateY(-1px);
 }
 
 .admin-nav-footer {
-  padding: 1rem;
+  padding: 1.25rem 1rem;
+  border-top: 1px solid #f1f5f9;
 }
-.admin-nav-footer .nav-btn {
-  background: rgba(234, 6, 6, 0.1);
-  color: #ff4d4d;
+
+.nav-btn.nav-btn-tv {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
 }
-.admin-nav-footer .nav-btn:hover {
-  background: #ea0606;
-  color: white;
-  box-shadow: 0 4px 7px -1px rgba(234, 6, 6, 0.11), 0 2px 4px -1px rgba(234, 6, 6, 0.07);
+
+.nav-btn.nav-btn-tv:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+.nav-btn.nav-btn-logout {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.nav-btn.nav-btn-logout:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
 }
 
 /* -------------------- HEADER -------------------- */

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboard } from '../context/DashboardContext';
 import { Lock, User, ArrowRight, Eye, EyeOff, LayoutDashboard, MonitorPlay, Zap } from 'lucide-react';
@@ -7,8 +7,14 @@ import bgPerpus from '../assets/bg-perpus.png';
 import '../modern-login.css';
 
 export default function Login() {
-  const { setIsAuthenticated, basePath, prefix } = useDashboard();
+  const { isAuthenticated, setIsAuthenticated, basePath, prefix } = useDashboard();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(basePath ? `${basePath}/admin` : '/admin', { replace: true });
+    }
+  }, [isAuthenticated, basePath, navigate]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -150,7 +156,7 @@ export default function Login() {
                 <span>ATAU</span>
               </div>
 
-              <button type="button" className="cool-btn-secondary" onClick={() => window.open(`${basePath}`, '_blank')}>
+              <button type="button" className="cool-btn-secondary" onClick={() => window.open(basePath ? `${basePath}/tv` : '/tv', '_blank')}>
                 <MonitorPlay size={18} /> Kunjungi Layar TV
               </button>
             </div>
