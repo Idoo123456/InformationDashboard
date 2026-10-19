@@ -11,11 +11,37 @@ import { applyThemeColors } from '../utils/themeUtils';
 function TVDisplay() {
   const { primaryColor, templateColors, tvLayout, timeOn, timeOff } = useDashboard();
   const [searchParams] = useSearchParams();
-  const activeLayout = searchParams.get('layout') || tvLayout;
+  const screenId = searchParams.get('screen'); // misal: 1, 2, atau 3
+  const [tvScreenConfig, setTvScreenConfig] = useState(null);
+
+  // Ambil dan pantau konfigurasi TV spesifik jika parameter ?screen=X ada
+  useEffect(() => {
+    if (!screenId) return;
+
+    const fetchScreenConfig = () => {
+      fetch(`/api/tv-screens/${screenId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setTvScreenConfig(data);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchScreenConfig();
+    const interval = setInterval(fetchScreenConfig, 4000); // Sinkronisasi otomatis setiap 4 detik
+    return () => clearInterval(interval);
+  }, [screenId]);
+
+  const activeLayout = (tvScreenConfig && tvScreenConfig.layout) || searchParams.get('layout') || tvLayout;
   const [isStandby, setIsStandby] = useState(false);
 
-  // Layout-specific color theme with fallback to primaryColor
-  const layoutColor = templateColors?.[activeLayout] || primaryColor || '#1e40af';
+  // Layout-specific color theme with fallback to primaryColor or tvScreenConfig
+  const layoutColor = (tvScreenConfig && tvScreenConfig.theme_color) 
+    || templateColors?.[activeLayout] 
+    || primaryColor 
+    || '#1e40af';
 
   useEffect(() => {
     applyThemeColors(layoutColor);
@@ -48,10 +74,15 @@ function TVDisplay() {
     return () => clearInterval(interval);
   }, [timeOn, timeOff]);
 
-  if (isStandby) {
+  const isScreenOff = isStandby || (tvScreenConfig && Number(tvScreenConfig.is_active) === 0);
+
+  if (isScreenOff) {
     return (
-      <div style={{ width: '100vw', height: '100vh', background: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <h1 style={{ color: '#222', fontSize: '2rem', fontFamily: 'sans-serif' }}>Mode Tidur (Standby)</h1>
+      <div style={{ width: '100vw', height: '100vh', background: '#0a0f1d', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#94a3b8' }}>
+        <h1 style={{ color: '#475569', fontSize: '2.5rem', fontFamily: 'sans-serif', margin: 0 }}>Mode Tidur (Standby)</h1>
+        <p style={{ marginTop: '0.75rem', fontSize: '1.1rem', color: '#334155' }}>
+          {tvScreenConfig?.name ? `${tvScreenConfig.name} dinonaktifkan` : 'Layar ini sedang dalam mode hemat daya'}
+        </p>
       </div>
     );
   }

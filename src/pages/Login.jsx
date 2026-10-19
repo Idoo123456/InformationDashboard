@@ -7,7 +7,7 @@ import bgPerpus from '../assets/bg-perpus.png';
 import '../modern-login.css';
 
 export default function Login() {
-  const { isAuthenticated, setIsAuthenticated, basePath, prefix } = useDashboard();
+  const { isAuthenticated, setIsAuthenticated, setCurrentUser, basePath, prefix } = useDashboard();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,21 +21,48 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
-      const expectedUsername = prefix === 'main' ? 'admin' : `admin_${prefix}`;
-      
-      if (username === expectedUsername && password === 'admin123') {
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, prefix })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setIsAuthenticated(true);
-        navigate(`${basePath}/admin`);
+        if (data.user) {
+          setCurrentUser(data.user);
+        }
+        const targetPath = data.redirectPath || (basePath ? `${basePath}/admin` : '/admin');
+        navigate(targetPath);
       } else {
-        setError(`Akses ditolak! Anda tidak memiliki izin (role) yang sesuai.`);
+        setError(data.message || 'Login gagal, periksa username dan password.');
         setIsLoading(false);
       }
-    }, 1000); // Slightly longer for premium feel
+    } catch (err) {
+      // Fallback jika server backend sedang offline
+      const expectedUsername = prefix === 'main' ? 'admin' : `admin_${prefix}`;
+      if (username === expectedUsername && password === 'admin123') {
+        setIsAuthenticated(true);
+        setCurrentUser({
+          username,
+          role: prefix === 'main' ? 'superadmin' : 'admin',
+          faculty_prefix: prefix,
+          name: prefix === 'main' ? 'Super Administrator' : `Admin ${prefix.toUpperCase()}`
+        });
+        navigate(basePath ? `${basePath}/admin` : '/admin');
+      } else {
+        setError('Akses ditolak! Gagal terhubung ke database atau kredensial salah.');
+        setIsLoading(false);
+      }
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 const DashboardContext = createContext();
 
@@ -17,6 +17,20 @@ const defaultTimezone = "WIB";
 const defaultTimeOn = "06:00";
 const defaultTimeOff = "22:00";
 const defaultAutoRefresh = true;
+
+export const FACULTY_LIST = [
+  { prefix: 'main', code: 'PUSAT', name: 'Universitas Riau (Kantor Pusat)', path: '/admin', tvPath: '/tv' },
+  { prefix: 'fkip', code: 'FKIP', name: 'Fakultas Keguruan dan Ilmu Pendidikan', path: '/fkip/admin', tvPath: '/fkip/tv' },
+  { prefix: 'fisip', code: 'FISIP', name: 'Fakultas Ilmu Sosial dan Ilmu Politik', path: '/fisip/admin', tvPath: '/fisip/tv' },
+  { prefix: 'feb', code: 'FEB', name: 'Fakultas Ekonomi dan Bisnis', path: '/feb/admin', tvPath: '/feb/tv' },
+  { prefix: 'fmipa', code: 'FMIPA', name: 'Fakultas Matematika dan Ilmu Pengetahuan Alam', path: '/fmipa/admin', tvPath: '/fmipa/tv' },
+  { prefix: 'ft', code: 'FT', name: 'Fakultas Teknik', path: '/ft/admin', tvPath: '/ft/tv' },
+  { prefix: 'fp', code: 'FP', name: 'Fakultas Pertanian', path: '/fp/admin', tvPath: '/fp/tv' },
+  { prefix: 'fpk', code: 'FPK', name: 'Fakultas Perikanan dan Kelautan', path: '/fpk/admin', tvPath: '/fpk/tv' },
+  { prefix: 'fk', code: 'FK', name: 'Fakultas Kedokteran', path: '/fk/admin', tvPath: '/fk/tv' },
+  { prefix: 'hukum', code: 'FH', name: 'Fakultas Hukum', path: '/hukum/admin', tvPath: '/hukum/tv' },
+  { prefix: 'fkp', code: 'FKp', name: 'Fakultas Keperawatan', path: '/fkp/admin', tvPath: '/fkp/tv' }
+];
 
 const getRelativeDate = (offsetDays) => {
   const d = new Date();
@@ -210,6 +224,24 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   const [announcements, setAnnouncements] = useState(() => loadState('announcements', defaultAnnouncements));
   const [slides, setSlides] = useState(() => loadState('slides', defaultSlides));
   const [isAuthenticated, setIsAuthenticated] = useState(() => loadState('isAuthenticated', false));
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('auth_user');
+      return saved ? JSON.parse(saved) : (prefix === 'main' ? { username: 'admin', role: 'superadmin', name: 'Administrator' } : { username: `admin_${prefix}`, role: 'admin', name: `Admin ${prefix.toUpperCase()}` });
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const isSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.username === 'admin';
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('auth_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('auth_user');
+    }
+  }, [currentUser]);
   const [slideDuration, setSlideDuration] = useState(() => loadState('slideDuration', 8));
   const [marqueeSpeed, setMarqueeSpeed] = useState(() => loadState('marqueeSpeed', 20));
   const [scheduleSpeed, setScheduleSpeed] = useState(() => loadState('scheduleSpeed', 1));
@@ -237,6 +269,152 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   useEffect(() => localStorage.setItem(getKey('marqueeSpeed'), JSON.stringify(marqueeSpeed)), [marqueeSpeed, prefix]);
   useEffect(() => localStorage.setItem(getKey('scheduleSpeed'), JSON.stringify(scheduleSpeed)), [scheduleSpeed, prefix]);
   useEffect(() => localStorage.setItem(getKey('scheduleScrollType'), JSON.stringify(scheduleScrollType)), [scheduleScrollType, prefix]);
+
+  // ==========================================
+  // SINKRONISASI DENGAN DATABASE MYSQL (API)
+  // ==========================================
+  const isLoadedFromDb = useRef(false);
+
+  // 1. Ambil data dari MySQL saat prefix / komponen dimuat
+  useEffect(() => {
+    let isMounted = true;
+
+    // Ambil Pengaturan (Settings)
+    fetch(`/api/settings/${prefix}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!isMounted || !data) return;
+        if (data.faculty_name) setFacultyName(data.faculty_name);
+        if (data.sub_unit_name) setSubUnitName(data.sub_unit_name);
+        if (data.accreditation) setAccreditation(data.accreditation);
+        if (data.campus_location) setCampusLocation(data.campus_location);
+        if (data.operational_hours) setOperationalHours(data.operational_hours);
+        if (data.tagline) setTagline(data.tagline);
+        if (data.primary_color) setPrimaryColor(data.primary_color);
+        if (data.template_colors) setTemplateColors(data.template_colors);
+        if (data.tv_layout) setTvLayout(data.tv_layout);
+        if (data.language) setLanguage(data.language);
+        if (data.timezone) setTimezone(data.timezone);
+        if (data.time_on) setTimeOn(data.time_on);
+        if (data.time_off) setTimeOff(data.time_off);
+        if (data.auto_refresh !== undefined) setAutoRefresh(Boolean(data.auto_refresh));
+        if (data.slide_duration) setSlideDuration(data.slide_duration);
+        if (data.marquee_speed) setMarqueeSpeed(data.marquee_speed);
+        if (data.schedule_speed) setScheduleSpeed(data.schedule_speed);
+        if (data.schedule_scroll_type) setScheduleScrollType(data.schedule_scroll_type);
+      })
+      .catch(() => {});
+
+    // Ambil Jadwal (Schedules)
+    fetch(`/api/schedules/${prefix}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
+        setSchedules(data);
+      })
+      .catch(() => {});
+
+    // Ambil Pengumuman (Announcements)
+    fetch(`/api/announcements/${prefix}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
+        setAnnouncements(data);
+      })
+      .catch(() => {});
+
+    // Ambil Slides
+    fetch(`/api/slides/${prefix}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
+        setSlides(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) {
+          setTimeout(() => { isLoadedFromDb.current = true; }, 1000);
+        }
+      });
+
+    return () => { isMounted = false; };
+  }, [prefix]);
+
+  // 2. Simpan otomatis ke MySQL jika Schedules diubah
+  useEffect(() => {
+    if (!isLoadedFromDb.current) return;
+    const timer = setTimeout(() => {
+      fetch(`/api/schedules/${prefix}/bulk`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedules })
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [schedules, prefix]);
+
+  // 3. Simpan otomatis ke MySQL jika Announcements diubah
+  useEffect(() => {
+    if (!isLoadedFromDb.current) return;
+    const timer = setTimeout(() => {
+      fetch(`/api/announcements/${prefix}/bulk`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ announcements })
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [announcements, prefix]);
+
+  // 4. Simpan otomatis ke MySQL jika Slides diubah
+  useEffect(() => {
+    if (!isLoadedFromDb.current) return;
+    const timer = setTimeout(() => {
+      fetch(`/api/slides/${prefix}/bulk`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slides })
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [slides, prefix]);
+
+  // 5. Simpan otomatis ke MySQL jika Settings diubah
+  useEffect(() => {
+    if (!isLoadedFromDb.current) return;
+    const timer = setTimeout(() => {
+      fetch(`/api/settings/${prefix}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          faculty_name: facultyName,
+          sub_unit_name: subUnitName,
+          accreditation,
+          campus_location: campusLocation,
+          operational_hours: operationalHours,
+          tagline,
+          primary_color: primaryColor,
+          template_colors: templateColors,
+          tv_layout: tvLayout,
+          language,
+          timezone,
+          time_on: timeOn,
+          time_off: timeOff,
+          auto_refresh: autoRefresh,
+          slide_duration: slideDuration,
+          marquee_speed: marqueeSpeed,
+          schedule_speed: scheduleSpeed,
+          schedule_scroll_type: scheduleScrollType
+        })
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [
+    facultyName, subUnitName, accreditation, campusLocation, operationalHours,
+    tagline, primaryColor, templateColors, tvLayout, language, timezone,
+    timeOn, timeOff, autoRefresh, slideDuration, marqueeSpeed, scheduleSpeed, scheduleScrollType, prefix
+  ]);
+
 
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -322,6 +500,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       announcements, setAnnouncements,
       slides, setSlides,
       isAuthenticated, setIsAuthenticated,
+      currentUser, setCurrentUser, isSuperAdmin, FACULTY_LIST,
       slideDuration, setSlideDuration,
       marqueeSpeed, setMarqueeSpeed,
       scheduleSpeed, setScheduleSpeed,

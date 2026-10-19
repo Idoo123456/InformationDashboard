@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield, Palette, Check, Sparkles } from 'lucide-react';
+import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield, Palette, Check, Sparkles, Tv, Radio, Users, Building2, ShieldCheck, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import '../admin.css';
@@ -9,6 +9,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import localforage from 'localforage';
 import ImageCropper from '../components/ImageCropper';
 import { PRESET_COLORS, TEMPLATE_LIST } from '../utils/themeUtils';
+import UserManager from '../components/admin/UserManager';
+import TvScreenManager from '../components/admin/TvScreenManager';
+import RoomManager from '../components/admin/RoomManager';
+import ActivityLogViewer from '../components/admin/ActivityLogViewer';
 
 const showSuccessPopup = (message) => {
   Swal.fire({
@@ -74,6 +78,7 @@ function AdminDashboard() {
     announcements, setAnnouncements, 
     slides, setSlides,
     setIsAuthenticated,
+    prefix, currentUser, isSuperAdmin, FACULTY_LIST,
     slideDuration, setSlideDuration,
     marqueeSpeed, setMarqueeSpeed,
     scheduleSpeed, setScheduleSpeed,
@@ -108,6 +113,24 @@ function AdminDashboard() {
   });
   const [reportStatus, setReportStatus] = useState('Semua');
   const [reportSearch, setReportSearch] = useState('');
+
+  // Master Ruangan State
+  const [masterRooms, setMasterRooms] = useState([]);
+  const fetchMasterRooms = async () => {
+    try {
+      const res = await fetch(`/api/rooms?faculty=${prefix || 'main'}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMasterRooms(data);
+      }
+    } catch (e) {
+      console.error('Error fetching rooms:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchMasterRooms();
+  }, [prefix]);
 
   const getDynamicStatus = (item) => {
     if (item.status === 'Dibatalkan') return 'Dibatalkan';
@@ -166,7 +189,8 @@ function AdminDashboard() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    navigate(`${basePath}/login`);
+    localStorage.removeItem('auth_user');
+    navigate(basePath ? `${basePath}/login` : '/login');
   };
 
   // local states for editing
@@ -493,14 +517,40 @@ function AdminDashboard() {
     
     if (targetField === 'mediaUrl') {
       try {
-        const storageKey = `media_${slideId}_${Date.now()}`;
-        await localforage.setItem(storageKey, croppedBlob);
-        updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
+        showToastPopup('Mengunggah gambar ke server...');
+        const formData = new FormData();
+        formData.append('file', croppedBlob, `slide_${slideId}_${Date.now()}.jpg`);
+        formData.append('faculty_prefix', prefix || 'main');
+        formData.append('uploaded_by', currentUser?.username || 'admin');
+
+        let serverUrl = null;
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) serverUrl = data.url;
+          }
+        } catch (netErr) {
+          console.warn('Gagal upload gambar ke server, fallback ke local:', netErr);
+        }
+
+        if (serverUrl) {
+          updateSlide(slideId, 'mediaUrl', serverUrl);
+          showToastPopup('Gambar berhasil diunggah ke server!');
+        } else {
+          const storageKey = `media_${slideId}_${Date.now()}`;
+          await localforage.setItem(storageKey, croppedBlob);
+          updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
+          showToastPopup('Gambar tersimpan di lokal');
+        }
         URL.revokeObjectURL(croppingImage.src);
         setCroppingImage(null);
       } catch(e) {
         console.error(e);
-        Swal.fire('Error', 'Gagal menyimpan gambar crop ke lokal', 'error');
+        Swal.fire('Error', 'Gagal memproses gambar crop', 'error');
       }
       return;
     }
@@ -529,11 +579,41 @@ function AdminDashboard() {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
+
+      if (targetField === 'bg') {
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            try {
+              const formData = new FormData();
+              formData.append('file', blob, `bg_${slideId}_${Date.now()}.jpg`);
+              formData.append('faculty_prefix', prefix || 'main');
+              formData.append('uploaded_by', currentUser?.username || 'admin');
+              const res = await fetch('/api/upload', { method: 'POST', body: formData });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.url) {
+                  updateSlide(slideId, 'bg', `url('${data.url}') center/cover no-repeat`);
+                  URL.revokeObjectURL(croppingImage.src);
+                  URL.revokeObjectURL(objectUrl);
+                  setCroppingImage(null);
+                  return;
+                }
+              }
+            } catch (err) {
+              console.warn('Upload bg ke server gagal, fallback ke dataUrl', err);
+            }
+          }
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          updateSlide(slideId, 'bg', `url('${dataUrl}') center/cover no-repeat`);
+          URL.revokeObjectURL(croppingImage.src);
+          URL.revokeObjectURL(objectUrl);
+          setCroppingImage(null);
+        }, 'image/jpeg', 0.85);
+        return;
+      }
       
       const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-      const finalValue = targetField === 'bg' ? `url('${dataUrl}') center/cover no-repeat` : dataUrl;
-      updateSlide(slideId, targetField, finalValue);
-      
+      updateSlide(slideId, targetField, dataUrl);
       URL.revokeObjectURL(croppingImage.src);
       URL.revokeObjectURL(objectUrl);
       setCroppingImage(null);
@@ -544,7 +624,7 @@ function AdminDashboard() {
   const handleMediaUpload = async (slideId, file) => {
     if (!file) return;
     
-    // We increase limit to 200MB since we use localforage (IndexedDB)
+    // We increase limit to 200MB since we support server upload
     if (file.size > 200 * 1024 * 1024) {
       Swal.fire({
         title: 'Ukuran Terlalu Besar',
@@ -562,14 +642,38 @@ function AdminDashboard() {
     }
 
     try {
-      showToastPopup('Sedang memproses file...');
-      const storageKey = `media_${slideId}_${Date.now()}`;
-      await localforage.setItem(storageKey, file);
-      updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
-      showToastPopup('File berhasil diunggah!');
+      showToastPopup('Mengunggah video ke server...');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('faculty_prefix', prefix || 'main');
+      formData.append('uploaded_by', currentUser?.username || 'admin');
+
+      let serverUrl = null;
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) serverUrl = data.url;
+        }
+      } catch (netErr) {
+        console.warn('Gagal upload video ke server, fallback ke local:', netErr);
+      }
+
+      if (serverUrl) {
+        updateSlide(slideId, 'mediaUrl', serverUrl);
+        showToastPopup('Video berhasil diunggah ke server!');
+      } else {
+        const storageKey = `media_${slideId}_${Date.now()}`;
+        await localforage.setItem(storageKey, file);
+        updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
+        showToastPopup('Video tersimpan secara lokal!');
+      }
     } catch (e) {
       console.error(e);
-      Swal.fire('Error', 'Gagal menyimpan file ke penyimpanan lokal', 'error');
+      Swal.fire('Error', 'Gagal memproses unggahan file', 'error');
     }
   };
 
@@ -630,6 +734,26 @@ function AdminDashboard() {
           <button className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
             <Activity size={18} /> Laporan Agenda
           </button>
+          <button className={`nav-btn ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => setActiveTab('rooms')}>
+            <Building2 size={18} /> Master Ruangan
+          </button>
+
+          {isSuperAdmin && (
+            <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Pusat & Pengguna
+              </div>
+              <button className={`nav-btn ${activeTab === 'tv_manager' ? 'active' : ''}`} onClick={() => setActiveTab('tv_manager')}>
+                <Tv size={18} /> TV Pusat (3 Layar)
+              </button>
+              <button className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+                <Users size={18} /> Manajemen Pengguna
+              </button>
+              <button className={`nav-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>
+                <ClipboardList size={18} /> Log Aktivitas Kampus
+              </button>
+            </div>
+          )}
         </nav>
         <div className="admin-nav-footer" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           <button onClick={() => window.open(basePath ? `${basePath}/tv` : '/tv', '_blank')} className="nav-btn nav-btn-tv">
@@ -653,9 +777,29 @@ function AdminDashboard() {
               {activeTab === 'schedules' && 'Jadwal Kegiatan'}
               {activeTab === 'announcements' && 'Pengumuman'}
               {activeTab === 'reports' && 'Laporan Agenda'}
+              {activeTab === 'tv_manager' && 'Manajemen 3 Layar TV Pusat'}
+              {activeTab === 'users' && 'Manajemen Pengguna & Akun Fakultas'}
             </h1>
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+            {isSuperAdmin && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.85rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}>
+                <Building2 size={16} color="#2563eb" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>Fakultas:</span>
+                <select 
+                  value={prefix}
+                  onChange={(e) => {
+                    const sel = FACULTY_LIST.find(f => f.prefix === e.target.value);
+                    if (sel) navigate(sel.path);
+                  }}
+                  style={{ border: 'none', background: 'transparent', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', cursor: 'pointer', outline: 'none' }}
+                >
+                  {FACULTY_LIST.map(f => (
+                    <option key={f.prefix} value={f.prefix}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div style={{ position: 'relative', cursor: 'pointer' }}>
               <Bell size={20} color="#67748e" />
               <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', background: '#ea0606', borderRadius: '50%', border: '2px solid white' }}></span>
@@ -663,14 +807,18 @@ function AdminDashboard() {
             <div style={{ cursor: 'pointer' }}>
               <Cog size={20} color="#67748e" />
             </div>
-            <a href="/" target="_blank" className="view-btn">Lihat Layar TV</a>
+            <a href={basePath ? `${basePath}/tv` : '/tv'} target="_blank" rel="noreferrer" className="view-btn">Lihat Layar TV</a>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid #e2e8f0', paddingLeft: '1.5rem' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-                <User size={18} />
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: isSuperAdmin ? '#eff6ff' : '#e2e8f0', color: isSuperAdmin ? '#2563eb' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isSuperAdmin ? <ShieldCheck size={20} /> : <User size={18} />}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>Administrator</span>
-                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Super Admin</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
+                  {currentUser?.name || (isSuperAdmin ? 'Super Administrator' : 'Admin Fakultas')}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: isSuperAdmin ? '#2563eb' : '#64748b', fontWeight: 600 }}>
+                  {isSuperAdmin ? 'Super Admin (Akses Semua)' : `Admin ${prefix.toUpperCase()}`}
+                </span>
               </div>
             </div>
           </div>
@@ -2099,6 +2247,26 @@ function AdminDashboard() {
             </div>
           )}
 
+          {/* MASTER RUANGAN */}
+          {activeTab === 'rooms' && (
+            <RoomManager />
+          )}
+
+          {/* TV PUSAT MANAGER (SUPER ADMIN) */}
+          {activeTab === 'tv_manager' && isSuperAdmin && (
+            <TvScreenManager />
+          )}
+
+          {/* USER MANAGEMENT (SUPER ADMIN) */}
+          {activeTab === 'users' && isSuperAdmin && (
+            <UserManager />
+          )}
+
+          {/* AUDIT LOG VIEWER (SUPER ADMIN) */}
+          {activeTab === 'logs' && isSuperAdmin && (
+            <ActivityLogViewer />
+          )}
+
         </main>
       </div>
             {isScheduleModalOpen && editingSchedule && (
@@ -2138,20 +2306,41 @@ function AdminDashboard() {
               </div>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ruangan</label>
-                <select value={['TGCL - Podcast', 'TGCL - Meetingroom', 'TGCL - Event & Training Area', 'Studio Gurindam 12', 'Ruang Pertemuan/Meeting Room', 'Ruang Diskusi (Max 15 orang)', 'Ruang Diskusi (Max 8 orang)'].includes(editingSchedule.loc) ? editingSchedule.loc : (editingSchedule.loc ? 'Lainnya' : '')} onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value === 'Lainnya' ? '' : e.target.value})} className="admin-input">
-                  <option value="">Pilih Ruangan...</option>
-                  <option value="TGCL - Podcast">TGCL - Podcast</option>
-                  <option value="TGCL - Meetingroom">TGCL - Meetingroom</option>
-                  <option value="TGCL - Event & Training Area">TGCL - Event & Training Area</option>
-                  <option value="Studio Gurindam 12">Studio Gurindam 12</option>
-                  <option value="Ruang Pertemuan/Meeting Room">Ruang Pertemuan/Meeting Room</option>
-                  <option value="Ruang Diskusi (Max 15 orang)">Ruang Diskusi (Max 15 orang)</option>
-                  <option value="Ruang Diskusi (Max 8 orang)">Ruang Diskusi (Max 8 orang)</option>
-                  <option value="Lainnya">Lainnya (Isi Sendiri)...</option>
-                </select>
-                {!['TGCL - Podcast', 'TGCL - Meetingroom', 'TGCL - Event & Training Area', 'Studio Gurindam 12', 'Ruang Pertemuan/Meeting Room', 'Ruang Diskusi (Max 15 orang)', 'Ruang Diskusi (Max 8 orang)', ''].includes(editingSchedule.loc) && (
-                  <input type="text" value={editingSchedule.loc} onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value})} className="admin-input" placeholder="Ketik nama ruangan..." style={{ marginTop: '0.5rem' }} />
-                )}
+                {(() => {
+                  const defaultList = [
+                    'TGCL - Podcast', 'TGCL - Meetingroom', 'TGCL - Event & Training Area',
+                    'Studio Gurindam 12', 'Ruang Senat (Lt.5)', 'Gedung PKM Gobah',
+                    'Ruang Pertemuan/Meeting Room', 'Ruang Diskusi (Max 15 orang)', 'Ruang Diskusi (Max 8 orang)'
+                  ];
+                  const allRooms = Array.from(new Set([...defaultList, ...masterRooms.map(r => r.name)]));
+                  const isPreset = allRooms.includes(editingSchedule.loc);
+
+                  return (
+                    <>
+                      <select 
+                        value={isPreset ? editingSchedule.loc : (editingSchedule.loc ? 'Lainnya' : '')} 
+                        onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value === 'Lainnya' ? '' : e.target.value})} 
+                        className="admin-input"
+                      >
+                        <option value="">Pilih Ruangan...</option>
+                        {allRooms.map((rName) => (
+                          <option key={rName} value={rName}>{rName}</option>
+                        ))}
+                        <option value="Lainnya">Lainnya (Isi Manual)...</option>
+                      </select>
+                      {!isPreset && (
+                        <input 
+                          type="text" 
+                          value={editingSchedule.loc} 
+                          onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value})} 
+                          className="admin-input" 
+                          placeholder="Ketik nama ruangan khusus..." 
+                          style={{ marginTop: '0.5rem' }} 
+                        />
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 200px' }}>
