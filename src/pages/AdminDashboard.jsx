@@ -1131,65 +1131,33 @@ function AdminDashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
               
-              {/* Identitas Institusi */}
+              {/* Card 1: Identitas Unit & Kampus */}
               <div className="card" style={{ margin: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ImageIcon size={18} />
+                  <div style={{ width: '36px', height: '36px', borderRadius: '0.5rem', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Building2 size={20} />
                   </div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Identitas Institusi</h3>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 700 }}>Identitas Unit & Kampus</h3>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>Data identitas resmi yang tampil pada header TV Display</p>
+                  </div>
                 </div>
+
                 <div className="form-group">
-                  <label>Pilih / Ketik Nama Fakultas (Universitas Riau)</label>
-                  <select 
-                    className="admin-input" 
-                    style={{ marginBottom: '0.5rem', background: '#f8fafc', fontWeight: 600 }}
-                    value={
-                      [
-                        'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)',
-                        'Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)',
-                        'Fakultas Ekonomi dan Bisnis (FEB)',
-                        'Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)',
-                        'Fakultas Teknik (FT)',
-                        'Fakultas Pertanian (FP)',
-                        'Fakultas Perikanan dan Kelautan (FPK)',
-                        'Fakultas Kedokteran (FK)',
-                        'Fakultas Hukum (FH)',
-                        'Fakultas Keperawatan (FKp)',
-                        'Pascasarjana UNRI'
-                      ].includes(localFaculty) ? localFaculty : 'custom'
-                    }
-                    onChange={(e) => {
-                      if (e.target.value !== 'custom') {
-                        setLocalFaculty(e.target.value);
-                      }
-                    }}
-                  >
-                    <option value="Fakultas Keguruan dan Ilmu Pendidikan (FKIP)">Fakultas Keguruan dan Ilmu Pendidikan (FKIP)</option>
-                    <option value="Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)">Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)</option>
-                    <option value="Fakultas Ekonomi dan Bisnis (FEB)">Fakultas Ekonomi dan Bisnis (FEB)</option>
-                    <option value="Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)">Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)</option>
-                    <option value="Fakultas Teknik (FT)">Fakultas Teknik (FT)</option>
-                    <option value="Fakultas Pertanian (FP)">Fakultas Pertanian (FP)</option>
-                    <option value="Fakultas Perikanan dan Kelautan (FPK)">Fakultas Perikanan dan Kelautan (FPK)</option>
-                    <option value="Fakultas Kedokteran (FK)">Fakultas Kedokteran (FK)</option>
-                    <option value="Fakultas Hukum (FH)">Fakultas Hukum (FH)</option>
-                    <option value="Fakultas Keperawatan (FKp)">Fakultas Keperawatan (FKp)</option>
-                    <option value="Pascasarjana UNRI">Pascasarjana UNRI</option>
-                    <option value="custom">-- Ketik Nama Fakultas Manual --</option>
-                  </select>
+                  <label style={{ fontWeight: 600, color: '#334155' }}>Nama Resmi Fakultas / Unit</label>
                   <input 
                     type="text" 
                     value={localFaculty} 
                     onChange={(e) => setLocalFaculty(e.target.value)} 
                     className="admin-input"
                     placeholder="Contoh: Fakultas Keguruan dan Ilmu Pendidikan (FKIP)"
+                    style={{ fontWeight: 600 }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
-                    <label>Nama Unit / Lembaga / UPA</label>
+                    <label style={{ fontWeight: 600, color: '#334155' }}>Sub-Unit / Lembaga / UPA</label>
                     <input 
                       type="text" 
                       value={localSubUnit} 
@@ -1199,7 +1167,7 @@ function AdminDashboard() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Status Akreditasi / Badge</label>
+                    <label style={{ fontWeight: 600, color: '#334155' }}>Status Akreditasi / Badge</label>
                     <input 
                       type="text" 
                       value={localAccreditation} 
@@ -1212,17 +1180,17 @@ function AdminDashboard() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
-                    <label>Lokasi Kampus</label>
+                    <label style={{ fontWeight: 600, color: '#334155' }}>Lokasi Gedung / Kampus</label>
                     <input 
                       type="text" 
                       value={localCampusLocation} 
                       onChange={(e) => setLocalCampusLocation(e.target.value)} 
                       className="admin-input" 
-                      placeholder="Contoh: Kampus Bina Widya" 
+                      placeholder="Contoh: Kampus Bina Widya Km 12.5" 
                     />
                   </div>
                   <div className="form-group">
-                    <label>Jam Operasional Layanan</label>
+                    <label style={{ fontWeight: 600, color: '#334155' }}>Jam Layanan Operasional</label>
                     <input 
                       type="text" 
                       value={localOperationalHours} 
@@ -1232,108 +1200,74 @@ function AdminDashboard() {
                     />
                   </div>
                 </div>
+
                 <div className="form-group">
-                  <label>Slogan / Tagline (Opsional)</label>
-                  <input type="text" value={localTagline} onChange={(e) => setLocalTagline(e.target.value)} className="admin-input" placeholder="Contoh: Jantung Hati Masyarakat Riau" />
+                  <label style={{ fontWeight: 600, color: '#334155' }}>Slogan / Tagline Institusi</label>
+                  <input 
+                    type="text" 
+                    value={localTagline} 
+                    onChange={(e) => setLocalTagline(e.target.value)} 
+                    className="admin-input" 
+                    placeholder="Contoh: Jantung Hati Masyarakat Riau" 
+                  />
                 </div>
+
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Logo Instansi</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <img src={logoUnri} alt="Logo" style={{ width: '60px', height: '60px', objectFit: 'contain', background: '#f8fafc', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }} />
-                    <button className="btn-save" style={{ background: '#f1f5f9', color: '#475569', boxShadow: 'none' }}><Upload size={14} /> Ganti Logo</button>
+                  <label style={{ fontWeight: 600, color: '#334155' }}>Branding Logo Resmi</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                    <img src={logoUnri} alt="Logo UNRI" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>Logo Resmi Universitas Riau</div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Tampil otomatis di pojok kiri atas seluruh layar TV display</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Preferensi Tampilan */}
+              {/* Card 2: Preferensi Tampilan Layar TV */}
               <div className="card" style={{ margin: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#fdf4ff', color: '#d946ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <LayoutDashboard size={18} />
+                  <div style={{ width: '36px', height: '36px', borderRadius: '0.5rem', background: '#fdf4ff', color: '#c026d3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <LayoutDashboard size={20} />
                   </div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Preferensi Tampilan TV</h3>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 700 }}>Preferensi Tampilan Layar TV</h3>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>Atur tata letak default dan palet warna identitas visual monitor</p>
+                  </div>
                 </div>
-                {/* PENGATURAN WARNA SEMUA TEMPLATE */}
+
+                <div className="form-group">
+                  <label style={{ fontWeight: 600, color: '#334155' }}>Tata Letak Layar Default (Layout)</label>
+                  <select 
+                    className="admin-input" 
+                    value={localTvLayout} 
+                    onChange={(e) => setLocalTvLayout(e.target.value)}
+                    style={{ fontWeight: 600 }}
+                  >
+                    <option value="standard">Standard (Agenda Kiri + Slide Kanan)</option>
+                    <option value="full-media">Full Media (Slide Flyer Layar Penuh)</option>
+                    <option value="agenda-focus">Fokus Agenda (Agenda Lebar + Slide Mini)</option>
+                    <option value="tu">Tema Tata Usaha (2 Kolom: Agenda Minggu Ini & Mendatang)</option>
+                    <option value="admin">Tema Admin (Profesional, Sidebar Info Lengkap)</option>
+                  </select>
+                </div>
+
+                {/* PENGATURAN WARNA IDENTITAS INSTANSI */}
                 <div className="form-group" style={{ background: '#f8fafc', padding: '1.15rem', borderRadius: '0.85rem', border: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                     <div>
                       <label style={{ fontWeight: '700', color: '#1e293b', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.15rem' }}>
                         <Palette size={17} style={{ color: activeWorkingColor }} />
-                        Tema & Kustomisasi Warna
+                        Warna Utama & Tema Tampilan
                       </label>
-                      <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                        Pilih sasaran template untuk menyesuaikan warna:
+                      <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                        Pilih palet warna resmi untuk aksen header, kartu, dan teks layar:
                       </span>
                     </div>
-                    {selectedTemplateTab !== 'all' && (
-                      <button
-                        type="button"
-                        onClick={() => handleApplyColorToAll(activeWorkingColor)}
-                        className="btn-secondary"
-                        style={{ fontSize: '0.73rem', padding: '0.3rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}
-                        title="Terapkan warna ini ke seluruh template"
-                      >
-                        <Sparkles size={13} />
-                        Terapkan ke Semua
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Template Selector Tabs / Pill Buttons */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplateTab('all')}
-                      style={{
-                        padding: '0.35rem 0.75rem',
-                        borderRadius: '999px',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        border: selectedTemplateTab === 'all' ? '1.5px solid #2f5597' : '1px solid #cbd5e1',
-                        background: selectedTemplateTab === 'all' ? '#2f5597' : '#ffffff',
-                        color: selectedTemplateTab === 'all' ? '#ffffff' : '#475569',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      🌟 Semua Template (Global)
-                    </button>
-                    {TEMPLATE_LIST.map(tmpl => {
-                      const tmplColor = localTemplateColors?.[tmpl.id] || localPrimaryColor;
-                      const isSelected = selectedTemplateTab === tmpl.id;
-                      return (
-                        <button
-                          key={tmpl.id}
-                          type="button"
-                          onClick={() => setSelectedTemplateTab(tmpl.id)}
-                          style={{
-                            padding: '0.35rem 0.75rem',
-                            borderRadius: '999px',
-                            fontSize: '0.75rem',
-                            fontWeight: '700',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            border: isSelected ? `2px solid ${tmplColor}` : '1px solid #cbd5e1',
-                            background: '#ffffff',
-                            color: isSelected ? '#1e293b' : '#64748b',
-                            boxShadow: isSelected ? `0 2px 6px ${tmplColor}40` : 'none',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: tmplColor, display: 'inline-block' }} />
-                          {tmpl.name}
-                        </button>
-                      );
-                    })}
                   </div>
 
                   {/* Color Presets Palette */}
                   <div style={{ marginBottom: '0.85rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '0.45rem' }}>
-                      Palet Warna Populer:
-                    </span>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                       {PRESET_COLORS.map(colorItem => {
                         const isColorActive = (activeWorkingColor || '').toLowerCase() === colorItem.hex.toLowerCase();
@@ -1373,7 +1307,7 @@ function AdminDashboard() {
                         onChange={(e) => handleColorChange(e.target.value)} 
                         style={{ width: '38px', height: '34px', border: 'none', borderRadius: '0.35rem', cursor: 'pointer', padding: 0, background: 'transparent' }} 
                       />
-                      <span style={{ fontSize: '0.78rem', fontWeight: '600', color: '#475569' }}>Kustom Bebas:</span>
+                      <span style={{ fontSize: '0.78rem', fontWeight: '600', color: '#475569' }}>Kustom Warna:</span>
                     </div>
                     <input 
                       type="text" 
@@ -1389,142 +1323,139 @@ function AdminDashboard() {
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem', background: `${activeWorkingColor}18`, padding: '0.3rem 0.65rem', borderRadius: '999px', border: `1px solid ${activeWorkingColor}44` }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: activeWorkingColor }} />
                       <span style={{ fontSize: '0.75rem', fontWeight: '700', color: activeWorkingColor }}>
-                        Preview Tema
+                        {activeWorkingColor}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label>Layout Layar Utama</label>
-                  <select className="admin-input" value={localTvLayout} onChange={(e) => setLocalTvLayout(e.target.value)}>
-                    <option value="standard">Standard (Kegiatan Kiri, Slide Kanan)</option>
-                    <option value="full-media">Full Media (Slide Full Screen)</option>
-                    <option value="agenda-focus">Fokus Agenda (Agenda Lebar, Slide Kecil)</option>
-                    <option value="tu">Tema TU (2 Slide: Kegiatan Minggu Ini & Mendatang)</option>
-                    <option value="admin">Tema Admin (Profesional, Sidebar Lebar)</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Tipe Auto Scroll Jadwal Kegiatan</label>
-                  <select className="admin-input" value={localScheduleScrollType} onChange={(e) => setLocalScheduleScrollType(e.target.value)}>
-                    <option value="step">Scroll Bertahap (Jeda beberapa detik per agenda, lalu bergulir mulus)</option>
-                    <option value="continuous">Scroll Mengalir Mulus (Continuous Marquee tanpa henti)</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Kecepatan Scroll TV (Normal = 1)</label>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontWeight: 600, color: '#334155' }}>Durasi Rotasi Slide Default</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <input 
                       type="number" 
-                      min="0.1" 
-                      max="5" 
-                      step="0.1" 
-                      value={localScheduleSpeed} 
-                      onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
+                      min="3" 
+                      max="60" 
+                      value={localSlideDuration} 
+                      onChange={(e) => setLocalSlideDuration(Number(e.target.value))} 
                       className="admin-input"
-                      style={{ width: '90px', textAlign: 'center', fontWeight: 700 }}
+                      style={{ width: '85px', textAlign: 'center', fontWeight: 700 }}
                     />
-                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                      {localScheduleScrollType === 'step' 
-                        ? `Waktu jeda per agenda: ± ${Math.round(4.5 / (localScheduleSpeed || 1) * 10) / 10} detik` 
-                        : `Kecepatan alir: ± ${Math.round(30 * (localScheduleSpeed || 1))} px/detik`}
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                      detik per slide (otomatis berganti ke slide berikutnya)
                     </span>
                   </div>
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Bahasa Tampilan</label>
-                  <select className="admin-input" value={localLanguage} onChange={(e) => setLocalLanguage(e.target.value)}>
-                    <option value="id">Bahasa Indonesia</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
               </div>
 
-              {/* Jam Operasional */}
-              <div className="card" style={{ margin: 0 }}>
+              {/* Card 3: Jadwal Operasional Layar & Otomasi Hemat Daya */}
+              <div className="card" style={{ gridColumn: '1 / -1', margin: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Clock size={18} />
+                  <div style={{ width: '36px', height: '36px', borderRadius: '0.5rem', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clock size={20} />
                   </div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Operasional & Waktu</h3>
-                </div>
-                <div className="form-group">
-                  <label>Zona Waktu</label>
-                  <select className="admin-input" value={localTimezone} onChange={(e) => setLocalTimezone(e.target.value)}>
-                    <option value="WIB">WIB (Waktu Indonesia Barat)</option>
-                    <option value="WITA">WITA (Waktu Indonesia Tengah)</option>
-                    <option value="WIT">WIT (Waktu Indonesia Timur)</option>
-                  </select>
-                </div>
-                <div className="form-group" style={{ display: 'flex', gap: '1rem', marginBottom: 0 }}>
-                  <div style={{ flex: 1 }}>
-                    <label>Layar Nyala (On)</label>
-                    <input type="time" value={localTimeOn} onChange={(e) => setLocalTimeOn(e.target.value)} className="admin-input" />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 700 }}>Jadwal Operasional Layar & Otomasi Hemat Daya</h3>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>Manajemen jam aktif TV kampus dan sinkronisasi otomatis latar belakang</p>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label>Layar Mati (Standby)</label>
-                    <input type="time" value={localTimeOff} onChange={(e) => setLocalTimeOff(e.target.value)} className="admin-input" />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+                  {/* Kolom 1: Zona Waktu */}
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontWeight: 700, color: '#334155', marginBottom: '0.5rem', fontSize: '0.88rem' }}>
+                      Zona Waktu Server
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <span style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#dbeafe', color: '#1e40af', fontWeight: 700, fontSize: '0.85rem' }}>
+                        WIB (UTC+7)
+                      </span>
+                      <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>Pekanbaru, Riau</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.5 }}>
+                      Waktu TV display terkunci otomatis ke Waktu Indonesia Barat sesuai lokasi kampus Universitas Riau.
+                    </p>
+                  </div>
+
+                  {/* Kolom 2: Jam Operasional TV */}
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontWeight: 700, color: '#334155', marginBottom: '0.5rem', fontSize: '0.88rem' }}>
+                      Otomasi Jam Nyala & Siaga TV
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.6rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '0.2rem' }}>Layar Aktif (On):</span>
+                        <input type="time" value={localTimeOn} onChange={(e) => setLocalTimeOn(e.target.value)} className="admin-input" style={{ width: '100%', padding: '0.4rem', fontWeight: 600 }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '0.2rem' }}>Layar Mati (Standby):</span>
+                        <input type="time" value={localTimeOff} onChange={(e) => setLocalTimeOff(e.target.value)} className="admin-input" style={{ width: '100%', padding: '0.4rem', fontWeight: 600 }} />
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.5 }}>
+                      Di luar jam tersebut, monitor TV otomatis masuk mode Standby gelap untuk menghemat daya listrik kampus.
+                    </p>
+                  </div>
+
+                  {/* Kolom 3: Auto-Refresh */}
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontWeight: 700, color: '#334155', marginBottom: '0.5rem', fontSize: '0.88rem' }}>
+                      Sinkronisasi Otomatis
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontWeight: 600, color: '#1e293b', fontSize: '0.88rem', marginBottom: '0.6rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={localAutoRefresh} 
+                        onChange={(e) => setLocalAutoRefresh(e.target.checked)} 
+                        style={{ width: '18px', height: '18px', accentColor: '#2563eb' }} 
+                      />
+                      Auto-refresh data tiap 5 menit
+                    </label>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', lineHeight: 1.5 }}>
+                      Layar TV akan otomatis memperbarui agenda baru dan slide tanpa perlu operator memuat ulang browser TV secara manual.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Keamanan & Sistem */}
-              <div className="card" style={{ margin: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '0.5rem', background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Shield size={18} />
-                  </div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>Keamanan & Sistem</h3>
-                </div>
-                <div className="form-group">
-                  <label>Ubah Password Admin</label>
-                  <input type="password" placeholder="Masukkan password baru" className="admin-input" />
-                </div>
-                <div className="form-group">
-                  <label>Konfirmasi Password</label>
-                  <input type="password" placeholder="Ulangi password baru" className="admin-input" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600, color: '#475569', fontSize: '0.85rem' }}>
-                    <input type="checkbox" checked={localAutoRefresh} onChange={(e) => setLocalAutoRefresh(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#db2777' }} />
-                    Auto-refresh data tiap 5 menit
-                  </label>
-                </div>
+              {/* DOCKED SAVE FOOTER (GROUNDED) */}
+              <div style={{
+                gridColumn: '1 / -1',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e2e8f0',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  💡 Seluruh perubahan pengaturan akan langsung tersinkronisasi ke layar TV display kampus.
+                </span>
+                <button
+                  onClick={handleSaveSettings}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 2rem',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.65rem',
+                    fontWeight: 600,
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <Save size={18} /> Simpan Semua Pengaturan
+                </button>
               </div>
-
-                {/* DOCKED SAVE FOOTER (GROUNDED) */}
-                <div style={{
-                  gridColumn: '1 / -1',
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  alignItems: 'center',
-                  marginTop: '1.25rem',
-                  paddingTop: '1.5rem',
-                  borderTop: '1px solid #e2e8f0'
-                }}>
-                  <button
-                    onClick={handleSaveSettings}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.75rem 2rem',
-                      background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.65rem',
-                      fontWeight: 600,
-                      fontSize: '0.92rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                    onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-                  >
-                    <Save size={18} /> Simpan Semua Pengaturan
-                  </button>
-                </div>
               </div>
             </div>
           )}
