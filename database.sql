@@ -119,7 +119,7 @@ CREATE TABLE `settings` (
 INSERT INTO `settings` 
 (`faculty_prefix`, `faculty_name`, `sub_unit_name`, `accreditation`, `campus_location`, `operational_hours`, `tagline`, `primary_color`, `template_colors`, `tv_layout`) 
 VALUES
-('main', 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)', 'UPA Perpustakaan', 'Akreditasi Unggul', 'Kampus Bina Widya', '08:00 - 16:00 WIB', 'Jantung Hati Masyarakat Riau', '#1e40af', '{"standard": "#1e40af", "tu": "#1e40af", "agenda-focus": "#1e40af", "full-media": "#1e40af", "admin": "#1e40af"}', 'standard'),
+('main', 'Universitas Riau (Kantor Pusat)', 'Pusat Informasi & Layanan Terpadu', 'Akreditasi Unggul', 'Kampus Bina Widya', '08:00 - 16:00 WIB', 'Jantung Hati Masyarakat Riau', '#1e40af', '{"standard": "#1e40af", "tu": "#1e40af", "agenda-focus": "#1e40af", "full-media": "#1e40af", "admin": "#1e40af"}', 'standard'),
 ('fkip', 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)', 'Sekretariat Dekanat', 'Akreditasi Unggul', 'Kampus Bina Widya', '08:00 - 16:00 WIB', 'Mencerdaskan Kehidupan Bangsa', '#1e40af', '{"standard": "#1e40af", "tu": "#1e40af", "agenda-focus": "#1e40af", "full-media": "#1e40af", "admin": "#1e40af"}', 'standard');
 
 -- --------------------------------------------------------

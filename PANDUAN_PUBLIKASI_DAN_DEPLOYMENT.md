@@ -102,6 +102,51 @@ Agar sistem selalu menyala 24/7 dan otomatis hidup kembali saat server kampus re
 
 ---
 
+### 🐳 6b. Opsi Deployment Modern: Menggunakan Docker & Docker Compose (Rekomendasi Enterprise)
+
+Jika Anda ingin menjalankan seluruh ekosistem (Database MySQL 8.0, Backend Express, dan Frontend Nginx) dalam kontainer terisolasi yang stabil dan otomatis tanpa perlu menginstall XAMPP secara manual:
+
+#### A. Persyaratan:
+- **Windows**: Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) (pilih backend WSL 2).
+- **Linux (Ubuntu Server)**:
+  ```bash
+  sudo apt update && sudo apt install -y docker.io docker-compose-v2
+  sudo systemctl enable --now docker
+  ```
+
+#### B. Cara Menjalankan dengan 1 Perintah:
+Buka terminal di direktori proyek `c:\Dashboard Pusat Informasi` (atau lokasi clone di server), lalu jalankan:
+```bash
+docker compose up -d --build
+```
+
+#### C. Yang Dilakukan Docker Secara Otomatis:
+1. **Container MySQL (`unri_dashboard_db`)**: Membuat database `db_pusat_informasi`, menjalankan otomatis `database.sql` (10 tabel, akun pengguna, dan data awal siap pakai) tanpa perlu import phpMyAdmin manual.
+2. **Container Backend (`unri_dashboard_backend`)**: Menjalankan API Node.js/Express, menghubungkan otomatis ke container database.
+3. **Container Frontend (`unri_dashboard_frontend`)**: Mengompilasi aplikasi React menjadi bundle production yang dilayani web server **Nginx Alpine** berkecepatan tinggi dengan kompresi gzip.
+
+#### D. Akses Layar & Dasbor:
+- **Portal Admin & Dasbor**: `http://localhost` atau `http://[IP-SERVER]`
+- **Display TV Pusat**: `http://localhost/tv` atau `http://[IP-SERVER]/tv`
+- **Display TV Fakultas**: `http://localhost/fkip/tv` atau `http://[IP-SERVER]/fkip/tv`
+
+#### E. Perintah Manajemen Docker:
+```bash
+# Melihat status kontainer yang berjalan
+docker compose ps
+
+# Melihat log aplikasi secara realtime
+docker compose logs -f backend
+
+# Menghentikan seluruh sistem kontainer
+docker compose down
+
+# Menghentikan kontainer dan menghapus volume data jika ingin reset bersih
+docker compose down -v
+```
+
+---
+
 ### 📺 7. URL Layar TV Display Kampus
 
 Cukup buka browser (Google Chrome / Edge) di masing-masing Smart TV atau Mini PC TV, lalu tekan tombol `F11` (Full Screen):

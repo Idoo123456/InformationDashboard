@@ -1,0 +1,26 @@
+# ==========================================
+# Dockerfile: Backend API Service (Node.js)
+# Sistem Dashboard Pusat Informasi UNRI
+# ==========================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package definitions
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm install --omit=dev
+
+# Copy backend source code
+COPY server/ ./server/
+
+# Ensure uploads directory exists
+RUN mkdir -p server/uploads
+
+# Expose backend port
+EXPOSE 5000
+
+# Start Express Server
+CMD ["node", "server/index.js"]
