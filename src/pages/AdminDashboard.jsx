@@ -1081,7 +1081,55 @@ function AdminDashboard() {
           )}
           {/* SETTINGS */}
           {activeTab === 'settings' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto 2.5rem' }}>
+              
+              {/* HEADER BAR DENGAN TOMBOL SIMPAN */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                marginBottom: '1.75rem',
+                padding: '1.25rem 1.75rem',
+                background: '#ffffff',
+                borderRadius: '1rem',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.35rem', color: '#0f172a', fontWeight: 700 }}>
+                    Pengaturan Umum & Preferensi TV
+                  </h3>
+                  <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.88rem' }}>
+                    Konfigurasi identitas instansi, jam layanan, tata letak, dan jadwal operasional layar
+                  </p>
+                </div>
+                <button
+                  onClick={handleSaveSettings}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1.75rem',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.65rem',
+                    fontWeight: 600,
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <Save size={18} /> Simpan Semua Pengaturan
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
               
               {/* Identitas Institusi */}
               <div className="card" style={{ margin: 0 }}>
@@ -1444,10 +1492,36 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Floating Save Bar */}
-              <div style={{ gridColumn: '1 / -1', position: 'sticky', bottom: '2rem', display: 'flex', justifyContent: 'center', marginTop: '1rem', zIndex: 10, pointerEvents: 'none' }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(16px)', padding: '0.75rem 1rem', borderRadius: '999px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
-                  <button onClick={handleSaveSettings} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                {/* DOCKED SAVE FOOTER (GROUNDED) */}
+                <div style={{
+                  gridColumn: '1 / -1',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  marginTop: '1.25rem',
+                  paddingTop: '1.5rem',
+                  borderTop: '1px solid #e2e8f0'
+                }}>
+                  <button
+                    onClick={handleSaveSettings}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem 2rem',
+                      background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.65rem',
+                      fontWeight: 600,
+                      fontSize: '0.92rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                    onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                  >
                     <Save size={18} /> Simpan Semua Pengaturan
                   </button>
                 </div>
@@ -1618,14 +1692,17 @@ function AdminDashboard() {
                   <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Kelola semua aktivitas operasional dan jadwal di satu tempat.</p>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', background: 'white', borderRadius: '999px', padding: '0.3rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0' }}>
-                    <button onClick={() => setScheduleView('daftar')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem', borderRadius: '999px', background: scheduleView === 'daftar' ? '#3b82f6' : 'transparent', color: scheduleView === 'daftar' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}><List size={16} /> Timeline</button>
-                    <button onClick={() => setScheduleView('kalender')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem', borderRadius: '999px', background: scheduleView === 'kalender' ? '#3b82f6' : 'transparent', color: scheduleView === 'kalender' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}><Calendar size={16} /> Kalender</button>
-                    <button onClick={() => setScheduleView('grid')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem', borderRadius: '999px', background: scheduleView === 'grid' ? '#3b82f6' : 'transparent', color: scheduleView === 'grid' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }}><LayoutGrid size={16} /> Kanvas</button>
+                <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', background: 'white', borderRadius: '0.65rem', padding: '0.3rem', boxShadow: '0 2px 4px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+                    <button onClick={() => setScheduleView('daftar')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1rem', borderRadius: '0.45rem', background: scheduleView === 'daftar' ? '#3b82f6' : 'transparent', color: scheduleView === 'daftar' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s' }}><List size={16} /> Timeline</button>
+                    <button onClick={() => setScheduleView('kalender')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1rem', borderRadius: '0.45rem', background: scheduleView === 'kalender' ? '#3b82f6' : 'transparent', color: scheduleView === 'kalender' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s' }}><Calendar size={16} /> Kalender</button>
+                    <button onClick={() => setScheduleView('grid')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1rem', borderRadius: '0.45rem', background: scheduleView === 'grid' ? '#3b82f6' : 'transparent', color: scheduleView === 'grid' ? 'white' : '#64748b', border: 'none', cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s' }}><LayoutGrid size={16} /> Kanvas</button>
                   </div>
-                  <button onClick={handleAddSchedule} style={{ padding: '0.85rem 1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                    <Plus size={18} /> Entri Baru
+                  <button onClick={handleAddSchedule} style={{ padding: '0.75rem 1.35rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '0.65rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.25)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Plus size={17} /> Entri Baru
+                  </button>
+                  <button onClick={handleSaveSchedules} style={{ padding: '0.75rem 1.4rem', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.65rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 10px rgba(15, 23, 42, 0.2)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <Save size={16} /> Publikasikan ke Layar TV
                   </button>
                 </div>
               </div>
@@ -1848,47 +1925,76 @@ function AdminDashboard() {
                 </div>
               )}
 
-              {/* FLOATING SAVE BAR */}
-              <div style={{ position: 'sticky', bottom: '2rem', left: 0, right: 0, marginTop: '3rem', zIndex: 10 }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(14px)', padding: '1rem 1.5rem', borderRadius: '1rem', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>Tipe Scroll:</label>
-                      <select 
-                        value={localScheduleScrollType} 
-                        onChange={(e) => setLocalScheduleScrollType(e.target.value)} 
-                        className="admin-input" 
-                        style={{ padding: '0.4rem 0.75rem', margin: 0, borderRadius: '0.5rem', fontSize: '0.85rem', fontWeight: 600, width: 'auto' }}
-                      >
-                        <option value="step">Bertahap (Pause per Agenda)</option>
-                        <option value="continuous">Mengalir (Continuous Marquee)</option>
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>Kecepatan TV:</label>
-                      <input 
-                        type="number" 
-                        value={localScheduleSpeed} 
-                        onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
-                        className="admin-input"
-                        min="0.1"
-                        max="5"
-                        step="0.1"
-                        style={{ width: '75px', padding: '0.4rem', margin: 0, borderRadius: '0.5rem', textAlign: 'center', fontWeight: 700 }}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                        {localScheduleScrollType === 'step' 
-                          ? `(Jeda ±${Math.round(4.5 / (localScheduleSpeed || 1) * 10) / 10}s)` 
-                          : `(±${Math.round(30 * (localScheduleSpeed || 1))} px/s)`}
-                      </span>
-                    </div>
+              {/* DOCKED PUBLISH & SCROLL CONTROL PANEL */}
+              <div style={{
+                marginTop: '2.5rem',
+                background: '#ffffff',
+                padding: '1.25rem 1.75rem',
+                borderRadius: '1rem',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '1.25rem',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <label style={{ margin: 0, fontSize: '0.88rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Tipe Scroll Layar:</label>
+                    <select 
+                      value={localScheduleScrollType} 
+                      onChange={(e) => setLocalScheduleScrollType(e.target.value)} 
+                      className="admin-input" 
+                      style={{ padding: '0.5rem 0.85rem', margin: 0, borderRadius: '0.5rem', fontSize: '0.88rem', fontWeight: 600, width: 'auto', background: '#f8fafc' }}
+                    >
+                      <option value="step">Bertahap (Pause per Agenda)</option>
+                      <option value="continuous">Mengalir (Continuous Marquee)</option>
+                    </select>
                   </div>
 
-                  <button onClick={handleSaveSchedules} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)', transition: 'all 0.2s', marginLeft: 'auto' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                    <Save size={16} /> Publikasikan ke Layar TV
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <label style={{ margin: 0, fontSize: '0.88rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>Kecepatan TV:</label>
+                    <input 
+                      type="number" 
+                      value={localScheduleSpeed} 
+                      onChange={(e) => setLocalScheduleSpeed(Number(e.target.value))} 
+                      className="admin-input"
+                      min="0.1"
+                      max="5"
+                      step="0.1"
+                      style={{ width: '70px', padding: '0.45rem', margin: 0, borderRadius: '0.5rem', textAlign: 'center', fontWeight: 700, background: '#f8fafc' }}
+                    />
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                      {localScheduleScrollType === 'step' 
+                        ? `(Jeda ±${Math.round(4.5 / (localScheduleSpeed || 1) * 10) / 10}s)` 
+                        : `(±${Math.round(30 * (localScheduleSpeed || 1))} px/s)`}
+                    </span>
+                  </div>
                 </div>
+
+                <button
+                  onClick={handleSaveSchedules}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1.75rem',
+                    background: '#0f172a',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.65rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.2)',
+                    transition: 'all 0.2s',
+                    marginLeft: 'auto'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <Save size={16} /> Publikasikan ke Layar TV
+                </button>
               </div>
             </div>
           )}
@@ -1920,13 +2026,13 @@ function AdminDashboard() {
                      </div>
                   </div>
 
-                  <button onClick={handleDeleteSelectedSlides} disabled={selectedSlides.length === 0} style={{ padding: '0.75rem 1.25rem', background: selectedSlides.length > 0 ? '#fef2f2' : 'white', color: selectedSlides.length > 0 ? '#ef4444' : '#cbd5e1', border: `1px solid ${selectedSlides.length > 0 ? '#fecaca' : '#e2e8f0'}`, borderRadius: '999px', cursor: selectedSlides.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
+                  <button onClick={handleDeleteSelectedSlides} disabled={selectedSlides.length === 0} style={{ padding: '0.7rem 1.25rem', background: selectedSlides.length > 0 ? '#fef2f2' : 'white', color: selectedSlides.length > 0 ? '#ef4444' : '#cbd5e1', border: `1px solid ${selectedSlides.length > 0 ? '#fecaca' : '#e2e8f0'}`, borderRadius: '0.65rem', cursor: selectedSlides.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
                     <Trash2 size={16} /> Hapus ({selectedSlides.length})
                   </button>
-                  <button onClick={handleAddSlide} style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <button onClick={handleAddSlide} style={{ padding: '0.7rem 1.35rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '0.65rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                     <Plus size={18} /> Tambah Slide
                   </button>
-                  <button onClick={handleSaveSlides} style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <button onClick={handleSaveSlides} style={{ padding: '0.7rem 1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '0.65rem', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                     <Save size={18} /> Publikasikan ke TV
                   </button>
                 </div>
@@ -2120,14 +2226,67 @@ function AdminDashboard() {
                 </div>
               )}
 
-              {/* FLOATING SAVE BAR */}
-              <div style={{ position: 'sticky', bottom: '2rem', display: 'flex', justifyContent: 'center', marginTop: '3rem', zIndex: 10, pointerEvents: 'none' }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(16px)', padding: '0.75rem 1rem', borderRadius: '999px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8)', display: 'flex', alignItems: 'center', gap: '1rem', pointerEvents: 'auto' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.5rem', borderRight: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>Total: {localSlides.length} Slide</span>
-                  </div>
-                  <button onClick={handleSaveSlides} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                    <Save size={18} /> Publikasikan ke TV
+              {/* DOCKED SLIDES FOOTER (SOLID & GROUNDED) */}
+              <div style={{
+                marginTop: '2.5rem',
+                background: '#ffffff',
+                padding: '1.25rem 1.75rem',
+                borderRadius: '1rem',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#475569' }}>
+                    Total Terpasang: <strong style={{ color: '#0f172a' }}>{localSlides.length} Slide Konten</strong>
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>• Siap tayang di layar TV</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button
+                    onClick={handleAddSlide}
+                    style={{
+                      padding: '0.65rem 1.25rem',
+                      background: '#f8fafc',
+                      color: '#334155',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.88rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <Plus size={16} /> Tambah Slide Baru
+                  </button>
+                  <button
+                    onClick={handleSaveSlides}
+                    style={{
+                      padding: '0.65rem 1.5rem',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.88rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 10px rgba(16, 185, 129, 0.25)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                    onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                  >
+                    <Save size={16} /> Publikasikan ke TV
                   </button>
                 </div>
               </div>
