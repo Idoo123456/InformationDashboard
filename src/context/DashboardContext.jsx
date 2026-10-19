@@ -225,17 +225,30 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   const [schedules, setSchedules] = useState(() => loadState('schedules', defaultSchedules));
   const [announcements, setAnnouncements] = useState(() => loadState('announcements', defaultAnnouncements));
   const [slides, setSlides] = useState(() => loadState('slides', defaultSlides));
-  const [isAuthenticated, setIsAuthenticated] = useState(() => loadState('isAuthenticated', false));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      const savedAuth = localStorage.getItem('isAuthenticated');
+      const savedUser = localStorage.getItem('auth_user');
+      return Boolean(savedAuth === 'true' || (savedUser && savedUser !== 'null'));
+    } catch (e) {
+      return false;
+    }
+  });
+
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('auth_user');
-      return saved ? JSON.parse(saved) : (prefix === 'main' ? { username: 'admin', role: 'superadmin', name: 'Administrator' } : { username: `admin_${prefix}`, role: 'admin', name: `Admin ${prefix.toUpperCase()}` });
+      return saved ? JSON.parse(saved) : null;
     } catch (e) {
       return null;
     }
   });
 
   const isSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.username === 'admin';
+
+  useEffect(() => {
+    localStorage.setItem('isAuthenticated', JSON.stringify(isAuthenticated));
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (currentUser) {
@@ -266,7 +279,6 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   useEffect(() => localStorage.setItem(getKey('schedules'), JSON.stringify(schedules)), [schedules, prefix]);
   useEffect(() => localStorage.setItem(getKey('announcements'), JSON.stringify(announcements)), [announcements, prefix]);
   useEffect(() => localStorage.setItem(getKey('slides'), JSON.stringify(slides)), [slides, prefix]);
-  useEffect(() => localStorage.setItem(getKey('isAuthenticated'), JSON.stringify(isAuthenticated)), [isAuthenticated, prefix]);
   useEffect(() => localStorage.setItem(getKey('slideDuration'), JSON.stringify(slideDuration)), [slideDuration, prefix]);
   useEffect(() => localStorage.setItem(getKey('marqueeSpeed'), JSON.stringify(marqueeSpeed)), [marqueeSpeed, prefix]);
   useEffect(() => localStorage.setItem(getKey('scheduleSpeed'), JSON.stringify(scheduleSpeed)), [scheduleSpeed, prefix]);

@@ -5,10 +5,19 @@ import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, basePath } = useDashboard();
-  if (!isAuthenticated) {
-    return <Navigate to={`${basePath}/login`} replace />;
+  const { isAuthenticated, currentUser, basePath, prefix } = useDashboard();
+  if (!isAuthenticated && !currentUser) {
+    return <Navigate to={basePath ? `${basePath}/login` : '/login'} replace />;
   }
+
+  // Jika akun adalah admin fakultas tertentu (bukan superadmin),
+  // pastikan admin diarahkan otomatis ke dasbor fakultasnya sendiri
+  if (currentUser && currentUser.role !== 'superadmin' && currentUser.faculty_prefix && currentUser.faculty_prefix !== 'main') {
+    if (prefix !== currentUser.faculty_prefix) {
+      return <Navigate to={`/${currentUser.faculty_prefix}/admin`} replace />;
+    }
+  }
+
   return children;
 }
 

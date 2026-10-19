@@ -37,8 +37,13 @@ export default function Login() {
 
       if (response.ok && data.success) {
         setIsAuthenticated(true);
+        localStorage.setItem('isAuthenticated', 'true');
         if (data.user) {
           setCurrentUser(data.user);
+          localStorage.setItem('auth_user', JSON.stringify(data.user));
+        }
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token);
         }
         const targetPath = data.redirectPath || (basePath ? `${basePath}/admin` : '/admin');
         navigate(targetPath);
@@ -51,12 +56,15 @@ export default function Login() {
       const expectedUsername = prefix === 'main' ? 'admin' : `admin_${prefix}`;
       if (username === expectedUsername && password === 'admin123') {
         setIsAuthenticated(true);
-        setCurrentUser({
+        localStorage.setItem('isAuthenticated', 'true');
+        const fallbackUser = {
           username,
           role: prefix === 'main' ? 'superadmin' : 'admin',
           faculty_prefix: prefix,
           name: prefix === 'main' ? 'Super Administrator' : `Admin ${prefix.toUpperCase()}`
-        });
+        };
+        setCurrentUser(fallbackUser);
+        localStorage.setItem('auth_user', JSON.stringify(fallbackUser));
         navigate(basePath ? `${basePath}/admin` : '/admin');
       } else {
         setError('Akses ditolak! Gagal terhubung ke database atau kredensial salah.');

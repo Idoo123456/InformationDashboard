@@ -77,7 +77,7 @@ function AdminDashboard() {
     schedules, setSchedules, 
     announcements, setAnnouncements, 
     slides, setSlides,
-    setIsAuthenticated,
+    setIsAuthenticated, setCurrentUser,
     prefix, currentUser, isSuperAdmin, FACULTY_LIST,
     slideDuration, setSlideDuration,
     marqueeSpeed, setMarqueeSpeed,
@@ -86,6 +86,11 @@ function AdminDashboard() {
   } = useDashboard();
   
   const navigate = useNavigate();
+
+  // URL Layar TV yang presisi: admin fakultas selalu membuka TV fakultasnya, superadmin membuka TV unit yang sedang aktif
+  const tvDisplayUrl = (currentUser?.role !== 'superadmin' && currentUser?.faculty_prefix && currentUser.faculty_prefix !== 'main')
+    ? `/${currentUser.faculty_prefix}/tv`
+    : (basePath ? `${basePath}/tv` : '/tv');
 
   const [activeTab, setActiveTab] = useState('overview');
   const [overviewLayout, setOverviewLayout] = useState('modern');
@@ -189,7 +194,10 @@ function AdminDashboard() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setCurrentUser(null);
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('auth_token');
     navigate(basePath ? `${basePath}/login` : '/login');
   };
 
@@ -756,7 +764,7 @@ function AdminDashboard() {
           )}
         </nav>
         <div className="admin-nav-footer" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <button onClick={() => window.open(basePath ? `${basePath}/tv` : '/tv', '_blank')} className="nav-btn nav-btn-tv">
+          <button onClick={() => window.open(tvDisplayUrl, '_blank')} className="nav-btn nav-btn-tv">
             <MonitorPlay size={18} /> Lihat TV Display
           </button>
           <button onClick={handleLogout} className="nav-btn nav-btn-logout">
@@ -807,7 +815,7 @@ function AdminDashboard() {
             <div style={{ cursor: 'pointer' }}>
               <Cog size={20} color="#67748e" />
             </div>
-            <a href={basePath ? `${basePath}/tv` : '/tv'} target="_blank" rel="noreferrer" className="view-btn">Lihat Layar TV</a>
+            <a href={tvDisplayUrl} target="_blank" rel="noreferrer" className="view-btn">Lihat Layar TV</a>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid #e2e8f0', paddingLeft: '1.5rem' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: isSuperAdmin ? '#eff6ff' : '#e2e8f0', color: isSuperAdmin ? '#2563eb' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isSuperAdmin ? <ShieldCheck size={20} /> : <User size={18} />}
