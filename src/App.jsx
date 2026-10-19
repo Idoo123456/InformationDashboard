@@ -76,7 +76,7 @@ function App() {
 
         {/* Main Dashboard (Universitas Riau) */}
         <Route path="/*" element={
-          <DashboardProvider prefix="main" defaultFacultyNameOverride="Universitas Riau">
+          <DashboardProvider prefix="main" defaultFacultyNameOverride="Universitas Riau (Kantor Pusat)">
             <DashboardRoutes />
           </DashboardProvider>
         } />

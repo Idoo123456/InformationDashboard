@@ -6,6 +6,7 @@ import { Clock, Award, Building2, MapPin, Sparkles } from 'lucide-react';
 const Header = () => {
   const [time, setTime] = useState(new Date());
   const { 
+    prefix,
     facultyName, 
     subUnitName, 
     accreditation, 
@@ -26,12 +27,9 @@ const Header = () => {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   };
 
-  // Pastikan nama fakultas selalu lengkap dan tampil dengan jelas
-  const displayFaculty = (!facultyName || facultyName === 'Universitas Riau' || facultyName.includes('UPA PERPUSTAKAAN'))
-    ? 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)'
-    : facultyName;
-
-  const displayUnit = subUnitName || (facultyName?.includes('PERPUSTAKAAN') ? 'UPA Perpustakaan' : 'Pusat Informasi & Layanan');
+  // Nama fakultas / unit kerja resmi (dinamis sesuai prefix & pengaturan)
+  const displayFaculty = facultyName || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
+  const displayUnit = subUnitName || (prefix === 'main' ? 'Pusat Informasi & Layanan Terpadu' : 'Pusat Informasi Fakultas');
 
   return (
     <header className="header glass-panel header-grand">

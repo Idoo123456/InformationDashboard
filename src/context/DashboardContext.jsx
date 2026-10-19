@@ -198,10 +198,12 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
 
   const getInitialFaculty = () => {
     const saved = loadState('facultyName', null);
-    if (!saved || saved === 'Universitas Riau' || saved === 'UPA PERPUSTAKAAN UNIVERSITAS RIAU') {
-      return defaultFacultyNameOverride && defaultFacultyNameOverride !== 'Universitas Riau'
-        ? defaultFacultyNameOverride
-        : 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)';
+    if (!saved || saved === 'UPA PERPUSTAKAAN UNIVERSITAS RIAU') {
+      return defaultFacultyNameOverride || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
+    }
+    // Jika prefix main tersimpan residu FKIP dari konfigurasi lama, kembalikan ke Kantor Pusat
+    if (prefix === 'main' && saved === 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)') {
+      return defaultFacultyNameOverride || 'Universitas Riau (Kantor Pusat)';
     }
     return saved;
   };
