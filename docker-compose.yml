@@ -9,6 +9,7 @@ services:
     container_name: unri_dashboard_db
     restart: always
     environment:
+      TZ: Asia/Jakarta
       MYSQL_ROOT_PASSWORD: rootpassword123
       MYSQL_DATABASE: db_pusat_informasi
     ports:
@@ -37,6 +38,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      TZ: Asia/Jakarta
       PORT: 5000
       DB_HOST: db
       DB_USER: root

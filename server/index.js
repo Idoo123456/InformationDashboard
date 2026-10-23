@@ -19,6 +19,27 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Anti-Cache Header untuk seluruh API endpoint agar data selalu real-time
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
+// Helper format tanggal aman tanpa pergeseran timezone UTC
+const formatDateSafe = (d) => {
+  if (!d) return '';
+  if (typeof d === 'string') return d.slice(0, 10);
+  if (d instanceof Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return String(d).slice(0, 10);
+};
+
 // Setup folder uploads untuk media flyer & video
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -295,7 +316,7 @@ app.get('/api/schedules/:prefix', async (req, res) => {
     );
     const formatted = rows.map(r => ({
       ...r,
-      date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).slice(0, 10),
+      date: formatDateSafe(r.date),
       startTime: r.start_time,
       endTime: r.end_time,
       partnerCategory: r.partner_category
@@ -390,7 +411,7 @@ app.get('/api/announcements/:prefix', async (req, res) => {
     );
     const formatted = rows.map(r => ({
       ...r,
-      expiryDate: r.expiry_date instanceof Date ? r.expiry_date.toISOString().split('T')[0] : (r.expiry_date ? String(r.expiry_date).slice(0, 10) : '')
+      expiryDate: formatDateSafe(r.expiry_date)
     }));
     res.json(formatted);
   } catch (error) {

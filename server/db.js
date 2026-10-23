@@ -20,7 +20,9 @@ const pool = mysql.createPool({
   queueLimit: 0,
   connectTimeout: 10000,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 10000
+  keepAliveInitialDelay: 10000,
+  dateStrings: true,
+  timezone: '+07:00'
 });
 
 pool.on('error', (err) => {
