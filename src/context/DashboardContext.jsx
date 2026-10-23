@@ -288,6 +288,27 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   // SINKRONISASI DENGAN DATABASE MYSQL (API)
   // ==========================================
   const isLoadedFromDb = useRef(false);
+  const [isDbConnected, setIsDbConnected] = useState(false);
+
+  const checkDbConnection = async () => {
+    try {
+      const res = await fetch('/api/health');
+      if (res.ok) {
+        const data = await res.json();
+        setIsDbConnected(data.mysql === 'connected');
+      } else {
+        setIsDbConnected(false);
+      }
+    } catch {
+      setIsDbConnected(false);
+    }
+  };
+
+  useEffect(() => {
+    checkDbConnection();
+    const interval = setInterval(checkDbConnection, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 1. Ambil data dari MySQL saat prefix / komponen dimuat
   useEffect(() => {
@@ -518,7 +539,8 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       slideDuration, setSlideDuration,
       marqueeSpeed, setMarqueeSpeed,
       scheduleSpeed, setScheduleSpeed,
-      scheduleScrollType, setScheduleScrollType
+      scheduleScrollType, setScheduleScrollType,
+      isDbConnected, checkDbConnection
     }}>
       {children}
     </DashboardContext.Provider>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield, Palette, Check, Sparkles, Tv, Radio, Users, Building2, ShieldCheck, ClipboardList } from 'lucide-react';
+import { Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, Save, Trash2, Plus, Edit, LogOut, ChevronRight, ChevronLeft, User, Upload, Copy, LayoutDashboard, MonitorPlay, Activity, Download, Filter, Search, X, List, LayoutGrid, Clock, Shield, Palette, Check, Sparkles, Tv, Radio, Users, Building2, ShieldCheck, ClipboardList, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import '../admin.css';
@@ -82,7 +82,8 @@ function AdminDashboard() {
     slideDuration, setSlideDuration,
     marqueeSpeed, setMarqueeSpeed,
     scheduleSpeed, setScheduleSpeed,
-    scheduleScrollType, setScheduleScrollType
+    scheduleScrollType, setScheduleScrollType,
+    isDbConnected
   } = useDashboard();
   
   const navigate = useNavigate();
@@ -814,6 +815,31 @@ function AdminDashboard() {
             </div>
             <div style={{ cursor: 'pointer' }}>
               <Cog size={20} color="#67748e" />
+            </div>
+            <div 
+              title={isDbConnected ? 'Koneksi database MySQL aktif & tersinkronisasi' : 'Koneksi database terputus. Pastikan server/index.js & MySQL berjalan.'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: isDbConnected ? '#ecfdf5' : '#fef2f2',
+                border: `1px solid ${isDbConnected ? '#a7f3d0' : '#fecaca'}`,
+                padding: '0.35rem 0.75rem',
+                borderRadius: '9999px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: isDbConnected ? '#059669' : '#dc2626'
+              }}
+            >
+              <Database size={15} color={isDbConnected ? '#059669' : '#dc2626'} />
+              <span>{isDbConnected ? 'MySQL Terhubung' : 'Database Offline'}</span>
+              <span style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: isDbConnected ? '#10b981' : '#ef4444',
+                boxShadow: isDbConnected ? '0 0 6px #10b981' : 'none'
+              }} />
             </div>
             <a href={tvDisplayUrl} target="_blank" rel="noreferrer" className="view-btn">Lihat Layar TV</a>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid #e2e8f0', paddingLeft: '1.5rem' }}>

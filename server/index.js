@@ -767,7 +767,14 @@ if (fs.existsSync(distDir)) {
 }
 
 // Jalankan Server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Backend Server API running on http://localhost:${PORT}`);
+  try {
+    const [rows] = await pool.query('SELECT 1 + 1 AS test');
+    console.log(`✅ [Database] MySQL Sukses Terhubung ke '${process.env.DB_NAME || 'db_pusat_informasi'}' pada host '${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}'`);
+  } catch (err) {
+    console.error(`❌ [Database ERROR] Gagal terhubung ke MySQL:`, err.message);
+    console.error(`   👉 Pastikan MySQL (XAMPP/Docker) sedang aktif dan cek konfigurasi di server/.env`);
+  }
 });
 
