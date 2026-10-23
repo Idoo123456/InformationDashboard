@@ -7,6 +7,7 @@
     "dev": "node dev.js",
     "client": "vite",
     "server": "node server/index.js",
+    "migrate": "node server/migrations/migrate_all.js",
     "build": "vite build",
     "start": "node server/index.js",
     "lint": "oxlint",

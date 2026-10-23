@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, Smartphone, Sparkles, Globe, ImageOff } from 'lucide-react';
-import { useDashboard } from '../context/DashboardContext';
+import { useDashboard } from '../../context/DashboardContext';
 import localforage from 'localforage';
 
 // Helper to determine if a color string is visually light (needs dark text)

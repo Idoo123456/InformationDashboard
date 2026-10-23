@@ -1,4 +1,4 @@
-import pool from './db.js';
+import pool from '../db.js';
 
 async function migrateAll() {
   console.log('--- Memulai Migrasi Lengkap Database Kampus Enterprise ---');

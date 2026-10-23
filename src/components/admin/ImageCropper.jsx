@@ -23,7 +23,7 @@ export async function getCroppedImg(image, crop, fileName) {
     crop.height
   );
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     canvas.toBlob(blob => {
       if (!blob) {
         console.error('Canvas is empty');

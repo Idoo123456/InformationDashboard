@@ -4,7 +4,7 @@ import {
   User, Briefcase, Activity, ShieldAlert, Sparkles, AlertCircle, Compass 
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useDashboard } from '../context/DashboardContext';
+import { useDashboard } from '../../context/DashboardContext';
 
 const Sidebar = () => {
   const scrollRef = useRef(null);

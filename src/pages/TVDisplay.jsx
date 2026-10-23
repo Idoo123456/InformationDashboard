@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDashboard } from '../context/DashboardContext';
-import Header from '../components/Header';
-import Sidebar from '../components/Sidebar';
-import Slider from '../components/Slider';
-import Footer from '../components/Footer';
-import TUSlider from '../components/TUSlider';
+import Header from '../components/display/Header';
+import Sidebar from '../components/display/Sidebar';
+import Slider from '../components/display/Slider';
+import Footer from '../components/display/Footer';
+import TUSlider from '../components/display/TUSlider';
 import { applyThemeColors } from '../utils/themeUtils';
 
 function TVDisplay() {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useDashboard } from '../context/DashboardContext';
-import logoUnri from '../assets/logounri.png';
+import { useDashboard } from '../../context/DashboardContext';
+import logoUnri from '../../assets/logounri.png';
 import { Clock, Award, Building2, MapPin, Sparkles } from 'lucide-react';
 
 const Header = () => {

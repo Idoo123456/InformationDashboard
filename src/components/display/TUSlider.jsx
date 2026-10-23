@@ -20,7 +20,7 @@ import {
   Flame,
   Check
 } from 'lucide-react';
-import { useDashboard } from '../context/DashboardContext';
+import { useDashboard } from '../../context/DashboardContext';
 
 const ITEMS_PER_PAGE = 6; // Grid 3x2 proporsional layar penuh TV
 

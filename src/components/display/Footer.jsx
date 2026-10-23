@@ -1,7 +1,7 @@
 import { Info, Globe, Megaphone } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import logoUnri from '../assets/LogoUnri2.png';
-import { useDashboard } from '../context/DashboardContext';
+import logoUnri from '../../assets/LogoUnri2.png';
+import { useDashboard } from '../../context/DashboardContext';
 
 const Footer = () => {
   const marqueeRef = useRef(null);
