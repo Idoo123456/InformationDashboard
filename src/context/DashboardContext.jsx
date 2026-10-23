@@ -198,9 +198,12 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         const resSchedules = await fetch(`/api/schedules/${prefix}?_t=${Date.now()}`, noCacheOptions);
         if (resSchedules.ok) {
           const data = await resSchedules.json();
+          const cleaned = Array.isArray(data) ? data.map(item => ({
+            ...item,
+            date: typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : (item.date || '')
+          })) : [];
           setSchedules(prev => {
-            const next = Array.isArray(data) ? data : [];
-            return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+            return JSON.stringify(prev) === JSON.stringify(cleaned) ? prev : cleaned;
           });
         } else {
           setSchedules(prev => prev.length === 0 ? prev : []);
@@ -260,15 +263,18 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
     return () => clearInterval(interval);
   }, [fetchAllFromDb]);
 
-  // Helper fungsi simpan eksplisit langsung ke Database MySQL
   const saveSchedulesToDb = async (newSchedules) => {
+    const cleaned = (newSchedules || []).map(s => ({
+      ...s,
+      date: typeof s.date === 'string' && s.date.includes('T') ? s.date.split('T')[0] : (s.date || '')
+    }));
     const res = await fetch(`/api/schedules/${prefix}/bulk`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ schedules: newSchedules })
+      body: JSON.stringify({ schedules: cleaned })
     });
     if (!res.ok) throw new Error('Gagal menyimpan jadwal ke database MySQL');
-    setSchedules(newSchedules);
+    setSchedules(cleaned);
     return await res.json();
   };
 
@@ -308,7 +314,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
 
   return (
     <DashboardContext.Provider value={{
-      basePath, prefix,
+      basePath, prefix, currentFacultyPrefix: prefix,
       facultyName, setFacultyName,
       subUnitName, setSubUnitName,
       accreditation, setAccreditation,

@@ -138,7 +138,7 @@ CREATE TABLE `schedules` (
     `loc` VARCHAR(150) NOT NULL,
     `status` VARCHAR(50) DEFAULT 'Akan Datang',
     `pic` VARCHAR(100) DEFAULT '-',
-    `partner_category` ENUM('Internal', 'Eksternal') DEFAULT 'Internal',
+    `partner_category` VARCHAR(150) DEFAULT 'Internal',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

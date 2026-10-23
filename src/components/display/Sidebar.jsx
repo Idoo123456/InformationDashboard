@@ -22,12 +22,16 @@ const Sidebar = () => {
 
   const activeSchedules = schedules.filter(item => {
     try {
-      const scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
+        scheduleDateStr = scheduleDateStr.split('T')[0];
+      }
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const scheduleDate = new Date(`${scheduleDateStr}T00:00:00`);
+      if (isNaN(scheduleDate.getTime())) return true;
       
       // Tampilkan semua jadwal hari ini dan yang akan datang
       return scheduleDate >= today;
@@ -196,7 +200,10 @@ const Sidebar = () => {
     if (item.status === 'Selesai') return 'Selesai';
     
     try {
-      const scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
+        scheduleDateStr = scheduleDateStr.split('T')[0];
+      }
       const startStr = item.startTime || item.time || '00:00';
       const endStr = item.endTime || '23:59';
       

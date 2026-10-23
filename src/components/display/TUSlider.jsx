@@ -385,7 +385,10 @@ const TUSlider = () => {
     if (item.status === 'Selesai') return 'Selesai';
 
     try {
-      const scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
+        scheduleDateStr = scheduleDateStr.split('T')[0];
+      }
       const startStr = item.startTime || item.time || '00:00';
       const endStr = item.endTime || '23:59';
 

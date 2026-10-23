@@ -206,15 +206,20 @@ export default function ScheduleModal({
               <option value="Lainnya">Lainnya (Ketik Manual Ruangan Khusus)...</option>
             </select>
             {isCustomRoom && (
-              <input 
-                type="text" 
-                value={editingSchedule.loc} 
-                onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value})} 
-                className="admin-input" 
-                placeholder="Ketik nama ruangan khusus di sini..." 
-                style={{ marginTop: '0.5rem', fontWeight: 600 }} 
-                autoFocus
-              />
+              <>
+                <input 
+                  type="text" 
+                  value={editingSchedule.loc} 
+                  onChange={(e) => setEditingSchedule({...editingSchedule, loc: e.target.value})} 
+                  className="admin-input" 
+                  placeholder="Ketik nama ruangan khusus di sini..." 
+                  style={{ marginTop: '0.5rem', fontWeight: 600 }} 
+                  autoFocus
+                />
+                <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.75rem', color: '#0284c7', fontWeight: 500 }}>
+                  ℹ️ Ruangan baru yang Anda ketik ini otomatis didaftarkan ke Master Ruangan & database.
+                </p>
+              </>
             )}
           </div>
 

@@ -499,21 +499,39 @@ function AdminDashboard() {
     }
 
     const exists = localSchedules.find(item => item.id === s.id);
-    isSchedulesDirty.current = true;
-    if (exists) {
-      setLocalSchedules(localSchedules.map(item => item.id === s.id ? s : item));
-    } else {
-      setLocalSchedules([...localSchedules, s]);
-    }
+    const updatedSchedules = exists
+      ? localSchedules.map(item => item.id === s.id ? s : item)
+      : [...localSchedules, s];
+
+    setLocalSchedules(updatedSchedules);
     setIsScheduleModalOpen(false);
     setEditingSchedule(null);
-    showToastPopup('Jadwal berhasil diperbarui di daftar lokal. Klik "Publikasikan ke Layar TV" untuk menyimpan ke database MySQL.');
+
+    // Otomatis simpan langsung ke database MySQL & perbarui tampilan TV secara real-time!
+    try {
+      await saveSchedulesToDb(updatedSchedules);
+      isSchedulesDirty.current = false;
+      // Refresh master rooms agar ruangan baru yang diketik langsung muncul di dropdown dan menu admin
+      await fetchMasterRooms();
+      showSuccessPopup('Jadwal kegiatan berhasil disimpan ke database MySQL dan langsung tayang di TV!');
+    } catch (err) {
+      isSchedulesDirty.current = true;
+      Swal.fire('Gagal Menyimpan ke Database', err.message, 'error');
+    }
   };
 
   const deleteSchedule = (id) => {
-    showConfirmDelete(() => {
-      isSchedulesDirty.current = true;
-      setLocalSchedules(prev => prev.filter(s => s.id !== id));
+    showConfirmDelete(async () => {
+      const nextSchedules = localSchedules.filter(s => s.id !== id);
+      setLocalSchedules(nextSchedules);
+      try {
+        await saveSchedulesToDb(nextSchedules);
+        isSchedulesDirty.current = false;
+        showToastPopup('Kegiatan berhasil dihapus dari database.');
+      } catch (err) {
+        isSchedulesDirty.current = true;
+        Swal.fire('Gagal Menghapus', err.message, 'error');
+      }
     });
   };
 

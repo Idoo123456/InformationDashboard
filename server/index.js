@@ -331,11 +331,32 @@ app.get('/api/schedules/:prefix', async (req, res) => {
 app.post('/api/schedules', async (req, res) => {
   const { faculty_prefix = 'main', date, startTime, endTime, title, description, loc, status, pic, partnerCategory, user = 'admin' } = req.body;
   try {
+    const locVal = loc && loc.trim() ? loc.trim() : '-';
+    const partnerVal = partnerCategory && partnerCategory.trim() ? partnerCategory.trim() : 'Internal';
+
     const [result] = await pool.query(
       `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [faculty_prefix, date, startTime, endTime, title, description || '', loc, status || 'Akan Datang', pic || '-', partnerCategory || 'Internal']
+      [faculty_prefix, formatDateSafe(date), startTime, endTime, title, description || '', locVal, status || 'Akan Datang', pic || '-', partnerVal]
     );
+
+    // Otomatis daftarkan ruangan ke tabel rooms jika belum terdaftar
+    if (locVal && locVal !== '-') {
+      try {
+        const [existingRooms] = await pool.query(
+          'SELECT id FROM rooms WHERE (faculty_prefix = ? OR faculty_prefix = "main") AND LOWER(TRIM(name)) = LOWER(TRIM(?))',
+          [faculty_prefix, locVal]
+        );
+        if (existingRooms.length === 0) {
+          await pool.query(
+            'INSERT INTO rooms (faculty_prefix, name, category, building, floor, capacity, facilities) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [faculty_prefix, locVal, 'Ruangan Khusus', 'Gedung Utama', 'Lt. 1', 30, 'Standar']
+          );
+        }
+      } catch (roomErr) {
+        console.warn('Auto register room in POST /api/schedules note:', roomErr.message);
+      }
+    }
 
     await logActivity(user, faculty_prefix, 'TAMBAH_AGENDA', `Menambahkan kegiatan "${title}" pada ${date} (${startTime}-${endTime})`, req);
 
@@ -370,22 +391,43 @@ app.put('/api/schedules/:prefix/bulk', async (req, res) => {
     await connection.query('DELETE FROM schedules WHERE faculty_prefix = ?', [prefix]);
 
     for (const s of schedules) {
+      const locVal = s.loc && s.loc.trim() ? s.loc.trim() : '-';
+      const partnerVal = s.partnerCategory || s.partner_category || 'Internal';
+
       await connection.query(
         `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           prefix,
-          s.date,
+          formatDateSafe(s.date),
           s.startTime || s.start_time || '08:00',
           s.endTime || s.end_time || '10:00',
           s.title,
           s.description || '',
-          s.loc || '-',
+          locVal,
           s.status || 'Akan Datang',
           s.pic || '-',
-          s.partnerCategory || s.partner_category || 'Internal'
+          partnerVal
         ]
       );
+
+      // Otomatis daftarkan ruangan ke tabel rooms jika belum ada di database
+      if (locVal && locVal !== '-') {
+        try {
+          const [existingRooms] = await connection.query(
+            'SELECT id FROM rooms WHERE (faculty_prefix = ? OR faculty_prefix = "main") AND LOWER(TRIM(name)) = LOWER(TRIM(?))',
+            [prefix, locVal]
+          );
+          if (existingRooms.length === 0) {
+            await connection.query(
+              'INSERT INTO rooms (faculty_prefix, name, category, building, floor, capacity, facilities) VALUES (?, ?, ?, ?, ?, ?, ?)',
+              [prefix, locVal, 'Ruangan Khusus', 'Gedung Utama', 'Lt. 1', 30, 'Standar']
+            );
+          }
+        } catch (roomErr) {
+          console.warn('Auto register room in bulk note:', roomErr.message);
+        }
+      }
     }
 
     await connection.commit();
