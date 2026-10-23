@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { 
   Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, 
@@ -255,16 +255,44 @@ function AdminDashboard() {
   const [localSlides, setLocalSlides] = useState(slides);
   const [selectedSlides, setSelectedSlides] = useState([]);
 
+  // Flag penanda apakah pengguna sedang memiliki perubahan draft lokal yang belum disimpan
+  const isAnnouncementsDirty = useRef(false);
+  const isSchedulesDirty = useRef(false);
+  const isSlidesDirty = useRef(false);
+  const prevPrefixRef = useRef(prefix);
+
+  // Jika unit/fakultas berganti, reset semua draft dan muat data baru
   useEffect(() => {
-    setLocalSchedules(schedules);
+    if (prevPrefixRef.current !== prefix) {
+      prevPrefixRef.current = prefix;
+      isAnnouncementsDirty.current = false;
+      isSchedulesDirty.current = false;
+      isSlidesDirty.current = false;
+      setLocalSchedules(schedules);
+      setLocalAnnouncements(announcements);
+      setLocalSlides(slides);
+    }
+  }, [prefix, schedules, announcements, slides]);
+
+  // Sinkronisasi data schedules dari DB hanya jika user tidak sedang mengedit draft lokal
+  useEffect(() => {
+    if (!isSchedulesDirty.current) {
+      setLocalSchedules(schedules);
+    }
   }, [schedules]);
 
+  // Sinkronisasi data announcements dari DB hanya jika user tidak sedang mengedit draft lokal
   useEffect(() => {
-    setLocalAnnouncements(announcements);
+    if (!isAnnouncementsDirty.current) {
+      setLocalAnnouncements(announcements);
+    }
   }, [announcements]);
 
+  // Sinkronisasi data slides dari DB hanya jika user tidak sedang mengedit draft lokal
   useEffect(() => {
-    setLocalSlides(slides);
+    if (!isSlidesDirty.current) {
+      setLocalSlides(slides);
+    }
   }, [slides]);
 
   useEffect(() => {
@@ -291,6 +319,7 @@ function AdminDashboard() {
   const handleDeleteSelectedAnnouncements = () => {
     if (selectedAnnouncements.length === 0) return;
     showConfirmDelete(() => {
+      isAnnouncementsDirty.current = true;
       setLocalAnnouncements(prev => prev.filter((_, i) => !selectedAnnouncements.includes(i)));
       setSelectedAnnouncements([]);
     });
@@ -302,11 +331,13 @@ function AdminDashboard() {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
     const localISOTime = (new Date(nextMonth.getTime() - tzoffset)).toISOString().slice(0, 16);
     
+    isAnnouncementsDirty.current = true;
     setLocalAnnouncements([...localAnnouncements, { id: Date.now(), text: "Pengumuman Baru", expiryDate: localISOTime }]);
-    showToastPopup('Pengumuman berhasil ditambahkan');
+    showToastPopup('Pengumuman ditambahkan ke daftar draft. Jangan lupa klik "Simpan Pengumuman ke TV".');
   };
 
   const updateAnnouncement = (index, field, val) => {
+    isAnnouncementsDirty.current = true;
     const newAnn = [...localAnnouncements];
     if (typeof newAnn[index] === 'string') {
        newAnn[index] = { id: Date.now(), text: newAnn[index], expiryDate: '' };
@@ -317,6 +348,7 @@ function AdminDashboard() {
 
   const deleteAnnouncement = (index) => {
     showConfirmDelete(() => {
+      isAnnouncementsDirty.current = true;
       setLocalAnnouncements(prev => prev.filter((_, i) => i !== index));
     });
   };
@@ -333,6 +365,7 @@ function AdminDashboard() {
     }
     try {
       await saveAnnouncementsToDb(localAnnouncements);
+      isAnnouncementsDirty.current = false;
       setMarqueeSpeed(localMarqueeSpeed);
       showSuccessPopup('Pengumuman berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
     } catch (err) {
@@ -352,17 +385,125 @@ function AdminDashboard() {
     setIsScheduleModalOpen(true);
   };
 
-  const handleSaveModalSchedule = () => {
-    if (!editingSchedule.title) {
-      setIsScheduleModalOpen(false);
-      Swal.fire('Error', 'Nama Kegiatan harus diisi', 'error');
+  const handleSaveModalSchedule = async () => {
+    const s = editingSchedule;
+    if (!s) return;
+
+    // 1. Validasi Nama Kegiatan
+    if (!s.title || !s.title.trim()) {
+      Swal.fire({
+        title: 'Form Belum Lengkap',
+        text: 'Nama Kegiatan wajib diisi!',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Lengkapi Data'
+      });
       return;
     }
-    const exists = localSchedules.find(s => s.id === editingSchedule.id);
+
+    // 2. Validasi Ruangan (dropdown ruangan wajib dipilih/diisi)
+    if (!s.loc || !s.loc.trim()) {
+      Swal.fire({
+        title: 'Form Belum Lengkap',
+        text: 'Ruangan kegiatan wajib dipilih dari daftar atau diketik nama ruangannya!',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Pilih Ruangan'
+      });
+      return;
+    }
+
+    // 3. Validasi Tanggal
+    if (!s.date) {
+      Swal.fire({
+        title: 'Form Belum Lengkap',
+        text: 'Tanggal pelaksanaan kegiatan wajib dipilih!',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Pilih Tanggal'
+      });
+      return;
+    }
+
+    // 4. Validasi Jam Mulai & Jam Selesai
+    if (!s.startTime) {
+      Swal.fire({
+        title: 'Form Belum Lengkap',
+        text: 'Waktu Mulai kegiatan wajib diisi!',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Tentukan Jam'
+      });
+      return;
+    }
+
+    if (!s.endTime) {
+      Swal.fire({
+        title: 'Form Belum Lengkap',
+        text: 'Waktu Selesai kegiatan wajib diisi!',
+        icon: 'warning',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Tentukan Jam'
+      });
+      return;
+    }
+
+    if (s.startTime && s.endTime && s.endTime <= s.startTime) {
+      Swal.fire({
+        title: 'Waktu Tidak Valid',
+        text: `Waktu Selesai (${s.endTime}) tidak boleh lebih awal atau sama dengan Waktu Mulai (${s.startTime})!`,
+        icon: 'warning',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Perbaiki Jam'
+      });
+      return;
+    }
+
+    // 5. Alert Peringatan: Jam / Tanggal sudah terlewat
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
+    const currH = String(now.getHours()).padStart(2, '0');
+    const currM = String(now.getMinutes()).padStart(2, '0');
+    const currTimeStr = `${currH}:${currM}`;
+
+    let isPastWarning = null;
+    if (s.date < todayStr) {
+      isPastWarning = `Tanggal kegiatan (${s.date}) sudah terlewat dari hari ini (${todayStr}). Agenda masa lampau otomatis berstatus 'Selesai' dan tidak akan muncul di layar TV utama.`;
+    } else if (s.date === todayStr && s.endTime && s.endTime <= currTimeStr) {
+      isPastWarning = `Jam selesai kegiatan (${s.endTime}) sudah terlewat dari waktu saat ini (${currTimeStr} WIB). Agenda ini otomatis berstatus 'Selesai' dan tidak akan tayang di layar TV.`;
+    }
+
+    if (isPastWarning) {
+      const confirmResult = await Swal.fire({
+        title: '⚠️ Waktu Sudah Terlewat!',
+        html: `
+          <div style="text-align: left; font-size: 0.92rem; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; padding: 0.85rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; line-height: 1.45;">
+            ${isPastWarning}
+          </div>
+          <p style="font-weight: 600; color: #1e293b; margin: 0; font-size: 0.95rem;">Apakah Anda tetap ingin menyimpannya sebagai arsip / riwayat kegiatan?</p>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Tetap Simpan',
+        cancelButtonText: 'Batal & Ubah Jadwal',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b'
+      });
+
+      if (!confirmResult.isConfirmed) {
+        return; // Jangan tutup modal, biarkan pengguna memperbaiki tanggal / waktu
+      }
+    }
+
+    const exists = localSchedules.find(item => item.id === s.id);
+    isSchedulesDirty.current = true;
     if (exists) {
-      setLocalSchedules(localSchedules.map(s => s.id === editingSchedule.id ? editingSchedule : s));
+      setLocalSchedules(localSchedules.map(item => item.id === s.id ? s : item));
     } else {
-      setLocalSchedules([...localSchedules, editingSchedule]);
+      setLocalSchedules([...localSchedules, s]);
     }
     setIsScheduleModalOpen(false);
     setEditingSchedule(null);
@@ -371,6 +512,7 @@ function AdminDashboard() {
 
   const deleteSchedule = (id) => {
     showConfirmDelete(() => {
+      isSchedulesDirty.current = true;
       setLocalSchedules(prev => prev.filter(s => s.id !== id));
     });
   };
@@ -387,6 +529,7 @@ function AdminDashboard() {
     }
     try {
       await saveSchedulesToDb(localSchedules);
+      isSchedulesDirty.current = false;
       setScheduleSpeed(localScheduleSpeed);
       setScheduleScrollType(localScheduleScrollType);
       showSuccessPopup('Jadwal berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
@@ -399,12 +542,14 @@ function AdminDashboard() {
   const handleDeleteSelectedSlides = () => {
     if (selectedSlides.length === 0) return;
     showConfirmDelete(() => {
+      isSlidesDirty.current = true;
       setLocalSlides(prev => prev.filter(s => !selectedSlides.includes(s.id)));
       setSelectedSlides([]);
     });
   };
 
   const handleAddSlide = () => {
+    isSlidesDirty.current = true;
     const newSlide = {
       id: Date.now(),
       mediaType: 'none',
@@ -423,10 +568,11 @@ function AdminDashboard() {
       qrLabel: "Pindai QR"
     };
     setLocalSlides([...localSlides, newSlide]);
-    showToastPopup('Slide berhasil ditambahkan');
+    showToastPopup('Slide berhasil ditambahkan ke daftar draft.');
   };
 
   const updateSlide = (id, field, value) => {
+    isSlidesDirty.current = true;
     setLocalSlides(localSlides.map(s => {
       if (s.id !== id) return s;
       const updated = { ...s, [field]: value };
@@ -442,6 +588,7 @@ function AdminDashboard() {
 
   const deleteSlide = (id) => {
     showConfirmDelete(() => {
+      isSlidesDirty.current = true;
       setLocalSlides(prev => prev.filter(s => s.id !== id));
     });
   };
@@ -656,6 +803,7 @@ function AdminDashboard() {
     });
     try {
       await saveSlidesToDb(normalized);
+      isSlidesDirty.current = false;
       setLocalSlides(normalized);
       setSlideDuration(localSlideDuration);
       showSuccessPopup('Slide berhasil disimpan ke database MySQL dan diperbarui di layar TV!');

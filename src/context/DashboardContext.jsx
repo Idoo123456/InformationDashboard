@@ -190,12 +190,15 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         const resSchedules = await fetch(`/api/schedules/${prefix}`);
         if (resSchedules.ok) {
           const data = await resSchedules.json();
-          setSchedules(Array.isArray(data) ? data : []);
+          setSchedules(prev => {
+            const next = Array.isArray(data) ? data : [];
+            return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+          });
         } else {
-          setSchedules([]);
+          setSchedules(prev => prev.length === 0 ? prev : []);
         }
       } catch (err) {
-        setSchedules([]);
+        setSchedules(prev => prev.length === 0 ? prev : []);
       }
 
       // 3. Ambil Pengumuman (Announcements)
@@ -203,12 +206,15 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         const resAnn = await fetch(`/api/announcements/${prefix}`);
         if (resAnn.ok) {
           const data = await resAnn.json();
-          setAnnouncements(Array.isArray(data) ? data : []);
+          setAnnouncements(prev => {
+            const next = Array.isArray(data) ? data : [];
+            return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+          });
         } else {
-          setAnnouncements([]);
+          setAnnouncements(prev => prev.length === 0 ? prev : []);
         }
       } catch (err) {
-        setAnnouncements([]);
+        setAnnouncements(prev => prev.length === 0 ? prev : []);
       }
 
       // 4. Ambil Slides
@@ -216,12 +222,15 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         const resSlides = await fetch(`/api/slides/${prefix}`);
         if (resSlides.ok) {
           const data = await resSlides.json();
-          setSlides(Array.isArray(data) ? data : []);
+          setSlides(prev => {
+            const next = Array.isArray(data) ? data : [];
+            return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+          });
         } else {
-          setSlides([]);
+          setSlides(prev => prev.length === 0 ? prev : []);
         }
       } catch (err) {
-        setSlides([]);
+        setSlides(prev => prev.length === 0 ? prev : []);
       }
 
       isLoadedFromDb.current = true;
