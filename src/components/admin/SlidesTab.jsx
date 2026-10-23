@@ -169,6 +169,15 @@ export default function SlidesTab({
                           />
                         </label>
                       </div>
+                      {slide.mediaUrl && !slide.mediaUrl.startsWith('localforage:') && (
+                        <div style={{ marginTop: '0.5rem', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e2e8f0', maxHeight: '120px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {slide.mediaType === 'video' ? (
+                            <video src={slide.mediaUrl} style={{ maxHeight: '120px', maxWidth: '100%' }} muted />
+                          ) : (
+                            <img src={slide.mediaUrl} alt="Preview" style={{ maxHeight: '120px', maxWidth: '100%', objectFit: 'contain' }} />
+                          )}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="form-group" style={{ marginBottom: 0 }}>

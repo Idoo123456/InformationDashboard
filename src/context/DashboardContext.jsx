@@ -148,16 +148,24 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   // ========================================================
   const fetchAllFromDb = useCallback(async () => {
     try {
-      const resHealth = await fetch('/api/health');
+      const resHealth = await fetch(`/api/health?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
+      });
       if (!resHealth.ok) throw new Error('Backend error / DB offline');
       const health = await resHealth.json();
       if (health.mysql !== 'connected') throw new Error('MySQL disconnected');
 
       setIsDbConnected(true);
 
+      const noCacheOptions = {
+        cache: 'no-store',
+        headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
+      };
+
       // 1. Ambil Settings
       try {
-        const resSettings = await fetch(`/api/settings/${prefix}`);
+        const resSettings = await fetch(`/api/settings/${prefix}?_t=${Date.now()}`, noCacheOptions);
         if (resSettings.ok) {
           const data = await resSettings.json();
           if (data) {
@@ -187,7 +195,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
 
       // 2. Ambil Jadwal (Schedules)
       try {
-        const resSchedules = await fetch(`/api/schedules/${prefix}`);
+        const resSchedules = await fetch(`/api/schedules/${prefix}?_t=${Date.now()}`, noCacheOptions);
         if (resSchedules.ok) {
           const data = await resSchedules.json();
           setSchedules(prev => {
@@ -203,7 +211,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
 
       // 3. Ambil Pengumuman (Announcements)
       try {
-        const resAnn = await fetch(`/api/announcements/${prefix}`);
+        const resAnn = await fetch(`/api/announcements/${prefix}?_t=${Date.now()}`, noCacheOptions);
         if (resAnn.ok) {
           const data = await resAnn.json();
           setAnnouncements(prev => {
@@ -217,9 +225,9 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         setAnnouncements(prev => prev.length === 0 ? prev : []);
       }
 
-      // 4. Ambil Slides
+      // 4. Ambil Slides (Media Banner Digital Signage Murni dari MySQL)
       try {
-        const resSlides = await fetch(`/api/slides/${prefix}`);
+        const resSlides = await fetch(`/api/slides/${prefix}?_t=${Date.now()}`, noCacheOptions);
         if (resSlides.ok) {
           const data = await resSlides.json();
           setSlides(prev => {

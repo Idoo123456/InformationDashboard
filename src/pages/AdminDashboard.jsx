@@ -672,43 +672,56 @@ function AdminDashboard() {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
 
-      if (targetField === 'bg') {
-        canvas.toBlob(async (blob) => {
-          if (blob) {
-            try {
-              const formData = new FormData();
-              formData.append('file', blob, `bg_${slideId}_${Date.now()}.jpg`);
-              formData.append('faculty_prefix', prefix || 'main');
-              formData.append('uploaded_by', currentUser?.username || 'admin');
-              const res = await fetch('/api/upload', { method: 'POST', body: formData });
-              if (res.ok) {
-                const data = await res.json();
-                if (data.url) {
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            const formData = new FormData();
+            formData.append('file', blob, `${targetField}_${slideId}_${Date.now()}.jpg`);
+            formData.append('faculty_prefix', prefix || 'main');
+            formData.append('uploaded_by', currentUser?.username || 'admin');
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.url) {
+                if (targetField === 'bg') {
                   updateSlide(slideId, 'bg', `url('${data.url}') center/cover no-repeat`);
-                  URL.revokeObjectURL(croppingImage.src);
-                  URL.revokeObjectURL(objectUrl);
-                  setCroppingImage(null);
-                  return;
+                } else if (targetField === 'mediaUrl') {
+                  updateSlide(slideId, 'mediaUrl', data.url);
+                  updateSlide(slideId, 'mediaType', 'image');
+                } else if (targetField === 'qr') {
+                  updateSlide(slideId, 'qr', data.url);
+                  updateSlide(slideId, 'qrUrl', data.url);
+                } else {
+                  updateSlide(slideId, targetField, data.url);
                 }
+                URL.revokeObjectURL(croppingImage.src);
+                URL.revokeObjectURL(objectUrl);
+                setCroppingImage(null);
+                showToastPopup('Berkas gambar berhasil diunggah ke server!');
+                return;
               }
-            } catch (err) {
-              console.warn('Upload bg ke server gagal, fallback ke dataUrl', err);
             }
+          } catch (err) {
+            console.warn(`Upload ${targetField} ke server gagal, fallback ke dataUrl:`, err);
           }
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        }
+        // Fallback jika endpoint upload gagal
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        if (targetField === 'bg') {
           updateSlide(slideId, 'bg', `url('${dataUrl}') center/cover no-repeat`);
-          URL.revokeObjectURL(croppingImage.src);
-          URL.revokeObjectURL(objectUrl);
-          setCroppingImage(null);
-        }, 'image/jpeg', 0.85);
-        return;
-      }
-      
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-      updateSlide(slideId, targetField, dataUrl);
-      URL.revokeObjectURL(croppingImage.src);
-      URL.revokeObjectURL(objectUrl);
-      setCroppingImage(null);
+        } else if (targetField === 'mediaUrl') {
+          updateSlide(slideId, 'mediaUrl', dataUrl);
+          updateSlide(slideId, 'mediaType', 'image');
+        } else if (targetField === 'qr') {
+          updateSlide(slideId, 'qr', dataUrl);
+          updateSlide(slideId, 'qrUrl', dataUrl);
+        } else {
+          updateSlide(slideId, targetField, dataUrl);
+        }
+        URL.revokeObjectURL(croppingImage.src);
+        URL.revokeObjectURL(objectUrl);
+        setCroppingImage(null);
+      }, 'image/jpeg', 0.85);
     };
     img.src = objectUrl;
   };
@@ -738,32 +751,23 @@ function AdminDashboard() {
       formData.append('faculty_prefix', prefix || 'main');
       formData.append('uploaded_by', currentUser?.username || 'admin');
 
-      let serverUrl = null;
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.url) serverUrl = data.url;
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          updateSlide(slideId, 'mediaUrl', data.url);
+          updateSlide(slideId, 'mediaType', 'video');
+          showToastPopup('Video berhasil diunggah ke server!');
+          return;
         }
-      } catch (netErr) {
-        console.warn('Gagal upload video ke server, fallback ke local:', netErr);
       }
-
-      if (serverUrl) {
-        updateSlide(slideId, 'mediaUrl', serverUrl);
-        showToastPopup('Video berhasil diunggah ke server!');
-      } else {
-        const storageKey = `media_${slideId}_${Date.now()}`;
-        await localforage.setItem(storageKey, file);
-        updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
-        showToastPopup('Video tersimpan secara lokal!');
-      }
+      throw new Error('Server tidak mengembalikan URL berkas');
     } catch (e) {
       console.error(e);
-      Swal.fire('Error', 'Gagal memproses unggahan file', 'error');
+      Swal.fire('Gagal Unggah Video', 'Gagal mengunggah video ke server backend. Pastikan server aktif dan ukuran file di bawah 200MB.', 'error');
     }
   };
 
@@ -791,18 +795,31 @@ function AdminDashboard() {
       return {
         ...s,
         id: s.id || Date.now() + idx,
+        tag: s.tag || '',
+        title: typeof s.title === 'string' ? s.title : (s.title ? String(s.title) : 'Informasi'),
         bg: bgVal,
         bgColor: bgVal,
         desc: descVal,
         description: descVal,
         qr: qrVal,
         qrUrl: qrVal,
+        qrLabel: s.qrLabel || 'Scan QR',
         mediaType: s.mediaType || 'none',
-        mediaUrl: s.mediaUrl || ''
+        mediaUrl: s.mediaUrl || '',
+        isMediaOnly: Boolean(s.isMediaOnly),
+        mediaFit: s.mediaFit || 'cover',
+        btnText: s.btnText || '',
+        btnLink: s.btnLink || '',
+        sortOrder: idx + 1
       };
     });
     try {
       await saveSlidesToDb(normalized);
+      try {
+        await saveSettingsToDb({ slide_duration: localSlideDuration });
+      } catch (settingsErr) {
+        console.warn('Gagal simpan durasi slide ke settings:', settingsErr);
+      }
       isSlidesDirty.current = false;
       setLocalSlides(normalized);
       setSlideDuration(localSlideDuration);

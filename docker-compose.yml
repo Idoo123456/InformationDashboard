@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==========================================
   # 1. DATABASE SERVICE (MySQL 8.0)
@@ -9,14 +7,12 @@ services:
     container_name: unri_dashboard_db
     restart: always
     environment:
-      TZ: Asia/Jakarta
       MYSQL_ROOT_PASSWORD: rootpassword123
       MYSQL_DATABASE: db_pusat_informasi
     ports:
       - "3307:3306" # Port 3307 di host agar tidak bertabrakan jika ada XAMPP lokal
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword123"]
       interval: 5s
@@ -38,7 +34,6 @@ services:
       db:
         condition: service_healthy
     environment:
-      TZ: Asia/Jakarta
       PORT: 5000
       DB_HOST: db
       DB_USER: root
@@ -63,10 +58,28 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"      # Akses langsung: http://localhost
-      - "5173:80"    # Opsional: http://localhost:5173
+      - "1033:80"      # Akses langsung: http://localhost:1033
+      - "5173:80"      # Opsional: http://localhost:5173
     networks:
       - unri_network
+
+  # ==========================================
+  # 4. PHPMYADMIN SERVICE (GUI Database)
+  # ==========================================
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: unri_dashboard_phpmyadmin
+    restart: always
+    ports:
+      - "8088:80"      # Akses phpMyAdmin: http://localhost:8088
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: rootpassword123
+    networks:
+      - unri_network
+    depends_on:
+      - db
 
 volumes:
   mysql_data:

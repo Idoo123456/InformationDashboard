@@ -19,8 +19,8 @@ const killProcess = (proc) => {
   }
 };
 
-// 1. Jalankan Backend Express Server
-const server = spawn('node', ['server/index.js'], {
+// 1. Jalankan Backend Express Server (dengan --watch auto-reload)
+const server = spawn('node', ['--watch', 'server/index.js'], {
   stdio: 'inherit',
   shell: process.platform === 'win32'
 });

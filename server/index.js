@@ -59,7 +59,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 } // Maksimal 100MB per berkas
+  limits: { fileSize: 200 * 1024 * 1024 } // Maksimal 200MB per berkas (Flyer & Video Banner)
 });
 
 // Helper Pencatatan Audit Log Otomatis
@@ -463,19 +463,22 @@ app.get('/api/slides/:prefix', async (req, res) => {
     const formatted = rows.map(r => ({
       id: r.id,
       faculty_prefix: r.faculty_prefix,
-      tag: r.tag,
-      title: r.title,
-      desc: r.description,
-      description: r.description,
-      btnText: r.btn_text,
-      bg: r.bg,
-      bgColor: r.bg,
-      qr: r.qr_url,
-      qrUrl: r.qr_url,
-      qrLabel: r.qr_label,
-      mediaType: r.media_type,
-      mediaUrl: r.media_url,
-      sortOrder: r.sort_order
+      tag: r.tag || '',
+      title: r.title || '',
+      desc: r.description || '',
+      description: r.description || '',
+      btnText: r.btn_text || '',
+      btnLink: r.btn_link || '',
+      bg: r.bg || 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+      bgColor: r.bg || 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+      qr: r.qr_url || '',
+      qrUrl: r.qr_url || '',
+      qrLabel: r.qr_label || 'Scan QR',
+      mediaType: r.media_type || 'none',
+      mediaUrl: r.media_url || '',
+      isMediaOnly: Boolean(r.is_media_only),
+      mediaFit: r.media_fit || 'cover',
+      sortOrder: r.sort_order || 0
     }));
     res.json(formatted);
   } catch (error) {
@@ -498,20 +501,31 @@ app.put('/api/slides/:prefix/bulk', async (req, res) => {
 
     for (let idx = 0; idx < slides.length; idx++) {
       const s = slides[idx];
+      const validMediaType = ['image', 'video'].includes(s.mediaType) ? s.mediaType : 'none';
+      const titleVal = typeof s.title === 'string' ? s.title : (s.title ? String(s.title) : 'Informasi');
+      const isMediaOnlyVal = Boolean(s.isMediaOnly) ? 1 : 0;
+      const mediaFitVal = s.mediaFit || 'cover';
+      const btnLinkVal = s.btnLink || s.btn_link || '';
+
       await connection.query(
-        `INSERT INTO slides (faculty_prefix, tag, title, description, btn_text, bg, qr_url, qr_label, media_type, media_url, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO slides (
+          faculty_prefix, tag, title, description, btn_text, btn_link, bg, qr_url, qr_label, 
+          media_type, media_url, is_media_only, media_fit, sort_order
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           prefix,
           s.tag || '',
-          s.title || '',
+          titleVal,
           s.desc || s.description || '',
           s.btnText || '',
+          btnLinkVal,
           s.bg || s.bgColor || 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
           s.qr || s.qrUrl || '',
           s.qrLabel || 'Scan QR',
-          s.mediaType || 'none',
+          validMediaType,
           s.mediaUrl || '',
+          isMediaOnlyVal,
+          mediaFitVal,
           idx + 1
         ]
       );
