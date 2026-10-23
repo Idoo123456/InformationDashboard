@@ -58,9 +58,20 @@ const logActivity = async (username, faculty_prefix, action, details, req) => {
 app.get('/api/health', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS result');
-    res.json({ status: 'ok', mysql: 'connected', test: rows[0].result });
+    res.json({
+      status: 'ok',
+      mysql: 'connected',
+      test: rows[0].result,
+      database: process.env.DB_NAME,
+      host: `${process.env.DB_HOST}:${process.env.DB_PORT}`
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', mysql: 'disconnected', error: error.message });
+    console.error('MySQL Health Check Error:', error.message || error);
+    res.status(500).json({
+      status: 'error',
+      mysql: 'disconnected',
+      error: error.message || error.code || 'Koneksi database gagal'
+    });
   }
 });
 
@@ -767,14 +778,24 @@ if (fs.existsSync(distDir)) {
 }
 
 // Jalankan Server
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`Backend Server API running on http://localhost:${PORT}`);
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS test');
     console.log(`✅ [Database] MySQL Sukses Terhubung ke '${process.env.DB_NAME || 'db_pusat_informasi'}' pada host '${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}'`);
   } catch (err) {
     console.error(`❌ [Database ERROR] Gagal terhubung ke MySQL:`, err.message);
-    console.error(`   👉 Pastikan MySQL (XAMPP/Docker) sedang aktif dan cek konfigurasi di server/.env`);
+    console.error(`   👉 Pastikan host/port/user/password di server/.env sesuai. Host saat ini: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+  }
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ [Server ERROR] Port ${PORT} sedang dipakai oleh proses lain!`);
+    console.error(`   👉 Matikan proses node yang sedang berjalan di port ${PORT}.`);
+    process.exit(1);
+  } else {
+    console.error(`❌ [Server ERROR]:`, err.message);
   }
 });
 
