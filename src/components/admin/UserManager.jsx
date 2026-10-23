@@ -69,6 +69,7 @@ export default function UserManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || (!isEditing && (!formData.username.trim() || !formData.password.trim()))) {
+      setIsModalOpen(false);
       Swal.fire('Perhatian', 'Nama, username, dan password wajib diisi!', 'warning');
       return;
     }
@@ -84,6 +85,7 @@ export default function UserManager() {
       });
 
       const data = await res.json();
+      setIsModalOpen(false);
 
       if (res.ok && data.success) {
         Swal.fire({
@@ -93,12 +95,12 @@ export default function UserManager() {
           timer: 2000,
           showConfirmButton: false
         });
-        setIsModalOpen(false);
         fetchUsers();
       } else {
-        Swal.fire('Gagal', data.message || 'Terjadi kesalahan saat menyimpan data.', 'error');
+        Swal.fire('Gagal', data.message || data.error || 'Terjadi kesalahan saat menyimpan data.', 'error');
       }
     } catch (err) {
+      setIsModalOpen(false);
       Swal.fire('Error', 'Gagal menghubungi server database.', 'error');
     }
   };

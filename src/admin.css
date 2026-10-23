@@ -609,3 +609,9 @@ body {
   gap: 0.5rem;
 }
 
+/* SweetAlert2 Popup Priority - Pastikan selalu di atas seluruh modal overlay */
+.swal2-container {
+  z-index: 999999 !important;
+}
+
+

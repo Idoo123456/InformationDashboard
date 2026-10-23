@@ -354,6 +354,7 @@ function AdminDashboard() {
 
   const handleSaveModalSchedule = () => {
     if (!editingSchedule.title) {
+      setIsScheduleModalOpen(false);
       Swal.fire('Error', 'Nama Kegiatan harus diisi', 'error');
       return;
     }

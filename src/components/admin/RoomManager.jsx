@@ -71,6 +71,7 @@ export default function RoomManager() {
   const handleSaveRoom = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
+      setIsModalOpen(false);
       Swal.fire('Peringatan', 'Nama ruangan wajib diisi', 'warning');
       return;
     }
@@ -82,6 +83,7 @@ export default function RoomManager() {
         body: JSON.stringify(formData)
       });
       const data = await res.json();
+      setIsModalOpen(false);
 
       if (res.ok && data.success) {
         Swal.fire({
@@ -91,12 +93,12 @@ export default function RoomManager() {
           timer: 1600,
           showConfirmButton: false
         });
-        setIsModalOpen(false);
         fetchRooms();
       } else {
-        Swal.fire('Gagal', data.message || 'Gagal menyimpan ruangan', 'error');
+        Swal.fire('Gagal', data.message || data.error || 'Gagal menyimpan ruangan', 'error');
       }
     } catch (err) {
+      setIsModalOpen(false);
       console.error('Error saving room:', err);
       Swal.fire('Error', 'Terjadi kesalahan pada server', 'error');
     }

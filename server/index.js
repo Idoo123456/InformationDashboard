@@ -540,7 +540,7 @@ app.post('/api/users', async (req, res) => {
     });
   } catch (error) {
     console.error('Create user error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message, error: error.message });
   }
 });
 
@@ -576,7 +576,7 @@ app.put('/api/users/:id', async (req, res) => {
     res.json({ success: true, message: 'Data pengguna berhasil diperbarui!' });
   } catch (error) {
     console.error('Update user error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message, error: error.message });
   }
 });
 
@@ -721,7 +721,7 @@ app.post('/api/rooms', async (req, res) => {
     res.json({ success: true, id: result.insertId });
   } catch (error) {
     console.error('Add room error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, message: error.message, error: error.message });
   }
 });
 

@@ -116,6 +116,7 @@ export default function TvScreenManager() {
       });
 
       const data = await res.json();
+      setIsBroadcastModalOpen(false);
       if (res.ok && data.success) {
         Swal.fire({
           icon: 'success',
@@ -124,12 +125,12 @@ export default function TvScreenManager() {
           timer: 2500,
           showConfirmButton: false
         });
-        setIsBroadcastModalOpen(false);
         fetchScreens();
       } else {
         Swal.fire('Gagal', data.message || 'Gagal menerapkan pengaturan massal.', 'error');
       }
     } catch (err) {
+      setIsBroadcastModalOpen(false);
       Swal.fire('Error', 'Gagal menghubungi server backend.', 'error');
     }
   };
