@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Smartphone, Sparkles, Globe } from 'lucide-react';
-import { useDashboard, defaultSlides } from '../context/DashboardContext';
+import { ArrowRight, Smartphone, Sparkles, Globe, ImageOff } from 'lucide-react';
+import { useDashboard } from '../context/DashboardContext';
 import localforage from 'localforage';
 
 // Helper to determine if a color string is visually light (needs dark text)
@@ -26,8 +26,8 @@ const isLightBackground = (bg) => {
 
 const Slider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { slides: rawSlides, slideDuration } = useDashboard();
-  const slides = (rawSlides && rawSlides.length > 0) ? rawSlides : defaultSlides;
+  const { slides: rawSlides, slideDuration, isDbConnected } = useDashboard();
+  const slides = Array.isArray(rawSlides) ? rawSlides : [];
   const [blobUrls, setBlobUrls] = useState({});
 
   const activeIndex = Math.min(Math.max(0, Number.isFinite(currentSlide) ? currentSlide : 0), (slides.length || 1) - 1);
@@ -107,6 +107,22 @@ const Slider = () => {
     }
     return null;
   };
+
+  if (!slides || slides.length === 0) {
+    return (
+      <section className="slider-section glass-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '380px', textAlign: 'center', padding: '2.5rem' }}>
+        <div style={{ color: '#94a3b8', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.85rem' }}>
+          <ImageOff size={42} style={{ color: '#cbd5e1' }} />
+          <div>
+            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#475569' }}>Tidak Ada Slide Aktif</h4>
+            <p style={{ margin: '0.4rem 0 0', fontSize: '0.9rem', color: '#94a3b8' }}>
+              {isDbConnected ? 'Belum ada data banner informasi pada database.' : 'Database offline — Menunggu koneksi MySQL...'}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="slider-section glass-panel">

@@ -25,7 +25,7 @@ import { useDashboard } from '../context/DashboardContext';
 const ITEMS_PER_PAGE = 6; // Grid 3x2 proporsional layar penuh TV
 
 const TUSlider = () => {
-  const { schedules, slideDuration } = useDashboard();
+  const { schedules, slideDuration, facultyName, isDbConnected } = useDashboard();
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [slideTimerKey, setSlideTimerKey] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -608,7 +608,7 @@ const TUSlider = () => {
           <div className="tu-card-footer">
             <div className="tu-card-verification">
               <ShieldCheck size={15} className="tu-verify-icon" />
-              <span>Agenda Resmi Terverifikasi • FKIP UNRI</span>
+              <span>Agenda Resmi Terverifikasi • {facultyName || 'Universitas Riau'}</span>
             </div>
             <span className={`tu-partner-tag ${item.partnerCategory?.toLowerCase() === 'eksternal' ? 'partner-external' : 'partner-internal'}`}>
               {item.partnerCategory || 'INTERNAL'}
@@ -817,9 +817,13 @@ const TUSlider = () => {
                         {isThisWeek ? 'Tidak Ada Kegiatan Terjadwal Minggu Ini' : 'Belum Ada Kegiatan Mendatang'}
                       </h3>
                       <p className="tu-empty-desc">
-                        {isThisWeek 
-                          ? `Tidak ada agenda kegiatan untuk periode ${weekBounds.weekRangeText}.`
-                          : 'Belum ada agenda kegiatan yang dijadwalkan setelah minggu ini. Data akan otomatis muncul setelah ditambahkan oleh Admin.'}
+                        {isDbConnected ? (
+                          isThisWeek 
+                            ? `Tidak ada agenda kegiatan untuk periode ${weekBounds.weekRangeText}.`
+                            : 'Belum ada agenda kegiatan yang dijadwalkan setelah minggu ini.'
+                        ) : (
+                          'Database offline — Menunggu koneksi MySQL untuk memuat data agenda kegiatan.'
+                        )}
                       </p>
                     </div>
                   ) : (

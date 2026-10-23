@@ -10,7 +10,7 @@ const Sidebar = () => {
   const scrollRef = useRef(null);
   const contentRef = useRef(null);
   const isPausedRef = useRef(false);
-  const { schedules, scheduleSpeed, scheduleScrollType } = useDashboard();
+  const { schedules, scheduleSpeed, scheduleScrollType, isDbConnected } = useDashboard();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -216,8 +216,22 @@ const Sidebar = () => {
   };
 
 
-  const renderScheduleItems = (prefix = 'primary') => (
-    activeSchedules.map((item, index) => {
+  const renderScheduleItems = (prefix = 'primary') => {
+    if (activeSchedules.length === 0) {
+      if (prefix === 'clone') return null;
+      return (
+        <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#94a3b8', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.4)', borderRadius: '1rem', border: '1px dashed #cbd5e1', margin: '0.5rem 0' }}>
+          <CalendarDays size={32} style={{ color: '#cbd5e1' }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#475569' }}>Tidak Ada Agenda Kegiatan</div>
+            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+              {isDbConnected ? 'Belum ada agenda terdaftar pada database.' : 'Database offline — Menunggu koneksi MySQL...'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return activeSchedules.map((item, index) => {
       const computedStatus = getDynamicStatus(item);
       const statusStyle = getStatusColor(computedStatus);
       return (
@@ -263,8 +277,8 @@ const Sidebar = () => {
           </div>
         </div>
       );
-    })
-  );
+    });
+  };
 
   const [weather, setWeather] = useState({
     temp: '--',

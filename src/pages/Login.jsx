@@ -52,24 +52,8 @@ export default function Login() {
         setIsLoading(false);
       }
     } catch (err) {
-      // Fallback jika server backend sedang offline
-      const expectedUsername = prefix === 'main' ? 'admin' : `admin_${prefix}`;
-      if (username === expectedUsername && password === 'admin123') {
-        setIsAuthenticated(true);
-        localStorage.setItem('isAuthenticated', 'true');
-        const fallbackUser = {
-          username,
-          role: prefix === 'main' ? 'superadmin' : 'admin',
-          faculty_prefix: prefix,
-          name: prefix === 'main' ? 'Super Administrator' : `Admin ${prefix.toUpperCase()}`
-        };
-        setCurrentUser(fallbackUser);
-        localStorage.setItem('auth_user', JSON.stringify(fallbackUser));
-        navigate(basePath ? `${basePath}/admin` : '/admin');
-      } else {
-        setError('Akses ditolak! Gagal terhubung ke database atau kredensial salah.');
-        setIsLoading(false);
-      }
+      setError('Gagal masuk! Koneksi ke server atau database MySQL terputus. Pastikan database MySQL aktif.');
+      setIsLoading(false);
     }
   };
 

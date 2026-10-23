@@ -5,7 +5,7 @@ import { useDashboard } from '../context/DashboardContext';
 
 const Footer = () => {
   const marqueeRef = useRef(null);
-  const { announcements, marqueeSpeed } = useDashboard();
+  const { announcements, marqueeSpeed, isDbConnected } = useDashboard();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -13,12 +13,16 @@ const Footer = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const activeAnnouncements = announcements.filter(item => {
+  const activeAnnouncements = (announcements || []).filter(item => {
     if (typeof item === 'string') return true;
     if (!item.expiryDate) return true;
     const expiry = new Date(item.expiryDate);
     return expiry >= currentTime;
   });
+
+  const emptyText = isDbConnected
+    ? 'Pusat Informasi & Layanan Terpadu Universitas Riau — Belum ada pengumuman khusus saat ini.'
+    : 'Pusat Informasi Kampus Terpadu — [Database Offline: Menunggu Koneksi MySQL Server...]';
 
   return (
     <footer className="footer glass-panel">
@@ -32,29 +36,45 @@ const Footer = () => {
           <div className="marquee-content" ref={marqueeRef} style={{ animationDuration: `${marqueeSpeed || 20}s` }}>
             {/* Group 1 */}
             <div className="marquee-group">
-              {activeAnnouncements.map((item, i) => {
-                const text = typeof item === 'string' ? item : item.text;
-                return (
-                  <span key={i} className="marquee-item">
-                    <Info size={14} className="marquee-item-icon" />
-                    <span className="marquee-item-text">{text}</span>
-                    <span className="marquee-separator">•</span>
-                  </span>
-                );
-              })}
+              {activeAnnouncements.length === 0 ? (
+                <span className="marquee-item">
+                  <Info size={14} className="marquee-item-icon" />
+                  <span className="marquee-item-text">{emptyText}</span>
+                  <span className="marquee-separator">•</span>
+                </span>
+              ) : (
+                activeAnnouncements.map((item, i) => {
+                  const text = typeof item === 'string' ? item : item.text;
+                  return (
+                    <span key={i} className="marquee-item">
+                      <Info size={14} className="marquee-item-icon" />
+                      <span className="marquee-item-text">{text}</span>
+                      <span className="marquee-separator">•</span>
+                    </span>
+                  );
+                })
+              )}
             </div>
             {/* Group 2 (Clone for seamless loop) */}
             <div className="marquee-group" aria-hidden="true">
-              {activeAnnouncements.map((item, i) => {
-                const text = typeof item === 'string' ? item : item.text;
-                return (
-                  <span key={`clone-${i}`} className="marquee-item">
-                    <Info size={14} className="marquee-item-icon" />
-                    <span className="marquee-item-text">{text}</span>
-                    <span className="marquee-separator">•</span>
-                  </span>
-                );
-              })}
+              {activeAnnouncements.length === 0 ? (
+                <span className="marquee-item">
+                  <Info size={14} className="marquee-item-icon" />
+                  <span className="marquee-item-text">{emptyText}</span>
+                  <span className="marquee-separator">•</span>
+                </span>
+              ) : (
+                activeAnnouncements.map((item, i) => {
+                  const text = typeof item === 'string' ? item : item.text;
+                  return (
+                    <span key={`clone-${i}`} className="marquee-item">
+                      <Info size={14} className="marquee-item-icon" />
+                      <span className="marquee-item-text">{text}</span>
+                      <span className="marquee-separator">•</span>
+                    </span>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

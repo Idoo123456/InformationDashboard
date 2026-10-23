@@ -83,7 +83,12 @@ function AdminDashboard() {
     marqueeSpeed, setMarqueeSpeed,
     scheduleSpeed, setScheduleSpeed,
     scheduleScrollType, setScheduleScrollType,
-    isDbConnected
+    isDbConnected,
+    saveSchedulesToDb,
+    saveAnnouncementsToDb,
+    saveSlidesToDb,
+    saveSettingsToDb,
+    refreshFromDb
   } = useDashboard();
   
   const navigate = useNavigate();
@@ -267,24 +272,57 @@ function AdminDashboard() {
     showToastPopup(`Warna berhasil diterapkan ke semua template!`);
   };
   
-  const handleSaveSettings = () => {
-    setFacultyName(localFaculty);
-    setSubUnitName(localSubUnit);
-    setAccreditation(localAccreditation);
-    setCampusLocation(localCampusLocation);
-    setOperationalHours(localOperationalHours);
-    setTagline(localTagline);
-    setPrimaryColor(localPrimaryColor);
-    setTemplateColors(localTemplateColors);
-    setTvLayout(localTvLayout);
-    setLanguage(localLanguage);
-    setTimezone(localTimezone);
-    setTimeOn(localTimeOn);
-    setTimeOff(localTimeOff);
-    setAutoRefresh(localAutoRefresh);
-    setScheduleSpeed(localScheduleSpeed);
-    setScheduleScrollType(localScheduleScrollType);
-    showSuccessPopup('Pengaturan Umum & Warna Template berhasil disimpan!');
+  const handleSaveSettings = async () => {
+    if (!isDbConnected) {
+      Swal.fire({
+        title: 'Database Terputus!',
+        text: 'Tidak dapat menyimpan pengaturan karena database MySQL sedang mati / offline. Silakan hidupkan MySQL terlebih dahulu.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444'
+      });
+      return;
+    }
+    try {
+      await saveSettingsToDb({
+        faculty_name: localFaculty,
+        sub_unit_name: localSubUnit,
+        accreditation: localAccreditation,
+        campus_location: localCampusLocation,
+        operational_hours: localOperationalHours,
+        tagline: localTagline,
+        primary_color: localPrimaryColor,
+        template_colors: localTemplateColors,
+        tv_layout: localTvLayout,
+        language: localLanguage,
+        timezone: localTimezone,
+        time_on: localTimeOn,
+        time_off: localTimeOff,
+        auto_refresh: localAutoRefresh,
+        slide_duration: localSlideDuration,
+        marquee_speed: localMarqueeSpeed,
+        schedule_speed: localScheduleSpeed,
+        schedule_scroll_type: localScheduleScrollType
+      });
+      setFacultyName(localFaculty);
+      setSubUnitName(localSubUnit);
+      setAccreditation(localAccreditation);
+      setCampusLocation(localCampusLocation);
+      setOperationalHours(localOperationalHours);
+      setTagline(localTagline);
+      setPrimaryColor(localPrimaryColor);
+      setTemplateColors(localTemplateColors);
+      setTvLayout(localTvLayout);
+      setLanguage(localLanguage);
+      setTimezone(localTimezone);
+      setTimeOn(localTimeOn);
+      setTimeOff(localTimeOff);
+      setAutoRefresh(localAutoRefresh);
+      setScheduleSpeed(localScheduleSpeed);
+      setScheduleScrollType(localScheduleScrollType);
+      showSuccessPopup('Pengaturan Umum & Warna Template berhasil disimpan ke database MySQL!');
+    } catch (err) {
+      Swal.fire('Gagal Menyimpan', err.message, 'error');
+    }
   };
 
   const [localAnnouncements, setLocalAnnouncements] = useState(announcements);
@@ -399,10 +437,23 @@ function AdminDashboard() {
     });
   };
 
-  const handleSaveAnnouncements = () => {
-    setAnnouncements(localAnnouncements);
-    setMarqueeSpeed(localMarqueeSpeed);
-    showSuccessPopup('Pengumuman berhasil disimpan dan diperbarui di layar TV!');
+  const handleSaveAnnouncements = async () => {
+    if (!isDbConnected) {
+      Swal.fire({
+        title: 'Database Terputus!',
+        text: 'Tidak dapat menyimpan pengumuman karena database MySQL sedang mati / terputus. Silakan aktifkan MySQL terlebih dahulu.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444'
+      });
+      return;
+    }
+    try {
+      await saveAnnouncementsToDb(localAnnouncements);
+      setMarqueeSpeed(localMarqueeSpeed);
+      showSuccessPopup('Pengumuman berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
+    } catch (err) {
+      Swal.fire('Gagal Menyimpan', err.message, 'error');
+    }
   };
 
   const handleAddSchedule = () => {
@@ -429,7 +480,7 @@ function AdminDashboard() {
     }
     setIsScheduleModalOpen(false);
     setEditingSchedule(null);
-    showToastPopup('Jadwal berhasil disimpan');
+    showToastPopup('Jadwal berhasil diperbarui di daftar lokal. Klik "Publikasikan ke Layar TV" untuk menyimpan ke database MySQL.');
   };
 
   const updateSchedule = (id, field, value) => {
@@ -442,11 +493,24 @@ function AdminDashboard() {
     });
   };
 
-  const handleSaveSchedules = () => {
-    setSchedules(localSchedules);
-    setScheduleSpeed(localScheduleSpeed);
-    setScheduleScrollType(localScheduleScrollType);
-    showSuccessPopup('Jadwal berhasil disimpan dan diperbarui di layar TV!');
+  const handleSaveSchedules = async () => {
+    if (!isDbConnected) {
+      Swal.fire({
+        title: 'Database Terputus!',
+        text: 'Tidak dapat menyimpan agenda kegiatan karena database MySQL sedang mati / terputus. Silakan aktifkan MySQL terlebih dahulu.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444'
+      });
+      return;
+    }
+    try {
+      await saveSchedulesToDb(localSchedules);
+      setScheduleSpeed(localScheduleSpeed);
+      setScheduleScrollType(localScheduleScrollType);
+      showSuccessPopup('Jadwal berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
+    } catch (err) {
+      Swal.fire('Gagal Menyimpan', err.message, 'error');
+    }
   };
 
   const schedulesWithDynamicStatus = localSchedules.map(s => ({ ...s, dynamicStatus: getDynamicStatus(s) }));
@@ -686,7 +750,16 @@ function AdminDashboard() {
     }
   };
 
-  const handleSaveSlides = () => {
+  const handleSaveSlides = async () => {
+    if (!isDbConnected) {
+      Swal.fire({
+        title: 'Database Terputus!',
+        text: 'Tidak dapat menyimpan slide karena database MySQL sedang mati / terputus. Silakan aktifkan MySQL terlebih dahulu.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444'
+      });
+      return;
+    }
     const fallbackGradients = [
       'linear-gradient(135deg, #1c7947 0%, #2a9d5c 100%)',
       'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
@@ -711,10 +784,14 @@ function AdminDashboard() {
         mediaUrl: s.mediaUrl || ''
       };
     });
-    setLocalSlides(normalized);
-    setSlides(normalized);
-    setSlideDuration(localSlideDuration);
-    showSuccessPopup('Slide berhasil disimpan dan diperbarui di layar TV!');
+    try {
+      await saveSlidesToDb(normalized);
+      setLocalSlides(normalized);
+      setSlideDuration(localSlideDuration);
+      showSuccessPopup('Slide berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
+    } catch (err) {
+      Swal.fire('Gagal Menyimpan', err.message, 'error');
+    }
   };
 
   return (
@@ -924,11 +1001,13 @@ function AdminDashboard() {
                         <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</h3>
                       </div>
                     </div>
-                    <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f8fafc', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Shield size={24} /></div>
+                    <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: isDbConnected ? '#ffffff' : '#fef2f2' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: isDbConnected ? '#f8fafc' : '#fee2e2', color: isDbConnected ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Shield size={24} /></div>
                       <div>
-                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Status Sistem</p>
-                        <h3 style={{ margin: 0, color: '#10b981', fontSize: '1.1rem', fontWeight: 700 }}>Online</h3>
+                        <p style={{ margin: '0 0 0.25rem 0', color: isDbConnected ? '#64748b' : '#b91c1c', fontSize: '0.875rem', fontWeight: 500 }}>Status Database</p>
+                        <h3 style={{ margin: 0, color: isDbConnected ? '#10b981' : '#dc2626', fontSize: '1.1rem', fontWeight: 700 }}>
+                          {isDbConnected ? 'MySQL Terhubung' : 'Database Offline'}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -1012,9 +1091,9 @@ function AdminDashboard() {
                        <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Bulan Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</h3></div>
                        <MessageSquare size={24} color="#f59e0b" />
                     </div>
-                    <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none', background: '#ecfdf5' }}>
-                       <div><p style={{ margin: '0 0 0.2rem 0', color: '#065f46', fontSize: '0.8rem', textTransform: 'uppercase' }}>Sistem</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#065f46' }}>Online</h3></div>
-                       <Shield size={24} color="#10b981" />
+                    <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none', background: isDbConnected ? '#ecfdf5' : '#fef2f2' }}>
+                       <div><p style={{ margin: '0 0 0.2rem 0', color: isDbConnected ? '#065f46' : '#991b1b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Database</p><h3 style={{ margin: 0, fontSize: '1.15rem', color: isDbConnected ? '#065f46' : '#dc2626', fontWeight: 700 }}>{isDbConnected ? 'MySQL Aktif' : 'Offline'}</h3></div>
+                       <Shield size={24} color={isDbConnected ? '#10b981' : '#ef4444'} />
                     </div>
                   </div>
 
@@ -2431,12 +2510,7 @@ function AdminDashboard() {
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#475569', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ruangan</label>
                 {(() => {
-                  const defaultList = [
-                    'TGCL - Podcast', 'TGCL - Meetingroom', 'TGCL - Event & Training Area',
-                    'Studio Gurindam 12', 'Ruang Senat (Lt.5)', 'Gedung PKM Gobah',
-                    'Ruang Pertemuan/Meeting Room', 'Ruang Diskusi (Max 15 orang)', 'Ruang Diskusi (Max 8 orang)'
-                  ];
-                  const allRooms = Array.from(new Set([...defaultList, ...masterRooms.map(r => r.name)]));
+                  const allRooms = Array.from(new Set(masterRooms.map(r => r.name).filter(Boolean)));
                   const isPreset = allRooms.includes(editingSchedule.loc);
 
                   return (
