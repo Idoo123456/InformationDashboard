@@ -282,7 +282,33 @@ export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPre
         </div>
       );
     }
-    return null;
+    // Fallback ramah di TV agar layar tidak blank hitam polos
+    return (
+      <div 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(15, 23, 42, 0.55)',
+          color: 'rgba(255, 255, 255, 0.75)',
+          textAlign: 'center',
+          padding: '2rem',
+          zIndex: 1
+        }}
+      >
+        <AlertCircle size={36} style={{ marginBottom: '0.5rem', color: '#f59e0b' }} />
+        <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>Gambar Tidak Dapat Dimuat</span>
+        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem' }}>
+          Pastikan file terunggah di server atau tautan gambar bersifat publik.
+        </span>
+      </div>
+    );
   }
 
   return (
@@ -290,7 +316,6 @@ export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPre
       src={imgSrc}
       alt={typeof slide.title === 'string' ? slide.title : 'Slide Image'}
       referrerPolicy="no-referrer"
-      crossOrigin="anonymous"
       onError={handleImageError}
       style={{
         position: 'absolute',
