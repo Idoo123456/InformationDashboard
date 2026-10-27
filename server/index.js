@@ -392,7 +392,10 @@ app.put('/api/schedules/:prefix/bulk', async (req, res) => {
 
     for (const s of schedules) {
       const locVal = s.loc && s.loc.trim() ? s.loc.trim() : '-';
-      const partnerVal = s.partnerCategory || s.partner_category || 'Internal';
+      const rawPartner = (s.partnerCategory && typeof s.partnerCategory === 'string')
+        ? s.partnerCategory.trim()
+        : ((s.partner_category && typeof s.partner_category === 'string') ? s.partner_category.trim() : '');
+      const partnerVal = rawPartner || 'Internal';
 
       await connection.query(
         `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category)

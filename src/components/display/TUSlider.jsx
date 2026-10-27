@@ -613,7 +613,7 @@ const TUSlider = () => {
               <ShieldCheck size={15} className="tu-verify-icon" />
               <span>Agenda Resmi Terverifikasi • {facultyName || 'Universitas Riau'}</span>
             </div>
-            <span className={`tu-partner-tag ${item.partnerCategory?.toLowerCase() === 'eksternal' ? 'partner-external' : 'partner-internal'}`}>
+            <span className={`tu-partner-tag ${item.partnerCategory && item.partnerCategory.trim().toLowerCase() !== 'internal' ? 'partner-external' : 'partner-internal'}`}>
               {item.partnerCategory || 'INTERNAL'}
             </span>
           </div>

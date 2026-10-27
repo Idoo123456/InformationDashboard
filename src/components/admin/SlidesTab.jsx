@@ -1,4 +1,6 @@
-import { Activity, Trash2, Plus, Save, Image as ImageIcon, MessageSquare, Upload } from 'lucide-react';
+import { Activity, Trash2, Plus, Save, Image as ImageIcon, MessageSquare, Upload, ExternalLink, Video, CheckCircle2, Sparkles, HelpCircle } from 'lucide-react';
+import { resolveMediaInfo, sanitizeMediaInput, detectMediaType } from '../../utils/mediaUtils';
+import SlideMedia from '../display/SlideMedia';
 
 export default function SlidesTab({
   localSlides,
@@ -54,148 +56,185 @@ export default function SlidesTab({
       </div>
 
       <div className="slide-grid">
-        {localSlides.map((slide, index) => (
-          <div key={slide.id} className="slide-card-admin">
-            <div className="slide-card-header">
-              <input 
-                type="checkbox"
-                checked={selectedSlides.includes(slide.id)}
-                onChange={(e) => {
-                  if (e.target.checked) setSelectedSlides(prev => [...prev, slide.id]);
-                  else setSelectedSlides(prev => prev.filter(id => id !== slide.id));
-                }}
-                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#3b82f6' }}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>Slide #{index + 1}</h4>
-                <span style={{ padding: '0.2rem 0.6rem', borderRadius: '0.25rem', background: slide.mediaType === 'video' ? '#fef08a' : slide.mediaType === 'image' ? '#dcfce7' : '#e0e7ff', color: slide.mediaType === 'video' ? '#854d0e' : slide.mediaType === 'image' ? '#166534' : '#3730a3', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {slide.mediaType === 'none' ? 'Teks & Warna' : slide.mediaType}
-                </span>
-              </div>
-              <button onClick={() => deleteSlide(slide.id)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.4rem', borderRadius: '0.35rem', transition: 'all 0.2s' }} onMouseOver={e => {e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fef2f2';}} onMouseOut={e => {e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent';}} title="Hapus Slide">
-                <Trash2 size={16} />
-              </button>
-            </div>
+        {localSlides.map((slide, index) => {
+          const previewMediaInfo = resolveMediaInfo(slide.mediaUrl, slide.mediaType);
 
-            <div className="slide-card-body">
-              {/* Konten Teks */}
-              <div className="slide-section">
-                <div className="slide-section-title"><MessageSquare size={14} /> KONTEN TEKS</div>
-                <div className="form-group">
-                  <label>Label Tag (Contoh: PENGUMUMAN)</label>
-                  <input type="text" value={slide.tag} onChange={(e) => updateSlide(slide.id, 'tag', e.target.value)} className="admin-input" style={{ background: 'white' }} />
+          return (
+            <div key={slide.id} className="slide-card-admin">
+              <div className="slide-card-header">
+                <input 
+                  type="checkbox"
+                  checked={selectedSlides.includes(slide.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedSlides(prev => [...prev, slide.id]);
+                    else setSelectedSlides(prev => prev.filter(id => id !== slide.id));
+                  }}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#3b82f6' }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                  <h4 style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>Slide #{index + 1}</h4>
+                  <span style={{ padding: '0.2rem 0.6rem', borderRadius: '0.25rem', background: slide.mediaType === 'video' ? '#fef08a' : slide.mediaType === 'image' ? '#dcfce7' : '#e0e7ff', color: slide.mediaType === 'video' ? '#854d0e' : slide.mediaType === 'image' ? '#166534' : '#3730a3', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    {slide.mediaType === 'none' ? 'Teks & Warna' : slide.mediaType}
+                  </span>
                 </div>
-                <div className="form-group">
-                  <label>Judul Utama</label>
-                  <textarea value={typeof slide.title === 'string' ? slide.title : slide.title?.props?.children?.join('') || 'Judul'} onChange={(e) => updateSlide(slide.id, 'title', e.target.value)} className="admin-input" rows="2" style={{ background: 'white', minHeight: '60px', resize: 'vertical' }} />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Deskripsi Tambahan</label>
-                  <textarea value={slide.desc !== undefined ? slide.desc : (slide.description || '')} onChange={(e) => updateSlide(slide.id, 'desc', e.target.value)} className="admin-input" rows="3" style={{ background: 'white', minHeight: '80px', resize: 'vertical' }} />
-                </div>
+                <button onClick={() => deleteSlide(slide.id)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.4rem', borderRadius: '0.35rem', transition: 'all 0.2s' }} onMouseOver={e => {e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fef2f2';}} onMouseOut={e => {e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent';}} title="Hapus Slide">
+                  <Trash2 size={16} />
+                </button>
               </div>
 
-              {/* Konten Media */}
-              <div className="slide-section">
-                <div className="slide-section-title"><ImageIcon size={14} /> MEDIA & LATAR BELAKANG</div>
-                
-                <div className="form-group">
-                  <label>Tipe Latar Belakang</label>
-                  <select 
-                    value={slide.mediaType || 'none'} 
-                    onChange={(e) => updateSlide(slide.id, 'mediaType', e.target.value)} 
-                    className="admin-input" 
-                    style={{ background: 'white', fontWeight: 600, color: '#3b82f6' }}
-                  >
-                    <option value="none">Hanya Warna / Gradien</option>
-                    <option value="image">Gambar (JPG/PNG)</option>
-                    <option value="video">Video Latar (MP4/WebM)</option>
-                  </select>
-                </div>
-
-                {slide.mediaType !== 'none' && (
-                  <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f1f5f9', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#334155', fontWeight: 600, margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={slide.isMediaOnly || false} 
-                        onChange={(e) => updateSlide(slide.id, 'isMediaOnly', e.target.checked)} 
-                        style={{ width: '18px', height: '18px', accentColor: '#3b82f6' }}
-                      />
-                      Mode Full-Screen Media (Sembunyikan Teks)
-                    </label>
+              <div className="slide-card-body">
+                {/* Konten Teks */}
+                <div className="slide-section">
+                  <div className="slide-section-title"><MessageSquare size={14} /> KONTEN TEKS</div>
+                  <div className="form-group">
+                    <label>Label Tag (Contoh: PENGUMUMAN)</label>
+                    <input type="text" value={slide.tag} onChange={(e) => updateSlide(slide.id, 'tag', e.target.value)} className="admin-input" style={{ background: 'white' }} />
                   </div>
-                )}
-
-                {slide.mediaType === 'none' ? (
+                  <div className="form-group">
+                    <label>Judul Utama</label>
+                    <textarea value={typeof slide.title === 'string' ? slide.title : slide.title?.props?.children?.join('') || 'Judul'} onChange={(e) => updateSlide(slide.id, 'title', e.target.value)} className="admin-input" rows="2" style={{ background: 'white', minHeight: '60px', resize: 'vertical' }} />
+                  </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Pilih Warna Latar</label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                      <input 
-                        type="color" 
-                        value={(slide.bg || slide.bgColor || '#1e40af').startsWith('#') ? (slide.bg || slide.bgColor || '#1e40af').slice(0, 7) : '#1e40af'} 
-                        onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
-                        style={{ width: '40px', height: '40px', border: 'none', borderRadius: '0.25rem', cursor: 'pointer', padding: 0 }}
-                      />
-                      <input 
-                        type="text" 
-                        value={slide.bg || slide.bgColor || '#1e40af'} 
-                        onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
-                        className="admin-input" 
-                        style={{ border: 'none', boxShadow: 'none', background: 'transparent' }} 
-                      />
-                    </div>
+                    <label>Deskripsi Tambahan</label>
+                    <textarea value={slide.desc !== undefined ? slide.desc : (slide.description || '')} onChange={(e) => updateSlide(slide.id, 'desc', e.target.value)} className="admin-input" rows="3" style={{ background: 'white', minHeight: '80px', resize: 'vertical' }} />
                   </div>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label>Upload File Media</label>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                </div>
+
+                {/* Konten Media */}
+                <div className="slide-section">
+                  <div className="slide-section-title"><ImageIcon size={14} /> MEDIA & LATAR BELAKANG</div>
+                  
+                  <div className="form-group">
+                    <label>Tipe Latar Belakang</label>
+                    <select 
+                      value={slide.mediaType || 'none'} 
+                      onChange={(e) => updateSlide(slide.id, 'mediaType', e.target.value)} 
+                      className="admin-input" 
+                      style={{ background: 'white', fontWeight: 600, color: '#3b82f6' }}
+                    >
+                      <option value="none">Hanya Warna / Gradien</option>
+                      <option value="image">Gambar / Foto (URL Web, Google Drive, File JPG/PNG)</option>
+                      <option value="video">Video (YouTube, Google Drive, Vimeo, File MP4/WebM)</option>
+                    </select>
+                  </div>
+
+                  {slide.mediaType !== 'none' && (
+                    <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f1f5f9', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#334155', fontWeight: 600, margin: 0 }}>
+                        <input 
+                          type="checkbox" 
+                          checked={slide.isMediaOnly || false} 
+                          onChange={(e) => updateSlide(slide.id, 'isMediaOnly', e.target.checked)} 
+                          style={{ width: '18px', height: '18px', accentColor: '#3b82f6' }}
+                        />
+                        Mode Full-Screen Media (Sembunyikan Teks)
+                      </label>
+                    </div>
+                  )}
+
+                  {slide.mediaType === 'none' ? (
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Pilih Warna Latar</label>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                        <input 
+                          type="color" 
+                          value={(slide.bg || slide.bgColor || '#1e40af').startsWith('#') ? (slide.bg || slide.bgColor || '#1e40af').slice(0, 7) : '#1e40af'} 
+                          onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
+                          style={{ width: '40px', height: '40px', border: 'none', borderRadius: '0.25rem', cursor: 'pointer', padding: 0 }}
+                        />
                         <input 
                           type="text" 
-                          value={slide.mediaUrl?.startsWith('localforage:') ? '[File tersimpan secara lokal]' : (slide.mediaUrl || '')} 
-                          onChange={(e) => updateSlide(slide.id, 'mediaUrl', e.target.value)} 
+                          value={slide.bg || slide.bgColor || '#1e40af'} 
+                          onChange={(e) => updateSlide(slide.id, 'bg', e.target.value)} 
                           className="admin-input" 
-                          style={{ background: 'white', flex: 1, fontSize: '0.8rem' }}
-                          placeholder="Link URL gambar/video..." 
+                          style={{ border: 'none', boxShadow: 'none', background: 'transparent' }} 
                         />
-                        <label style={{ cursor: 'pointer', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#3b82f6', color: 'white', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#2563eb'} onMouseOut={e => e.currentTarget.style.background = '#3b82f6'}>
-                          <Upload size={16} /> Browse
-                          <input 
-                            type="file" 
-                            accept={slide.mediaType === 'video' ? 'video/*' : 'image/*'} 
-                            style={{ display: 'none' }} 
-                            onChange={(e) => handleMediaUpload(slide.id, e.target.files[0])} 
-                          />
-                        </label>
                       </div>
-                      {slide.mediaUrl && !slide.mediaUrl.startsWith('localforage:') && (
-                        <div style={{ marginTop: '0.5rem', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e2e8f0', maxHeight: '120px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {slide.mediaType === 'video' ? (
-                            <video src={slide.mediaUrl} style={{ maxHeight: '120px', maxWidth: '100%' }} muted />
-                          ) : (
-                            <img src={slide.mediaUrl} alt="Preview" style={{ maxHeight: '120px', maxWidth: '100%', objectFit: 'contain' }} />
-                          )}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="form-group">
+                        <label>Tautan URL Media atau Unggah Berkas</label>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <input 
+                            type="text" 
+                            value={slide.mediaUrl?.startsWith('localforage:') ? '[File tersimpan secara lokal]' : (slide.mediaUrl || '')} 
+                            onChange={(e) => {
+                              const clean = sanitizeMediaInput(e.target.value);
+                              const detected = detectMediaType(clean);
+                              if (detected === 'video' && slide.mediaType !== 'video') {
+                                updateSlide(slide.id, { mediaUrl: clean, mediaType: 'video' });
+                              } else if (detected === 'image' && slide.mediaType === 'none') {
+                                updateSlide(slide.id, { mediaUrl: clean, mediaType: 'image' });
+                              } else {
+                                updateSlide(slide.id, 'mediaUrl', clean);
+                              }
+                            }} 
+                            className="admin-input" 
+                            style={{ background: 'white', flex: 1, fontSize: '0.82rem' }}
+                            placeholder="Tempel link YouTube, Google Drive, Vimeo, atau link gambar..." 
+                          />
+                          <label style={{ cursor: 'pointer', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', background: '#3b82f6', color: 'white', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#2563eb'} onMouseOut={e => e.currentTarget.style.background = '#3b82f6'}>
+                            <Upload size={16} /> Upload
+                            <input 
+                              type="file" 
+                              accept={slide.mediaType === 'video' ? 'video/*' : 'image/*'} 
+                              style={{ display: 'none' }} 
+                              onChange={(e) => handleMediaUpload(slide.id, e.target.files[0])} 
+                            />
+                          </label>
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Mode Tampilan Media</label>
-                      <select 
-                        value={slide.mediaFit || 'cover'} 
-                        onChange={(e) => updateSlide(slide.id, 'mediaFit', e.target.value)} 
-                        className="admin-input" 
-                        style={{ background: 'white' }}
-                      >
-                        <option value="cover">Penuhi Layar (Cover)</option>
-                        <option value="contain">Ukuran Asli (Contain)</option>
-                        <option value="fill">Tarik Penuh (Fill)</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-              </div>
+
+                        {/* Petunjuk format yang didukung */}
+                        <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <HelpCircle size={13} color="#94a3b8" />
+                          <span>Mendukung: <strong>YouTube</strong>, <strong>Google Drive</strong> (Foto/Video), <strong>Vimeo</strong>, MP4/WebM, JPG/PNG.</span>
+                        </div>
+
+                        {/* Status Deteksi Platform Media */}
+                        {slide.mediaUrl && !slide.mediaUrl.startsWith('localforage:') && (
+                          <div style={{ marginTop: '0.75rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <CheckCircle2 size={13} color="#10b981" /> 
+                                Terdeteksi: <strong style={{ color: '#2563eb' }}>{previewMediaInfo.label}</strong>
+                              </span>
+                              {slide.mediaUrl.startsWith('http') && (
+                                <a 
+                                  href={slide.mediaUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  style={{ fontSize: '0.72rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.2rem', textDecoration: 'none', fontWeight: 600 }}
+                                >
+                                  Buka Tautan <ExternalLink size={11} />
+                                </a>
+                              )}
+                            </div>
+
+                            {/* Live Preview Media */}
+                            <div style={{ position: 'relative', height: '140px', borderRadius: '0.65rem', overflow: 'hidden', border: '1px solid #cbd5e1', background: '#0a0f1d' }}>
+                              <SlideMedia slide={slide} isActive={true} isPreview={true} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label>Mode Tampilan Media</label>
+                        <select 
+                          value={slide.mediaFit || 'cover'} 
+                          onChange={(e) => updateSlide(slide.id, 'mediaFit', e.target.value)} 
+                          className="admin-input" 
+                          style={{ background: 'white' }}
+                        >
+                          <option value="cover">Penuhi Layar (Cover - Proporsional)</option>
+                          <option value="contain">Ukuran Asli (Contain - Tanpa Terpotong)</option>
+                          <option value="fill">Tarik Penuh (Fill - Sesuai Lebar/Tinggi)</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
 
               {/* QR Code */}
               <div className="slide-section" style={{ background: '#fdf4ff', borderColor: '#fbcfe8' }}>
@@ -234,7 +273,8 @@ export default function SlidesTab({
 
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {localSlides.length === 0 && (

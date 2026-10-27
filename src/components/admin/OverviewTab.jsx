@@ -53,7 +53,7 @@ export default function OverviewTab({
               <h3 style={{ margin: '0 0 0.25rem 0', color: '#1e293b', fontSize: '1rem' }}>Ringkasan Bulan Ini</h3>
               <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>
                 Terdapat <strong>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length} kegiatan</strong> {' '}
-                ({schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory === 'Internal').length} Internal, {schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory === 'Eksternal').length} Eksternal). 
+                ({schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && (!s.partnerCategory || s.partnerCategory.trim().toLowerCase() === 'internal')).length} Internal, {schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal').length} Eksternal). 
                 Saat ini <strong>{schedules.filter(s => s.status === 'Berlangsung').length} kegiatan</strong> sedang berlangsung.
               </p>
             </div>

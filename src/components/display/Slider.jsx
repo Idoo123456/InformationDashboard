@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Smartphone, Sparkles, Globe, ImageOff } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
 import localforage from 'localforage';
+import SlideMedia from './SlideMedia';
+import { resolveMediaInfo } from '../../utils/mediaUtils';
 
 // Helper to determine if a color string is visually light (needs dark text)
 const isLightBackground = (bg) => {
@@ -129,6 +131,7 @@ const Slider = () => {
       <div className="slider-container">
         {slides.map((slide, index) => {
           const finalUrl = getFinalMediaUrl(slide);
+          const mediaInfo = resolveMediaInfo(finalUrl, slide.mediaType);
           
           // Background resolution:
           // Fallback if empty, pure white, or missing
@@ -144,15 +147,16 @@ const Slider = () => {
           const defaultGrad = fallbackGradients[index % fallbackGradients.length];
           const slideBg = isWhiteOrEmpty ? defaultGrad : rawBg;
 
+          const hasMedia = (slide.mediaType === 'image' || slide.mediaType === 'video' || mediaInfo.hasMedia) && Boolean(finalUrl);
+          const isMediaOnly = Boolean(slide.isMediaOnly && hasMedia);
+
           const isLight = isLightBackground(slideBg);
-          const textColor = isLight ? '#0f172a' : '#ffffff';
-          const textMutedColor = isLight ? '#334155' : 'rgba(255, 255, 255, 0.9)';
+          const textColor = (hasMedia && !isMediaOnly) ? '#ffffff' : (isLight ? '#0f172a' : '#ffffff');
+          const textMutedColor = (hasMedia && !isMediaOnly) ? 'rgba(255, 255, 255, 0.9)' : (isLight ? '#334155' : 'rgba(255, 255, 255, 0.9)');
 
           const slideDesc = slide.desc !== undefined ? slide.desc : (slide.description || '');
           const qrSrc = getQrUrl(slide);
           const qrDest = getQrDestination(slide);
-          const hasMedia = (slide.mediaType === 'image' || slide.mediaType === 'video') && Boolean(finalUrl);
-          const isMediaOnly = Boolean(slide.isMediaOnly && hasMedia);
 
           return (
             <div 
@@ -161,44 +165,46 @@ const Slider = () => {
               style={{ 
                 background: slideBg,
                 color: textColor,
-                ...(slide.mediaType === 'image' && finalUrl ? {
-                  backgroundImage: `url(${finalUrl})`,
-                  backgroundPosition: 'center',
-                  backgroundSize: slide.mediaFit === 'fill' ? '100% 100%' : (slide.mediaFit || 'cover'),
-                  backgroundRepeat: 'no-repeat'
-                } : {})
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden'
               }}
             >
-              {/* Subtle ambient lighting & mesh texture for modern depth */}
-              <div className="slide-ambient-overlay" aria-hidden="true">
-                <div className="slide-ambient-orb orb-1" />
-                <div className="slide-ambient-orb orb-2" />
-                <div className="slide-ambient-orb orb-3" />
-                <div className="slide-ambient-mesh" />
-              </div>
-
-              {slide.mediaType === 'video' && finalUrl && (
-                <video 
-                  src={finalUrl} 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: slide.mediaFit || 'cover',
-                    zIndex: 0
-                  }}
+              {/* Media rendering (YouTube, Google Drive, Vimeo, MP4, WebM, atau Foto) */}
+              {hasMedia && (
+                <SlideMedia 
+                  slide={slide} 
+                  isActive={index === activeIndex} 
+                  blobUrl={blobUrls[slide.id]} 
                 />
               )}
+
+              {/* Ambient lighting & mesh texture hanya untuk slide tanpa media */}
+              {!hasMedia && (
+                <div className="slide-ambient-overlay" aria-hidden="true">
+                  <div className="slide-ambient-orb orb-1" />
+                  <div className="slide-ambient-orb orb-2" />
+                  <div className="slide-ambient-orb orb-3" />
+                  <div className="slide-ambient-mesh" />
+                </div>
+              )}
               
-              {/* Dark overlay for readability if it has media and is not media-only */}
+              {/* Gradient overlay lembut untuk memastikan teks dan QR tetap tajam terbaca */}
               {hasMedia && !isMediaOnly && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1 }} />
+                <div 
+                  style={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: 0, 
+                    right: 0, 
+                    bottom: 0, 
+                    background: 'linear-gradient(to right, rgba(15, 23, 42, 0.78) 0%, rgba(15, 23, 42, 0.5) 55%, rgba(15, 23, 42, 0.25) 100%)', 
+                    zIndex: 1 
+                  }} 
+                />
               )}
 
               {!isMediaOnly && (

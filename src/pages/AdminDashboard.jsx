@@ -119,7 +119,12 @@ function AdminDashboard() {
   const filteredSchedules = computedSchedules.filter(s => {
     const matchDate = (!reportStartDate || s.date >= reportStartDate) && (!reportEndDate || s.date <= reportEndDate);
     const matchStatus = reportStatus === 'Semua' || s.status === reportStatus;
-    const matchSearch = !reportSearch || (s.title && s.title.toLowerCase().includes(reportSearch.toLowerCase()));
+    const q = reportSearch.toLowerCase().trim();
+    const matchSearch = !q || 
+      (s.title && s.title.toLowerCase().includes(q)) ||
+      (s.loc && s.loc.toLowerCase().includes(q)) ||
+      (s.pic && s.pic.toLowerCase().includes(q)) ||
+      (s.partnerCategory && s.partnerCategory.toLowerCase().includes(q));
     return matchDate && matchStatus && matchSearch;
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -385,8 +390,8 @@ function AdminDashboard() {
     setIsScheduleModalOpen(true);
   };
 
-  const handleSaveModalSchedule = async () => {
-    const s = editingSchedule;
+  const handleSaveModalSchedule = async (passedSchedule) => {
+    const s = passedSchedule || editingSchedule;
     if (!s) return;
 
     // 1. Validasi Nama Kegiatan
@@ -498,10 +503,20 @@ function AdminDashboard() {
       }
     }
 
-    const exists = localSchedules.find(item => item.id === s.id);
+    // Normalisasi kategori mitra agar tidak kosong/hilang
+    const partnerCleaned = (s.partnerCategory && s.partnerCategory.trim()) 
+      ? s.partnerCategory.trim() 
+      : 'Internal';
+
+    const scheduleToSave = {
+      ...s,
+      partnerCategory: partnerCleaned
+    };
+
+    const exists = localSchedules.find(item => item.id === scheduleToSave.id);
     const updatedSchedules = exists
-      ? localSchedules.map(item => item.id === s.id ? s : item)
-      : [...localSchedules, s];
+      ? localSchedules.map(item => item.id === scheduleToSave.id ? scheduleToSave : item)
+      : [...localSchedules, scheduleToSave];
 
     setLocalSchedules(updatedSchedules);
     setIsScheduleModalOpen(false);
@@ -589,17 +604,22 @@ function AdminDashboard() {
     showToastPopup('Slide berhasil ditambahkan ke daftar draft.');
   };
 
-  const updateSlide = (id, field, value) => {
+  const updateSlide = (id, fieldOrUpdates, value) => {
     isSlidesDirty.current = true;
-    setLocalSlides(localSlides.map(s => {
+    setLocalSlides(prev => prev.map(s => {
       if (s.id !== id) return s;
-      const updated = { ...s, [field]: value };
-      if (field === 'bg') updated.bgColor = value;
-      if (field === 'bgColor') updated.bg = value;
-      if (field === 'desc') updated.description = value;
-      if (field === 'description') updated.desc = value;
-      if (field === 'qr') updated.qrUrl = value;
-      if (field === 'qrUrl') updated.qr = value;
+      let updated;
+      if (typeof fieldOrUpdates === 'object' && fieldOrUpdates !== null) {
+        updated = { ...s, ...fieldOrUpdates };
+      } else {
+        updated = { ...s, [fieldOrUpdates]: value };
+      }
+      if (updated.bg) updated.bgColor = updated.bg;
+      if (updated.bgColor) updated.bg = updated.bgColor;
+      if (updated.desc !== undefined) updated.description = updated.desc;
+      if (updated.description !== undefined) updated.desc = updated.description;
+      if (updated.qr !== undefined) updated.qrUrl = updated.qr;
+      if (updated.qrUrl !== undefined) updated.qr = updated.qrUrl;
       return updated;
     }));
   };
@@ -648,12 +668,12 @@ function AdminDashboard() {
         }
 
         if (serverUrl) {
-          updateSlide(slideId, 'mediaUrl', serverUrl);
+          updateSlide(slideId, { mediaUrl: serverUrl, mediaType: 'image' });
           showToastPopup('Gambar berhasil diunggah ke server!');
         } else {
           const storageKey = `media_${slideId}_${Date.now()}`;
           await localforage.setItem(storageKey, croppedBlob);
-          updateSlide(slideId, 'mediaUrl', `localforage:${storageKey}`);
+          updateSlide(slideId, { mediaUrl: `localforage:${storageKey}`, mediaType: 'image' });
           showToastPopup('Gambar tersimpan di lokal');
         }
         URL.revokeObjectURL(croppingImage.src);
@@ -776,8 +796,7 @@ function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         if (data.url) {
-          updateSlide(slideId, 'mediaUrl', data.url);
-          updateSlide(slideId, 'mediaType', 'video');
+          updateSlide(slideId, { mediaUrl: data.url, mediaType: 'video' });
           showToastPopup('Video berhasil diunggah ke server!');
           return;
         }

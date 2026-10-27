@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity, Briefcase } from 'lucide-react';
 import { getDynamicStatus } from '../../utils/adminAlerts';
 
 export default function SchedulesTab({
@@ -27,7 +27,12 @@ export default function SchedulesTab({
   const schedulesWithDynamicStatus = localSchedules.map(s => ({ ...s, dynamicStatus: getDynamicStatus(s) }));
   
   const filteredSchedulesView = schedulesWithDynamicStatus.filter(s => {
-    const matchSearch = !scheduleSearch || (s.title && s.title.toLowerCase().includes(scheduleSearch.toLowerCase()));
+    const q = scheduleSearch.toLowerCase().trim();
+    const matchSearch = !q || 
+      (s.title && s.title.toLowerCase().includes(q)) ||
+      (s.loc && s.loc.toLowerCase().includes(q)) ||
+      (s.pic && s.pic.toLowerCase().includes(q)) ||
+      (s.partnerCategory && s.partnerCategory.toLowerCase().includes(q));
     const matchDateFrom = !scheduleDateFrom || s.date >= scheduleDateFrom;
     const matchDateTo = !scheduleDateTo || s.date <= scheduleDateTo;
     return matchSearch && matchDateFrom && matchDateTo;
@@ -103,11 +108,35 @@ export default function SchedulesTab({
                   </div>
                   
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>{s.title}</h4>
-                    <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                      <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>{s.title}</h4>
+                      {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.15rem 0.6rem',
+                          borderRadius: '0.45rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          backgroundColor: '#fff7ed',
+                          color: '#c2410c',
+                          border: '1px solid #ffedd5',
+                          boxShadow: '0 1px 2px rgba(234, 88, 12, 0.08)'
+                        }}>
+                          <Briefcase size={12} color="#ea580c" /> {s.partnerCategory}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: '#64748b', flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={14}/> {s.date}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><LayoutGrid size={14}/> {s.loc || '-'}</span>
                       {s.pic && <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><User size={14}/> {s.pic}</span>}
+                      {(!s.partnerCategory || s.partnerCategory.trim().toLowerCase() === 'internal') && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                          <Briefcase size={12} /> Internal (UNRI)
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -156,8 +185,15 @@ export default function SchedulesTab({
                     </div>
                     
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '1rem', color: '#334155', fontWeight: 600 }}>{s.title}</h4>
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{s.loc}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '1rem', color: '#334155', fontWeight: 600 }}>{s.title}</h4>
+                        {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
+                          <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ea580c', background: '#fff7ed', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid #fed7aa' }}>
+                            Mitra: {s.partnerCategory}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{s.loc} {s.pic ? `• ${s.pic}` : ''}</div>
                     </div>
 
                     <div style={{ width: '110px', textAlign: 'center' }}>
@@ -281,6 +317,11 @@ export default function SchedulesTab({
                       >
                         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
                         <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{s.startTime} • {s.loc || 'Ruangan -'}</div>
+                        {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
+                          <div style={{ fontSize: '0.62rem', color: '#ea580c', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            🏢 {s.partnerCategory}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

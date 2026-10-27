@@ -277,8 +277,11 @@ const Sidebar = () => {
               <User size={14} className="meta-icon" /> 
               {item.pic || '-'}
             </span>
-            <span className="meta-item" style={{ color: '#475569' }}>
-              <Briefcase size={14} className="meta-icon" /> 
+            <span className="meta-item" style={{ 
+              color: (item.partnerCategory && item.partnerCategory.trim().toLowerCase() !== 'internal') ? '#ea580c' : '#475569',
+              fontWeight: (item.partnerCategory && item.partnerCategory.trim().toLowerCase() !== 'internal') ? 600 : 400
+            }}>
+              <Briefcase size={14} className="meta-icon" style={{ color: (item.partnerCategory && item.partnerCategory.trim().toLowerCase() !== 'internal') ? '#ea580c' : undefined }} /> 
               {item.partnerCategory || 'Internal'}
             </span>
           </div>

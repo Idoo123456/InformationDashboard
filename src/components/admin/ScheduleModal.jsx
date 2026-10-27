@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertTriangle, Clock, Calendar, MapPin } from 'lucide-react';
+import { X, Save, AlertTriangle, Clock, Calendar, MapPin, Briefcase } from 'lucide-react';
 
 export default function ScheduleModal({
   isOpen,
@@ -22,12 +22,15 @@ export default function ScheduleModal({
   const allRooms = Array.from(new Set((masterRooms || []).map(r => r.name).filter(Boolean)));
   const [isCustomRoom, setIsCustomRoom] = useState(false);
   const [isCustomPic, setIsCustomPic] = useState(false);
+  const [isCustomPartner, setIsCustomPartner] = useState(false);
 
   // Update flags saat editingSchedule berganti
   useEffect(() => {
     if (editingSchedule) {
       setIsCustomRoom(!allRooms.includes(editingSchedule.loc) && Boolean(editingSchedule.loc));
       setIsCustomPic(!PIC_PRESETS.includes(editingSchedule.pic) && Boolean(editingSchedule.pic));
+      const isExt = Boolean(editingSchedule.partnerCategory) && editingSchedule.partnerCategory.trim().toLowerCase() !== 'internal';
+      setIsCustomPartner(isExt);
     }
   }, [editingSchedule?.id]);
 
@@ -260,13 +263,44 @@ export default function ScheduleModal({
               )}
             </div>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kategori Mitra</label>
-              <select value={editingSchedule.partnerCategory === 'Internal' ? 'Internal' : 'Eksternal'} onChange={(e) => setEditingSchedule({...editingSchedule, partnerCategory: e.target.value === 'Eksternal' ? '' : 'Internal'})} className="admin-input" style={{ fontWeight: 600 }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <Briefcase size={13} color="#f97316" /> Kategori Mitra
+              </label>
+              <select 
+                value={isCustomPartner ? 'Eksternal' : 'Internal'} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'Eksternal') {
+                    setIsCustomPartner(true);
+                    if (!editingSchedule.partnerCategory || editingSchedule.partnerCategory.trim().toLowerCase() === 'internal') {
+                      setEditingSchedule({ ...editingSchedule, partnerCategory: '' });
+                    }
+                  } else {
+                    setIsCustomPartner(false);
+                    setEditingSchedule({ ...editingSchedule, partnerCategory: 'Internal' });
+                  }
+                }} 
+                className="admin-input" 
+                style={{ fontWeight: 600 }}
+              >
                 <option value="Internal">Internal (UNRI)</option>
-                <option value="Eksternal">Eksternal (Ketik Nama Mitra)...</option>
+                <option value="Eksternal">Eksternal (Ketik Nama Mitra / Instansi)...</option>
               </select>
-              {editingSchedule.partnerCategory !== 'Internal' && (
-                <input type="text" value={editingSchedule.partnerCategory} onChange={(e) => setEditingSchedule({...editingSchedule, partnerCategory: e.target.value})} className="admin-input" placeholder="Ketik nama instansi / mitra luar..." style={{ marginTop: '0.5rem', fontWeight: 600 }} />
+              {isCustomPartner && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <input 
+                    type="text" 
+                    value={editingSchedule.partnerCategory === 'Internal' ? '' : (editingSchedule.partnerCategory || '')} 
+                    onChange={(e) => setEditingSchedule({ ...editingSchedule, partnerCategory: e.target.value })} 
+                    className="admin-input" 
+                    placeholder="Ketik nama instansi / mitra luar (contoh: PT Telkom, Kemendikbud)..." 
+                    style={{ fontWeight: 600, borderColor: '#fdba74', background: '#fff7ed' }} 
+                    autoFocus
+                  />
+                  <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.74rem', color: '#c2410c' }}>
+                    ℹ️ Jika nama mitra dikosongkan, otomatis disimpan sebagai "Eksternal".
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -281,7 +315,25 @@ export default function ScheduleModal({
         {/* FOOTER ACTION BUTTONS */}
         <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#f8fafc', borderRadius: '0 0 0.85rem 0.85rem' }}>
           <button onClick={onClose} style={{ padding: '0.65rem 1.35rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.55rem', cursor: 'pointer', fontWeight: 600, color: '#475569', transition: 'all 0.15s' }}>Batal</button>
-          <button onClick={onSave} style={{ padding: '0.65rem 1.45rem', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: 'white', border: 'none', borderRadius: '0.55rem', cursor: 'pointer', fontWeight: 600, display: 'flex', gap: '0.5rem', alignItems: 'center', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)', transition: 'all 0.15s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+          <button 
+            onClick={() => {
+              let finalPartner = editingSchedule.partnerCategory;
+              if (isCustomPartner) {
+                finalPartner = (finalPartner && finalPartner.trim()) ? finalPartner.trim() : 'Eksternal';
+              } else {
+                finalPartner = 'Internal';
+              }
+              const finalSchedule = {
+                ...editingSchedule,
+                partnerCategory: finalPartner
+              };
+              setEditingSchedule(finalSchedule);
+              onSave(finalSchedule);
+            }} 
+            style={{ padding: '0.65rem 1.45rem', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: 'white', border: 'none', borderRadius: '0.55rem', cursor: 'pointer', fontWeight: 600, display: 'flex', gap: '0.5rem', alignItems: 'center', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)', transition: 'all 0.15s' }} 
+            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} 
+            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             <Save size={16} /> Simpan Kegiatan
           </button>
         </div>
