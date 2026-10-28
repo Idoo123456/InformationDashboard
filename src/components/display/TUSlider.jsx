@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { getLocalDateStr } from '../../utils/dateUtils';
 import { 
   CalendarDays, 
   Clock, 
@@ -385,7 +386,7 @@ const TUSlider = () => {
     if (item.status === 'Selesai') return 'Selesai';
 
     try {
-      let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      let scheduleDateStr = item.date || getLocalDateStr();
       if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
         scheduleDateStr = scheduleDateStr.split('T')[0];
       }

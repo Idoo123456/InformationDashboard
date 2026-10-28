@@ -15,8 +15,11 @@ const Footer = () => {
 
   const activeAnnouncements = (announcements || []).filter(item => {
     if (typeof item === 'string') return true;
-    if (!item.expiryDate) return true;
-    const expiry = new Date(item.expiryDate);
+    const expiryRaw = item.expiryDate || item.expiry_date;
+    if (!expiryRaw) return true;
+    const expiryStr = String(expiryRaw).split('T')[0];
+    const expiry = new Date(`${expiryStr}T23:59:59`);
+    if (isNaN(expiry.getTime())) return true;
     return expiry >= currentTime;
   });
 

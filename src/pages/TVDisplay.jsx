@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useDashboard } from '../context/DashboardContext';
 import Header from '../components/display/Header';
 import Sidebar from '../components/display/Sidebar';
@@ -9,8 +9,9 @@ import TUSlider from '../components/display/TUSlider';
 import { applyThemeColors } from '../utils/themeUtils';
 
 function TVDisplay() {
-  const { primaryColor, templateColors, tvLayout, timeOn, timeOff } = useDashboard();
+  const { primaryColor, templateColors, tvLayout, timeOn, timeOff, prefix } = useDashboard();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const screenId = searchParams.get('screen'); // misal: 1, 2, atau 3
   const [tvScreenConfig, setTvScreenConfig] = useState(null);
 
@@ -24,6 +25,14 @@ function TVDisplay() {
         .then(data => {
           if (data) {
             setTvScreenConfig(data);
+            const targetFaculty = data.faculty_prefix || 'main';
+            const currentPrefix = prefix || 'main';
+            if (targetFaculty !== currentPrefix) {
+              const targetPath = targetFaculty === 'main'
+                ? `/tv?screen=${screenId}`
+                : `/${targetFaculty}/tv?screen=${screenId}`;
+              navigate(targetPath, { replace: true });
+            }
           }
         })
         .catch(() => {});
@@ -32,7 +41,7 @@ function TVDisplay() {
     fetchScreenConfig();
     const interval = setInterval(fetchScreenConfig, 4000); // Sinkronisasi otomatis setiap 4 detik
     return () => clearInterval(interval);
-  }, [screenId]);
+  }, [screenId, prefix, navigate]);
 
   const activeLayout = (tvScreenConfig && tvScreenConfig.layout) || searchParams.get('layout') || tvLayout;
   const [isStandby, setIsStandby] = useState(false);

@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { getLocalDateStr } from './dateUtils';
 
 export const showSuccessPopup = (message) => {
   Swal.fire({
@@ -48,7 +49,7 @@ export const getDynamicStatus = (item) => {
   if (item.status === 'Selesai') return 'Selesai';
   
   try {
-    let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+    let scheduleDateStr = item.date || getLocalDateStr();
     if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
       scheduleDateStr = scheduleDateStr.split('T')[0];
     }

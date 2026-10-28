@@ -4,6 +4,7 @@ import {
   User, Calendar, Monitor, FileText, AlertCircle, CheckCircle2 
 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
+import { getLocalDateStr } from '../../utils/dateUtils';
 
 export default function ActivityLogViewer() {
   const { isSuperAdmin, currentFacultyPrefix } = useDashboard();
@@ -88,7 +89,7 @@ export default function ActivityLogViewer() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Audit_Log_UNRI_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `Audit_Log_UNRI_${getLocalDateStr()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

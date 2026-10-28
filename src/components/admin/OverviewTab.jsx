@@ -1,5 +1,6 @@
 import { LayoutDashboard, LayoutGrid, List, Activity, MonitorPlay, Calendar, MessageSquare, Shield, Image as ImageIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { getLocalDateStr, getMonthPrefixStr } from '../../utils/dateUtils';
 
 export default function OverviewTab({
   overviewLayout,
@@ -10,6 +11,9 @@ export default function OverviewTab({
   isDbConnected,
   setActiveTab
 }) {
+  const todayStr = getLocalDateStr();
+  const thisMonthPrefix = getMonthPrefixStr();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
@@ -52,8 +56,8 @@ export default function OverviewTab({
             <div>
               <h3 style={{ margin: '0 0 0.25rem 0', color: '#1e293b', fontSize: '1rem' }}>Ringkasan Bulan Ini</h3>
               <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>
-                Terdapat <strong>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length} kegiatan</strong> {' '}
-                ({schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && (!s.partnerCategory || s.partnerCategory.trim().toLowerCase() === 'internal')).length} Internal, {schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-')) && s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal').length} Eksternal). 
+                Terdapat <strong>{schedules.filter(s => s.date && s.date.startsWith(thisMonthPrefix)).length} kegiatan</strong> {' '}
+                ({schedules.filter(s => s.date && s.date.startsWith(thisMonthPrefix) && (!s.partnerCategory || s.partnerCategory.trim().toLowerCase() === 'internal')).length} Internal, {schedules.filter(s => s.date && s.date.startsWith(thisMonthPrefix) && s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal').length} Eksternal). 
                 Saat ini <strong>{schedules.filter(s => s.status === 'Berlangsung').length} kegiatan</strong> sedang berlangsung.
               </p>
             </div>
@@ -71,14 +75,14 @@ export default function OverviewTab({
               <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={24} /></div>
               <div>
                 <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Kegiatan Hari Ini</p>
-                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date === new Date().toISOString().split('T')[0]).length}</h3>
+                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date === todayStr).length}</h3>
               </div>
             </div>
             <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fff7ed', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MessageSquare size={24} /></div>
               <div>
                 <p style={{ margin: '0 0 0.25rem 0', color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Kegiatan Bulan Ini</p>
-                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</h3>
+                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 700 }}>{schedules.filter(s => s.date && s.date.startsWith(thisMonthPrefix)).length}</h3>
               </div>
             </div>
             <div className="card" style={{ margin: 0, padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: isDbConnected ? '#ffffff' : '#fef2f2' }}>
@@ -164,11 +168,11 @@ export default function OverviewTab({
                <MonitorPlay size={24} color="#3b82f6" />
             </div>
             <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none' }}>
-               <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Aktivitas Hari Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date === new Date().toISOString().split('T')[0]).length}</h3></div>
+               <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Aktivitas Hari Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date === todayStr).length}</h3></div>
                <Calendar size={24} color="#10b981" />
             </div>
             <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none' }}>
-               <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Bulan Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date.startsWith(new Date().toISOString().split('-').slice(0,2).join('-'))).length}</h3></div>
+               <div><p style={{ margin: '0 0 0.2rem 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase' }}>Bulan Ini</p><h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>{schedules.filter(s => s.date && s.date.startsWith(thisMonthPrefix)).length}</h3></div>
                <MessageSquare size={24} color="#f59e0b" />
             </div>
             <div className="card" style={{ margin: 0, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', boxShadow: 'none', background: isDbConnected ? '#ecfdf5' : '#fef2f2' }}>

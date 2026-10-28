@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity, Briefcase } from 'lucide-react';
 import { getDynamicStatus } from '../../utils/adminAlerts';
+import { getLocalDateStr } from '../../utils/dateUtils';
 
 export default function SchedulesTab({
   localSchedules,
@@ -294,7 +295,7 @@ export default function SchedulesTab({
               const day = i + 1;
               const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const daySchedules = localSchedules.filter(s => s.date === dateStr);
-              const isToday = new Date().toISOString().split('T')[0] === dateStr;
+              const isToday = getLocalDateStr() === dateStr;
 
               return (
                 <div key={day} style={{ padding: '0.75rem', minHeight: '140px', background: isToday ? '#f0fdf4' : 'white', display: 'flex', flexDirection: 'column', transition: 'background 0.2s' }}>

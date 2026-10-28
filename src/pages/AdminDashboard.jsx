@@ -25,13 +25,13 @@ import ScheduleModal from '../components/admin/ScheduleModal';
 import SlidesTab from '../components/admin/SlidesTab';
 import ReportsTab from '../components/admin/ReportsTab';
 
-// Alert and formatting utilities
 import { 
   showSuccessPopup, 
   showToastPopup, 
   showConfirmDelete, 
   getDynamicStatus 
 } from '../utils/adminAlerts';
+import { getLocalDateStr, getStartOfMonthStr, getEndOfMonthStr } from '../utils/dateUtils';
 
 function AdminDashboard() {
   const [croppingImage, setCroppingImage] = useState(null);
@@ -82,17 +82,8 @@ function AdminDashboard() {
   const [editingSchedule, setEditingSchedule] = useState(null);
 
   // Filter Reports States
-  const [reportStartDate, setReportStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().split('T')[0];
-  });
-  const [reportEndDate, setReportEndDate] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(0);
-    return d.toISOString().split('T')[0];
-  });
+  const [reportStartDate, setReportStartDate] = useState(getStartOfMonthStr);
+  const [reportEndDate, setReportEndDate] = useState(getEndOfMonthStr);
   const [reportStatus, setReportStatus] = useState('Semua');
   const [reportSearch, setReportSearch] = useState('');
 
@@ -380,7 +371,7 @@ function AdminDashboard() {
 
   // Schedules Handlers
   const handleAddSchedule = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateStr();
     setEditingSchedule({ id: Date.now(), date: today, startTime: '09:00', endTime: '12:00', title: '', description: '', loc: '', status: 'Otomatis', pic: '', partnerCategory: 'Internal' });
     setIsScheduleModalOpen(true);
   };

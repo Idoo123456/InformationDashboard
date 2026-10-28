@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useDashboard } from '../../context/DashboardContext';
+import { getLocalDateStr } from '../../utils/dateUtils';
 
 const Sidebar = () => {
   const scrollRef = useRef(null);
@@ -22,7 +23,7 @@ const Sidebar = () => {
 
   const activeSchedules = schedules.filter(item => {
     try {
-      let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      let scheduleDateStr = item.date || getLocalDateStr();
       if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
         scheduleDateStr = scheduleDateStr.split('T')[0];
       }
@@ -200,7 +201,7 @@ const Sidebar = () => {
     if (item.status === 'Selesai') return 'Selesai';
     
     try {
-      let scheduleDateStr = item.date || new Date().toISOString().split('T')[0];
+      let scheduleDateStr = item.date || getLocalDateStr();
       if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {
         scheduleDateStr = scheduleDateStr.split('T')[0];
       }
@@ -359,7 +360,8 @@ const Sidebar = () => {
     let isMounted = true;
 
     const initWeather = () => {
-      if (navigator.geolocation) {
+      const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (navigator.geolocation && isSecure) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             if (!isMounted) return;
