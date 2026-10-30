@@ -190,19 +190,49 @@ CREATE TABLE `slides` (
     `media_url` LONGTEXT,
     `is_media_only` BOOLEAN DEFAULT FALSE,
     `media_fit` VARCHAR(50) DEFAULT 'cover',
+    `target_tvs` TEXT NULL,
     `sort_order` INT DEFAULT 0,
     `is_active` BOOLEAN DEFAULT TRUE,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `slides` 
-(`faculty_prefix`, `tag`, `title`, `description`, `btn_text`, `bg`, `qr_url`, `qr_label`, `media_type`, `media_url`, `sort_order`) 
+(`faculty_prefix`, `tag`, `title`, `description`, `btn_text`, `bg`, `qr_url`, `qr_label`, `media_type`, `media_url`, `target_tvs`, `sort_order`) 
 VALUES
-('main', 'Whistle Blower System', 'Laporkan Pelanggaran<br/>Integritas <strong>UNRI!</strong>', 'Temukan korupsi, pungli, kecurangan akademik, atau pemalsuan dokumen? Laporkan sekarang! Identitas pelapor dijamin aman dan rahasia.', 'Laporkan Sekarang', 'linear-gradient(135deg, #1c7947 0%, #2a9d5c 100%)', 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id/lapor', 'Scan untuk Melapor', 'none', '', 1),
-('main', 'Zona Integritas', 'Stop Kekerasan<br/>di <strong>Lingkungan UNRI!</strong>', 'Terima atau melihat tindakan kekerasan di lingkungan kampus? Jangan diam, laporkan melalui kanal resmi kami.', '', 'linear-gradient(135deg, #2f5597 0%, #4a7bd1 100%)', 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id/lapor-kekerasan', 'Scan QR Lapor', 'none', '', 2);
+('main', 'Whistle Blower System', 'Laporkan Pelanggaran<br/>Integritas <strong>UNRI!</strong>', 'Temukan korupsi, pungli, kecurangan akademik, atau pemalsuan dokumen? Laporkan sekarang! Identitas pelapor dijamin aman dan rahasia.', 'Laporkan Sekarang', 'linear-gradient(135deg, #1c7947 0%, #2a9d5c 100%)', 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id/lapor', 'Scan untuk Melapor', 'none', '', '[]', 1),
+('main', 'Zona Integritas', 'Stop Kekerasan<br/>di <strong>Lingkungan UNRI!</strong>', 'Terima atau melihat tindakan kekerasan di lingkungan kampus? Jangan diam, laporkan melalui kanal resmi kami.', '', 'linear-gradient(135deg, #2f5597 0%, #4a7bd1 100%)', 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id/lapor-kekerasan', 'Scan QR Lapor', 'none', '', '[]', 2);
 
 -- --------------------------------------------------------
--- 8. Tabel: tv_screens (Manajemen 3 TV Pusat)
+-- 8. Tabel: tv_devices (Manajemen Perangkat TV Fleksibel & Dinamis)
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `tv_devices`;
+CREATE TABLE `tv_devices` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `name` VARCHAR(150) NOT NULL,
+    `location` VARCHAR(150) DEFAULT '',
+    `faculty_prefix` VARCHAR(20) NOT NULL DEFAULT 'main',
+    `layout` VARCHAR(30) NOT NULL DEFAULT 'standard',
+    `theme_color` VARCHAR(20) DEFAULT '#1e40af',
+    `slide_duration` INT DEFAULT 8,
+    `marquee_speed` INT DEFAULT 20,
+    `custom_announcement` TEXT,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `notes` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `tv_devices` (`id`, `code`, `name`, `location`, `faculty_prefix`, `layout`, `theme_color`, `is_active`, `notes`)
+VALUES
+(1, 'tv-1', 'TV 1 - Lobi Utama Rektorat', 'Gedung Rektorat Lt. 1', 'main', 'standard', '#1e40af', 1, 'Layar utama display pengunjung'),
+(2, 'tv-2', 'TV 2 - Gedung Kuliah & Senat', 'Gedung Senat Kampus Bina Widya', 'main', 'agenda-focus', '#1e40af', 1, 'Fokus informasi rapat & agenda pimpinan'),
+(3, 'tv-3', 'TV 3 - Perpustakaan Pusat', 'UPA Perpustakaan Lt. 1', 'main', 'full-media', '#1e40af', 1, 'Display media poster & pengumuman'),
+(6, 'tv-6', 'TV 6 - Gedung Kuliah Bersama', 'GKB II Bina Widya', 'main', 'standard', '#1e40af', 1, 'Informasi akademik & kemahasiswaan'),
+(8, 'tv-8', 'TV 8 - Auditorium PKM Gobah', 'Gedung PKM Gobah Lt. 1', 'main', 'agenda-focus', '#1e40af', 1, 'Layar agenda acara & seminar kampus');
+
+-- --------------------------------------------------------
+-- 9. Tabel: tv_screens (Manajemen 3 TV Pusat)
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `tv_screens`;
 CREATE TABLE `tv_screens` (
@@ -228,7 +258,7 @@ VALUES
 (3, 'TV Pusat 3', 'Ruang Publik & Perpustakaan', 'main', 'full-media', '#1e40af', 1, '', 8, 20);
 
 -- --------------------------------------------------------
--- 9. Tabel: activity_logs (Audit Trail / Riwayat Log Aktivitas)
+-- 10. Tabel: activity_logs (Audit Trail / Riwayat Log Aktivitas)
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `activity_logs`;
 CREATE TABLE `activity_logs` (
@@ -259,4 +289,40 @@ CREATE TABLE `media_library` (
     `uploaded_by` VARCHAR(50) DEFAULT 'admin',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
--- 
+
+-- --------------------------------------------------------
+-- 11. Tabel: tv_devices (Perangkat TV Digital Signage Multi-Fakultas)
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `tv_devices`;
+CREATE TABLE `tv_devices` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `name` VARCHAR(150) NOT NULL,
+    `location` VARCHAR(150) DEFAULT '',
+    `faculty_prefix` VARCHAR(20) NOT NULL DEFAULT 'main',
+    `layout` VARCHAR(30) NOT NULL DEFAULT 'standard',
+    `theme_color` VARCHAR(20) DEFAULT '#1e40af',
+    `slide_duration` INT DEFAULT 8,
+    `marquee_speed` INT DEFAULT 20,
+    `custom_announcement` TEXT,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `notes` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_faculty_prefix` (`faculty_prefix`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `tv_devices` (`id`, `code`, `name`, `location`, `faculty_prefix`, `layout`, `theme_color`, `is_active`, `notes`) VALUES
+(1, 'tv-1', 'TV 1 - Lobi Utama Rektorat', 'Gedung Rektorat Lt. 1', 'main', 'standard', '#1e40af', 1, 'Layar utama display pengunjung'),
+(2, 'tv-2', 'TV 2 - Gedung Kuliah & Senat', 'Gedung Senat Kampus Bina Widya', 'main', 'agenda-focus', '#1e40af', 1, 'Fokus informasi rapat & agenda pimpinan'),
+(3, 'tv-3', 'TV 3 - Perpustakaan Pusat', 'UPA Perpustakaan Lt. 1', 'main', 'full-media', '#1e40af', 1, 'Display media poster & pengumuman'),
+(6, 'tv-6', 'TV 6 - Gedung Kuliah Bersama', 'GKB II Bina Widya', 'main', 'standard', '#1e40af', 1, 'Informasi akademik & kemahasiswaan'),
+(8, 'tv-8', 'TV 8 - Auditorium PKM Gobah', 'Gedung PKM Gobah Lt. 1', 'main', 'agenda-focus', '#1e40af', 1, 'Layar agenda acara & seminar kampus'),
+(10, 'fkip-perpus', 'TV 1 - Perpustakaan & Ruang Baca FKIP', 'Gedung UPA Perpustakaan FKIP Lt. 1', 'fkip', 'standard', '#0284c7', 1, 'Display informasi literasi & buku FKIP'),
+(11, 'fkip-lobi', 'TV 2 - Lobi Dekanat FKIP', 'Gedung Dekanat FKIP Lt. 1', 'fkip', 'agenda-focus', '#0284c7', 1, 'Agenda & pengumuman resmi dekanat FKIP'),
+(12, 'fkip-lab', 'TV 3 - Lab Microteaching & Multimedia', 'Gedung Pembelajaran Terpadu FKIP', 'fkip', 'full-media', '#0284c7', 1, 'Jadwal praktikum & informasi lab'),
+(13, 'ft-perpus', 'TV 1 - Perpustakaan & Corner Riset Teknik', 'Gedung Lab Terpadu FT Lt. 2', 'ft', 'standard', '#d97706', 1, 'Informasi jurnal, riset & repositori teknik'),
+(14, 'ft-lobi', 'TV 2 - Lobi Utama Kampus Teknik', 'Gedung Dekanat C FT Lt. 1', 'ft', 'agenda-focus', '#d97706', 1, 'Agenda rapat, ujian & seminar dekanat FT'),
+(15, 'ft-sidang', 'TV 3 - Ruang Senat & Sidang FT', 'Gedung D FT Lt. 2', 'ft', 'standard', '#d97706', 1, 'Jadwal sidang tugas akhir & senat'),
+(16, 'feb-perpus', 'TV 1 - Perpustakaan & BI Corner FEB', 'Gedung UPA FEB Lt. 1', 'feb', 'standard', '#16a34a', 1, 'Informasi BI corner & referensi bisnis'),
+(17, 'feb-lobi', 'TV 2 - Lobi Hall Dekanat FEB', 'Gedung Dekanat FEB', 'feb', 'agenda-focus', '#16a34a', 1, 'Informasi ekonomi & pengumuman');

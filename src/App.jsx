@@ -30,7 +30,9 @@ function DashboardRoutes() {
       {/* Langsung ke halaman admin saat link dibuka */}
       <Route path="/" element={<Navigate to={adminTarget} replace />} />
       <Route path="tv" element={<TVDisplay />} />
+      <Route path="tv/:tvId" element={<TVDisplay />} />
       <Route path="display" element={<TVDisplay />} />
+      <Route path="display/:tvId" element={<TVDisplay />} />
       <Route path="login" element={<Login />} />
       <Route path="admin" element={
         <ProtectedRoute>

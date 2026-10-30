@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { resolveMediaInfo } from '../../utils/mediaUtils';
 import { AlertCircle, Volume2, VolumeX } from 'lucide-react';
 
-export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPreview = false }) {
-  const finalRawUrl = blobUrl || slide.mediaUrl || '';
-  const mediaInfo = resolveMediaInfo(finalRawUrl, slide.mediaType);
+export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPreview = false, mediaUrl, mediaType, mediaFit, title }) {
+  const effectiveSlide = slide || { mediaUrl, mediaType, mediaFit, title };
+  const finalRawUrl = blobUrl || effectiveSlide?.mediaUrl || mediaUrl || '';
+  const resolvedMediaType = effectiveSlide?.mediaType || mediaType || 'image';
+  const mediaInfo = resolveMediaInfo(finalRawUrl, resolvedMediaType);
   const [imgSrc, setImgSrc] = useState('');
   const [hasError, setHasError] = useState(false);
   const [retryStage, setRetryStage] = useState(0);
@@ -27,7 +29,7 @@ export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPre
     } else {
       setImgSrc(mediaInfo.imageUrl || mediaInfo.url || '');
     }
-  }, [finalRawUrl, slide.mediaType, mediaInfo.provider, mediaInfo.mediaType]);
+  }, [finalRawUrl, resolvedMediaType, mediaInfo.provider, mediaInfo.mediaType]);
 
   // Fungsi pengirim perintah postMessage ke iframe YouTube
   const sendYouTubeCommand = (func, args = '') => {

@@ -124,13 +124,34 @@ async function migrateAll() {
       media_url LONGTEXT,
       is_media_only BOOLEAN DEFAULT FALSE,
       media_fit VARCHAR(50) DEFAULT 'cover',
+      target_tvs TEXT NULL,
       sort_order INT DEFAULT 0,
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
-  // 8. tv_screens (Manajemen TV Pusat & Display)
+  // 8. tv_devices (Manajemen Perangkat TV Dinamis)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_devices (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      faculty_prefix VARCHAR(20) NOT NULL DEFAULT 'main',
+      layout VARCHAR(30) NOT NULL DEFAULT 'standard',
+      theme_color VARCHAR(20) DEFAULT '#1e40af',
+      slide_duration INT DEFAULT 8,
+      marquee_speed INT DEFAULT 20,
+      custom_announcement TEXT,
+      is_active BOOLEAN DEFAULT TRUE,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // 9. tv_screens (Manajemen TV Pusat & Display)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tv_screens (
       id INT PRIMARY KEY,

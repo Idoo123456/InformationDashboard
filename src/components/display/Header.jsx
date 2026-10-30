@@ -3,7 +3,7 @@ import { useDashboard } from '../../context/DashboardContext';
 import logoUnri from '../../assets/logounri.png';
 import { Clock, Award, Building2, MapPin, Sparkles } from 'lucide-react';
 
-const Header = () => {
+const Header = ({ currentTv }) => {
   const [time, setTime] = useState(new Date());
   const { 
     prefix,
@@ -29,7 +29,8 @@ const Header = () => {
 
   // Nama fakultas / unit kerja resmi (dinamis sesuai prefix & pengaturan)
   const displayFaculty = facultyName || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
-  const displayUnit = subUnitName || (prefix === 'main' ? 'Pusat Informasi & Layanan Terpadu' : 'Pusat Informasi Fakultas');
+  const displayUnit = currentTv?.name || subUnitName || (prefix === 'main' ? 'Pusat Informasi & Layanan Terpadu' : 'Pusat Informasi Fakultas');
+  const displayLocation = currentTv?.location || campusLocation || 'Kampus Bina Widya, Pekanbaru';
 
   return (
     <header className="header glass-panel header-grand">
@@ -44,7 +45,7 @@ const Header = () => {
           <h3 className="header-unit-title">{displayUnit}</h3>
           <span className="header-campus-info">
             <MapPin size={11} className="header-pin-icon" />
-            {campusLocation || 'Kampus Bina Widya, Pekanbaru'}
+            {displayLocation}
           </span>
         </div>
       </div>

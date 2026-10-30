@@ -26,22 +26,43 @@ const isLightBackground = (bg) => {
   return false;
 };
 
-const Slider = () => {
+const Slider = ({ currentTv }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { slides: rawSlides, slideDuration, isDbConnected } = useDashboard();
-  const slides = Array.isArray(rawSlides) ? rawSlides : [];
+  const allSlides = Array.isArray(rawSlides) ? rawSlides : [];
+
+  // Filter slides berdasarkan target_tvs jika sedang dibuka pada perangkat TV tertentu
+  const slides = allSlides.filter(slide => {
+    if (!currentTv) return true; // Tidak ada filter TV khusus, tayangkan semua
+    const targets = slide.targetTvs || slide.target_tvs;
+    if (!targets || !Array.isArray(targets) || targets.length === 0 || targets.includes('all')) {
+      return true; // Slide ini disetel global (Semua TV)
+    }
+    const currentIdStr = String(currentTv.id);
+    const currentCodeStr = String(currentTv.code || '').toLowerCase();
+    return targets.some(t => {
+      const tStr = String(t).trim().toLowerCase();
+      return tStr === currentIdStr || tStr === currentCodeStr || tStr === `tv-${currentIdStr}`;
+    });
+  });
+
   const [blobUrls, setBlobUrls] = useState({});
 
   const activeIndex = Math.min(Math.max(0, Number.isFinite(currentSlide) ? currentSlide : 0), (slides.length || 1) - 1);
 
+  // Reset slide index jika slides berubah
+  useEffect(() => {
+    setCurrentSlide(0);
+  }, [slides.length]);
+
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
-    const durationSec = Math.max(3, Number(slideDuration) || 8);
+    const durationSec = Math.max(3, Number(currentTv?.slide_duration) || Number(slideDuration) || 8);
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (Number.isFinite(prev) ? (prev + 1) % slides.length : 0));
     }, durationSec * 1000);
     return () => clearInterval(timer);
-  }, [slides.length, slideDuration]);
+  }, [slides.length, slideDuration, currentTv?.slide_duration]);
 
   // Load local blobs if mediaUrl starts with 'localforage:'
   useEffect(() => {
@@ -116,9 +137,13 @@ const Slider = () => {
         <div style={{ color: '#94a3b8', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.85rem' }}>
           <ImageOff size={42} style={{ color: '#cbd5e1' }} />
           <div>
-            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#475569' }}>Tidak Ada Slide Aktif</h4>
+            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#475569' }}>
+              {currentTv ? `Tidak Ada Slide untuk ${currentTv.name}` : 'Tidak Ada Slide Aktif'}
+            </h4>
             <p style={{ margin: '0.4rem 0 0', fontSize: '0.9rem', color: '#94a3b8' }}>
-              {isDbConnected ? 'Belum ada data banner informasi pada database.' : 'Database offline — Menunggu koneksi MySQL...'}
+              {currentTv
+                ? 'Belum ada konten slide yang ditargetkan untuk layar TV ini. Anda dapat mengaturnya di menu Manajemen Slide pada Dasbor Admin.'
+                : (isDbConnected ? 'Belum ada data banner informasi pada database.' : 'Database offline — Menunggu koneksi MySQL...')}
             </p>
           </div>
         </div>

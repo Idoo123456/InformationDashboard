@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import logoUnri from '../../assets/LogoUnri2.png';
 import { useDashboard } from '../../context/DashboardContext';
 
-const Footer = () => {
+const Footer = ({ customAnnouncement }) => {
   const marqueeRef = useRef(null);
   const { announcements, marqueeSpeed, isDbConnected } = useDashboard();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -23,6 +23,12 @@ const Footer = () => {
     return expiry >= currentTime;
   });
 
+  // Jika TV memiliki custom announcement khusus, sertakan di urutan terdepan
+  const displayAnnouncements = [
+    ...(customAnnouncement && customAnnouncement.trim() ? [{ text: `📢 [TV KHUSUS] ${customAnnouncement.trim()}` }] : []),
+    ...activeAnnouncements
+  ];
+
   const emptyText = isDbConnected
     ? 'Pusat Informasi & Layanan Terpadu Universitas Riau — Belum ada pengumuman khusus saat ini.'
     : 'Pusat Informasi Kampus Terpadu — [Database Offline: Menunggu Koneksi MySQL Server...]';
@@ -39,14 +45,14 @@ const Footer = () => {
           <div className="marquee-content" ref={marqueeRef} style={{ animationDuration: `${marqueeSpeed || 20}s` }}>
             {/* Group 1 */}
             <div className="marquee-group">
-              {activeAnnouncements.length === 0 ? (
+              {displayAnnouncements.length === 0 ? (
                 <span className="marquee-item">
                   <Info size={14} className="marquee-item-icon" />
                   <span className="marquee-item-text">{emptyText}</span>
                   <span className="marquee-separator">•</span>
                 </span>
               ) : (
-                activeAnnouncements.map((item, i) => {
+                displayAnnouncements.map((item, i) => {
                   const text = typeof item === 'string' ? item : item.text;
                   return (
                     <span key={i} className="marquee-item">
@@ -60,14 +66,14 @@ const Footer = () => {
             </div>
             {/* Group 2 (Clone for seamless loop) */}
             <div className="marquee-group" aria-hidden="true">
-              {activeAnnouncements.length === 0 ? (
+              {displayAnnouncements.length === 0 ? (
                 <span className="marquee-item">
                   <Info size={14} className="marquee-item-icon" />
                   <span className="marquee-item-text">{emptyText}</span>
                   <span className="marquee-separator">•</span>
                 </span>
               ) : (
-                activeAnnouncements.map((item, i) => {
+                displayAnnouncements.map((item, i) => {
                   const text = typeof item === 'string' ? item : item.text;
                   return (
                     <span key={`clone-${i}`} className="marquee-item">

@@ -14,7 +14,7 @@ import localforage from 'localforage';
 // Subcomponents
 import ImageCropper from '../components/admin/ImageCropper';
 import UserManager from '../components/admin/UserManager';
-import TvScreenManager from '../components/admin/TvScreenManager';
+import TvDeviceManager from '../components/admin/TvDeviceManager';
 import RoomManager from '../components/admin/RoomManager';
 import ActivityLogViewer from '../components/admin/ActivityLogViewer';
 import OverviewTab from '../components/admin/OverviewTab';
@@ -589,7 +589,9 @@ function AdminDashboard() {
       bgColor: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
       qr: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id",
       qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id",
-      qrLabel: "Pindai QR"
+      qrLabel: "Pindai QR",
+      targetTvs: [],
+      target_tvs: []
     };
     setLocalSlides([...localSlides, newSlide]);
     showToastPopup('Slide berhasil ditambahkan ke daftar draft.');
@@ -836,6 +838,8 @@ function AdminDashboard() {
         mediaUrl: s.mediaUrl || '',
         isMediaOnly: Boolean(s.isMediaOnly),
         mediaFit: s.mediaFit || 'cover',
+        targetTvs: s.targetTvs || s.target_tvs || [],
+        target_tvs: s.targetTvs || s.target_tvs || [],
         btnText: s.btnText || '',
         btnLink: s.btnLink || '',
         sortOrder: idx + 1
@@ -886,15 +890,15 @@ function AdminDashboard() {
           <button className={`nav-btn ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => setActiveTab('rooms')}>
             <Building2 size={18} /> Master Ruangan
           </button>
+          <button className={`nav-btn ${activeTab === 'tv_devices' ? 'active' : ''}`} onClick={() => setActiveTab('tv_devices')}>
+            <Tv size={18} /> Kelola Perangkat TV
+          </button>
 
           {isSuperAdmin && (
             <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Pusat & Pengguna
               </div>
-              <button className={`nav-btn ${activeTab === 'tv_manager' ? 'active' : ''}`} onClick={() => setActiveTab('tv_manager')}>
-                <Tv size={18} /> TV Pusat (3 Layar)
-              </button>
               <button className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
                 <Users size={18} /> Manajemen Pengguna
               </button>
@@ -927,7 +931,7 @@ function AdminDashboard() {
               {activeTab === 'announcements' && 'Pengumuman'}
               {activeTab === 'reports' && 'Laporan Agenda'}
               {activeTab === 'rooms' && 'Master Ruangan Kampus'}
-              {activeTab === 'tv_manager' && 'Manajemen 3 Layar TV Pusat'}
+              {activeTab === 'tv_devices' && 'Manajemen Perangkat TV Digital Signage'}
               {activeTab === 'users' && 'Manajemen Pengguna & Akun Fakultas'}
               {activeTab === 'logs' && 'Log Audit Aktivitas Kampus'}
             </h1>
@@ -1111,8 +1115,8 @@ function AdminDashboard() {
             <RoomManager />
           )}
 
-          {activeTab === 'tv_manager' && isSuperAdmin && (
-            <TvScreenManager />
+          {activeTab === 'tv_devices' && (
+            <TvDeviceManager />
           )}
 
           {activeTab === 'users' && isSuperAdmin && (
