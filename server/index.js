@@ -309,18 +309,47 @@ app.put('/api/settings/:prefix', async (req, res) => {
 // ==========================================
 app.get('/api/schedules/:prefix', async (req, res) => {
   const { prefix } = req.params;
+  const { tv, device } = req.query;
+  const targetTvFilter = tv || device;
+
   try {
     const [rows] = await pool.query(
       'SELECT * FROM schedules WHERE faculty_prefix = ? ORDER BY date ASC, start_time ASC',
       [prefix]
     );
-    const formatted = rows.map(r => ({
-      ...r,
-      date: formatDateSafe(r.date),
-      startTime: r.start_time,
-      endTime: r.end_time,
-      partnerCategory: r.partner_category
-    }));
+    const formatted = rows.map(r => {
+      let targetTvs = [];
+      if (r.target_tvs) {
+        try {
+          targetTvs = typeof r.target_tvs === 'string' ? JSON.parse(r.target_tvs) : r.target_tvs;
+          if (!Array.isArray(targetTvs)) targetTvs = [];
+        } catch {
+          targetTvs = String(r.target_tvs).split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+
+      return {
+        ...r,
+        date: formatDateSafe(r.date),
+        startTime: r.start_time,
+        endTime: r.end_time,
+        partnerCategory: r.partner_category,
+        targetTvs: targetTvs,
+        target_tvs: targetTvs
+      };
+    });
+
+    // Jika parameter filter TV diberikan, saring jadwal untuk TV tersebut atau global
+    if (targetTvFilter) {
+      const filtered = formatted.filter(s => {
+        if (!s.targetTvs || s.targetTvs.length === 0 || s.targetTvs.includes('all')) {
+          return true; // Ditampilkan di semua TV
+        }
+        return s.targetTvs.some(t => String(t) === String(targetTvFilter));
+      });
+      return res.json(filtered);
+    }
+
     res.json(formatted);
   } catch (error) {
     console.error('Get schedules error:', error);
@@ -329,15 +358,16 @@ app.get('/api/schedules/:prefix', async (req, res) => {
 });
 
 app.post('/api/schedules', async (req, res) => {
-  const { faculty_prefix = 'main', date, startTime, endTime, title, description, loc, status, pic, partnerCategory, user = 'admin' } = req.body;
+  const { faculty_prefix = 'main', date, startTime, endTime, title, description, loc, status, pic, partnerCategory, targetTvs, target_tvs, user = 'admin' } = req.body;
   try {
     const locVal = loc && loc.trim() ? loc.trim() : '-';
     const partnerVal = partnerCategory && partnerCategory.trim() ? partnerCategory.trim() : 'Internal';
+    const targetTvsVal = JSON.stringify(targetTvs || target_tvs || []);
 
     const [result] = await pool.query(
-      `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [faculty_prefix, formatDateSafe(date), startTime, endTime, title, description || '', locVal, status || 'Akan Datang', pic || '-', partnerVal]
+      `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category, target_tvs)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [faculty_prefix, formatDateSafe(date), startTime, endTime, title, description || '', locVal, status || 'Akan Datang', pic || '-', partnerVal, targetTvsVal]
     );
 
     // Otomatis daftarkan ruangan ke tabel rooms jika belum terdaftar
@@ -396,10 +426,11 @@ app.put('/api/schedules/:prefix/bulk', async (req, res) => {
         ? s.partnerCategory.trim()
         : ((s.partner_category && typeof s.partner_category === 'string') ? s.partner_category.trim() : '');
       const partnerVal = rawPartner || 'Internal';
+      const targetTvsVal = JSON.stringify(s.targetTvs || s.target_tvs || []);
 
       await connection.query(
-        `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO schedules (faculty_prefix, date, start_time, end_time, title, description, loc, status, pic, partner_category, target_tvs)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           prefix,
           formatDateSafe(s.date),
@@ -410,7 +441,8 @@ app.put('/api/schedules/:prefix/bulk', async (req, res) => {
           locVal,
           s.status || 'Akan Datang',
           s.pic || '-',
-          partnerVal
+          partnerVal,
+          targetTvsVal
         ]
       );
 
@@ -824,6 +856,15 @@ app.get('/api/tv-devices', async (req, res) => {
     }
     sql += ' ORDER BY id ASC';
     const [rows] = await pool.query(sql, params);
+
+    // Fallback: Jika fakultas tertentu belum mendaftarkan TV sendiri, otomatis kembalikan TV kampus pusat
+    if (rows.length === 0 && faculty && faculty !== 'main') {
+      const [fallbackRows] = await pool.query('SELECT * FROM tv_devices WHERE faculty_prefix = "main" ORDER BY id ASC');
+      if (fallbackRows.length > 0) {
+        return res.json(fallbackRows);
+      }
+    }
+
     res.json(rows);
   } catch (error) {
     console.error('Get tv devices error:', error);
@@ -1138,6 +1179,17 @@ const server = app.listen(PORT, async () => {
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS test');
     console.log(`✅ [Database] MySQL Sukses Terhubung ke '${process.env.DB_NAME || 'db_pusat_informasi'}' pada host '${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}'`);
+    
+    // Auto-patch: pastikan kolom target_tvs tersedia di tabel schedules
+    try {
+      const [cols] = await pool.query(`SHOW COLUMNS FROM schedules LIKE 'target_tvs'`);
+      if (cols.length === 0) {
+        await pool.query(`ALTER TABLE schedules ADD COLUMN target_tvs TEXT NULL AFTER partner_category`);
+        console.log('✅ [Database Migration] Kolom target_tvs berhasil ditambahkan ke tabel schedules');
+      }
+    } catch (colErr) {
+      console.warn('⚠️ [Database Migration Note]:', colErr.message);
+    }
   } catch (err) {
     console.error(`❌ [Database ERROR] Gagal terhubung ke MySQL:`, err.message);
     console.error(`   👉 Pastikan host/port/user/password di server/.env sesuai. Host saat ini: ${process.env.DB_HOST}:${process.env.DB_PORT}`);

@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity, Briefcase } from 'lucide-react';
-import { getDynamicStatus } from '../../utils/adminAlerts';
+import { useState, useEffect } from 'react';
+import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity, Briefcase, Tv, X } from 'lucide-react';
+import { getDynamicStatus, showToastPopup } from '../../utils/adminAlerts';
 import { getLocalDateStr } from '../../utils/dateUtils';
+import { useDashboard } from '../../context/DashboardContext';
+import { DEFAULT_CAMPUS_TVS, fetchCampusTvDevices } from '../../utils/tvDevices';
 
 export default function SchedulesTab({
   localSchedules,
@@ -9,11 +11,126 @@ export default function SchedulesTab({
   setLocalScheduleSpeed,
   localScheduleScrollType,
   setLocalScheduleScrollType,
+  availableTvs: propTvs,
   handleAddSchedule,
   handleEditSchedule,
+  updateSchedule,
   deleteSchedule,
   handleSaveSchedules
 }) {
+  const { prefix, currentUser } = useDashboard();
+  const currentFaculty = currentUser?.faculty_prefix || prefix || 'main';
+
+  // Perangkat TV yang terdaftar di database - default ke daftar TV kampus (TV 1, 2, 3, 6, 8)
+  const [availableTvs, setAvailableTvs] = useState(() => (propTvs && propTvs.length > 0 ? propTvs : DEFAULT_CAMPUS_TVS));
+
+  // State Modal Target TV
+  const [targetModalSchedule, setTargetModalSchedule] = useState(null);
+  const [selectedTargetTvs, setSelectedTargetTvs] = useState([]);
+  const [isAllTvMode, setIsAllTvMode] = useState(true);
+
+  // Sinkronisasi data TV dari prop parent
+  useEffect(() => {
+    if (propTvs && propTvs.length > 0) {
+      setAvailableTvs(propTvs);
+    }
+  }, [propTvs]);
+
+  // Ambil data TV dari backend
+  useEffect(() => {
+    fetchCampusTvDevices(currentFaculty).then(data => {
+      if (Array.isArray(data) && data.length > 0) setAvailableTvs(data);
+    });
+  }, [currentFaculty]);
+
+  // Buka modal Target TV untuk agenda kegiatan
+  const handleOpenTargetModal = (schedule) => {
+    fetchCampusTvDevices(currentFaculty).then(data => {
+      if (Array.isArray(data) && data.length > 0) setAvailableTvs(data);
+    });
+    setTargetModalSchedule(schedule);
+    const currentTargets = schedule.targetTvs || schedule.target_tvs;
+    if (!currentTargets || !Array.isArray(currentTargets) || currentTargets.length === 0 || currentTargets.includes('all')) {
+      setIsAllTvMode(true);
+      setSelectedTargetTvs([]);
+    } else {
+      setIsAllTvMode(false);
+      setSelectedTargetTvs(currentTargets.map(t => String(t)));
+    }
+  };
+
+  // Simpan Target TV untuk agenda kegiatan
+  const handleSaveTargetTvs = () => {
+    if (!targetModalSchedule) return;
+    const finalTargets = isAllTvMode ? [] : selectedTargetTvs;
+    if (updateSchedule) {
+      updateSchedule(targetModalSchedule.id, { targetTvs: finalTargets, target_tvs: finalTargets }, null, true);
+    }
+    setTargetModalSchedule(null);
+    showToastPopup('Target tayang kegiatan berhasil disimpan!');
+  };
+
+  // Helper render badge target TV pada card kegiatan
+  const renderTargetBadge = (schedule) => {
+    const targets = schedule.targetTvs || schedule.target_tvs;
+    const isGlobal = !targets || !Array.isArray(targets) || targets.length === 0 || targets.includes('all');
+
+    if (isGlobal) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleOpenTargetModal(schedule); }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            padding: '0.2rem 0.55rem',
+            borderRadius: '0.45rem',
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            color: '#15803d',
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.15s'
+          }}
+          title="Klik untuk mengubah target tampilan TV"
+        >
+          <Tv size={12} /> Tayang di: Semua TV (Global)
+        </button>
+      );
+    }
+
+    const names = targets.map(t => {
+      const found = availableTvs.find(dev => String(dev.id) === String(t) || String(dev.code) === String(t));
+      return found ? (found.code ? found.code.toUpperCase() : `TV ${found.id}`) : `TV ${t}`;
+    });
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); handleOpenTargetModal(schedule); }}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.35rem',
+          padding: '0.2rem 0.55rem',
+          borderRadius: '0.45rem',
+          background: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          color: '#1d4ed8',
+          fontSize: '0.72rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          transition: 'all 0.15s'
+        }}
+        title="Klik untuk mengubah target tampilan TV"
+      >
+        <Tv size={12} /> Tayang di: {names.join(', ')} ({targets.length} TV)
+      </button>
+    );
+  };
+
   const [scheduleView, setScheduleView] = useState('daftar');
   const [scheduleSearch, setScheduleSearch] = useState('');
   const [scheduleDateFrom, setScheduleDateFrom] = useState('');
@@ -111,6 +228,7 @@ export default function SchedulesTab({
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
                       <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>{s.title}</h4>
+                      {renderTargetBadge(s)}
                       {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
                         <span style={{
                           display: 'inline-flex',
@@ -188,6 +306,7 @@ export default function SchedulesTab({
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '1rem', color: '#334155', fontWeight: 600 }}>{s.title}</h4>
+                        {renderTargetBadge(s)}
                         {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
                           <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ea580c', background: '#fff7ed', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid #fed7aa' }}>
                             Mitra: {s.partnerCategory}
@@ -229,9 +348,12 @@ export default function SchedulesTab({
               <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '120px', height: '120px', background: s.dynamicStatus === 'Berlangsung' ? 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(255,255,255,0) 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', borderRadius: '50%', zIndex: 0 }}></div>
               
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                <span style={{ padding: '0.35rem 0.85rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#10b981' : s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Otomatis' ? '#3b82f6' : s.dynamicStatus === 'Selesai' ? '#94a3b8' : '#ef4444', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                  {s.dynamicStatus}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ padding: '0.35rem 0.85rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#10b981' : s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Otomatis' ? '#3b82f6' : s.dynamicStatus === 'Selesai' ? '#94a3b8' : '#ef4444', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    {s.dynamicStatus}
+                  </span>
+                  {renderTargetBadge(s)}
+                </div>
                 <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Calendar size={12} /> {s.date}</span>
               </div>
               
@@ -318,6 +440,9 @@ export default function SchedulesTab({
                       >
                         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
                         <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{s.startTime} • {s.loc || 'Ruangan -'}</div>
+                        <div style={{ fontSize: '0.62rem', color: '#2563eb', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '2px' }}>
+                          <Tv size={10} /> {(!s.targetTvs || s.targetTvs.length === 0 || s.targetTvs.includes('all')) ? 'Semua TV' : `${s.targetTvs.length} TV`}
+                        </div>
                         {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
                           <div style={{ fontSize: '0.62rem', color: '#ea580c', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             🏢 {s.partnerCategory}
@@ -404,6 +529,239 @@ export default function SchedulesTab({
           <Save size={16} /> Publikasikan ke Layar TV
         </button>
       </div>
+
+      {/* MODAL TARGET DISPLAY TV */}
+      {targetModalSchedule && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '1rem', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column' }}>
+            {/* Modal Header */}
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '0.65rem', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Tv size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                    Target Display TV — Agenda Kegiatan
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                    Tentukan pada layar TV mana saja kegiatan ini akan ditampilkan
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTargetModalSchedule(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.4rem', borderRadius: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Ringkasan Kegiatan */}
+              <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.65rem', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '6px', height: '36px', borderRadius: '4px', background: '#2563eb' }}></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>
+                    📅 {targetModalSchedule.date} • ⏰ {targetModalSchedule.startTime} - {targetModalSchedule.endTime}
+                  </div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {targetModalSchedule.title}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mode Pemilihan: Semua TV vs TV Tertentu */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                  Pilihan Jangkauan Tampilan:
+                </label>
+
+                {/* Option 1: Semua TV */}
+                <div
+                  onClick={() => setIsAllTvMode(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '0.65rem',
+                    border: `2px solid ${isAllTvMode ? '#2563eb' : '#e2e8f0'}`,
+                    background: isAllTvMode ? '#eff6ff' : 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="schedule_modal_tv_mode"
+                    checked={isAllTvMode}
+                    onChange={() => setIsAllTvMode(true)}
+                    style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: isAllTvMode ? '#1e40af' : '#1e293b' }}>
+                      🌐 Tampilkan di Seluruh Layar TV (Global)
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: isAllTvMode ? '#3b82f6' : '#64748b' }}>
+                      Kegiatan ini akan otomatis tayang di setiap layar TV kampus tanpa batasan (default).
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option 2: TV Tertentu */}
+                <div
+                  onClick={() => setIsAllTvMode(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '0.65rem',
+                    border: `2px solid ${!isAllTvMode ? '#2563eb' : '#e2e8f0'}`,
+                    background: !isAllTvMode ? '#eff6ff' : 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="schedule_modal_tv_mode"
+                    checked={!isAllTvMode}
+                    onChange={() => setIsAllTvMode(false)}
+                    style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: !isAllTvMode ? '#1e40af' : '#1e293b' }}>
+                      🎯 Tampilkan Hanya di TV Tertentu (Contoh: TV 1, TV 3)
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: !isAllTvMode ? '#3b82f6' : '#64748b' }}>
+                      Pilih satu atau beberapa TV khusus untuk menayangkan kegiatan ini.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* LIST TV CHECKBOXES */}
+              {!isAllTvMode && (
+                <div style={{ marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569' }}>
+                      Pilih Layar TV Target:
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTargetTvs(availableTvs.map(t => String(t.id)))}
+                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#2563eb', cursor: 'pointer' }}
+                      >
+                        Pilih Semua
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTargetTvs([])}
+                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#64748b', cursor: 'pointer' }}
+                      >
+                        Hapus Pilihan
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '0.65rem', padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', background: '#fafbfc' }}>
+                    {availableTvs.length === 0 ? (
+                      <div style={{ padding: '1.5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                        Belum ada data TV di sistem. Silakan tambahkan TV di menu 'Kelola Perangkat TV'.
+                      </div>
+                    ) : (
+                      availableTvs.map(dev => {
+                        const devIdStr = String(dev.id);
+                        const isChecked = selectedTargetTvs.includes(devIdStr) || selectedTargetTvs.includes(dev.code);
+                        return (
+                          <label
+                            key={dev.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '0.75rem',
+                              padding: '0.6rem 0.85rem',
+                              borderRadius: '0.5rem',
+                              background: isChecked ? 'white' : '#f8fafc',
+                              border: `1px solid ${isChecked ? '#3b82f6' : '#e2e8f0'}`,
+                              cursor: 'pointer',
+                              boxShadow: isChecked ? '0 2px 4px rgba(59,130,246,0.1)' : 'none',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedTargetTvs(prev => [...prev.filter(id => id !== devIdStr && id !== dev.code), devIdStr]);
+                                  } else {
+                                    setSelectedTargetTvs(prev => prev.filter(id => id !== devIdStr && id !== dev.code));
+                                  }
+                                }}
+                                style={{ width: '17px', height: '17px', cursor: 'pointer', accentColor: '#2563eb' }}
+                              />
+                              <div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
+                                  {dev.name}
+                                </div>
+                                <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                                  {dev.location || 'Lokasi umum'} • <span style={{ fontWeight: 600 }}>Kode: {dev.code}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '0.35rem', background: '#eff6ff', color: '#1d4ed8' }}>
+                              #{dev.id}
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '0.8rem', color: '#475569', background: '#f8fafc', padding: '0.55rem 0.85rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                    {selectedTargetTvs.length === 0 ? (
+                      <span style={{ color: '#ef4444', fontWeight: 600 }}>⚠️ Belum ada TV yang dipilih. Silakan centang minimal 1 TV atau pilih opsi 'Semua TV'.</span>
+                    ) : (
+                      <span>
+                        ✅ Dipilih <strong>{selectedTargetTvs.length} dari {availableTvs.length} TV</strong>: {' '}
+                        {selectedTargetTvs.map(t => {
+                          const f = availableTvs.find(d => String(d.id) === String(t) || String(d.code) === String(t));
+                          return f ? f.name : `TV #${t}`;
+                        }).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fafbfc' }}>
+              <button
+                type="button"
+                onClick={() => setTargetModalSchedule(null)}
+                style={{ padding: '0.6rem 1.2rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.55rem', color: '#475569', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveTargetTvs}
+                style={{ padding: '0.6rem 1.4rem', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', border: 'none', borderRadius: '0.55rem', color: 'white', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.25)' }}
+              >
+                Terapkan Target TV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

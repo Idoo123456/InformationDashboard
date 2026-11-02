@@ -90,9 +90,20 @@ async function migrateAll() {
       status VARCHAR(50) DEFAULT 'Akan Datang',
       pic VARCHAR(100) DEFAULT '-',
       partner_category VARCHAR(150) DEFAULT 'Internal',
+      target_tvs TEXT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
+
+  // Patch target_tvs jika tabel sudah ada dari versi sebelumnya
+  try {
+    const [cols] = await pool.query("SHOW COLUMNS FROM schedules LIKE 'target_tvs'");
+    if (cols.length === 0) {
+      await pool.query("ALTER TABLE schedules ADD COLUMN target_tvs TEXT NULL AFTER partner_category");
+    }
+  } catch (e) {
+    // abaikan jika sudah ada
+  }
 
   // 6. announcements (Pengumuman Running Text)
   await pool.query(`

@@ -25,7 +25,7 @@ import { useDashboard } from '../../context/DashboardContext';
 
 const ITEMS_PER_PAGE = 6; // Grid 3x2 proporsional layar penuh TV
 
-const TUSlider = () => {
+const TUSlider = ({ currentTv }) => {
   const { schedules, slideDuration, facultyName, isDbConnected } = useDashboard();
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [slideTimerKey, setSlideTimerKey] = useState(0);
@@ -157,9 +157,26 @@ const TUSlider = () => {
     }
   }, [currentTime]);
 
+  // Filter schedules berdasarkan target_tvs jika dibuka pada layar TV tertentu
+  const tvFilteredSchedules = useMemo(() => {
+    return (schedules || []).filter(item => {
+      if (!currentTv) return true;
+      const targets = item.targetTvs || item.target_tvs;
+      if (!targets || !Array.isArray(targets) || targets.length === 0 || targets.includes('all')) {
+        return true;
+      }
+      const currentIdStr = String(currentTv.id);
+      const currentCodeStr = String(currentTv.code || '').toLowerCase();
+      return targets.some(t => {
+        const tStr = String(t).trim().toLowerCase();
+        return tStr === currentIdStr || tStr === currentCodeStr || tStr === `tv-${currentIdStr}`;
+      });
+    });
+  }, [schedules, currentTv]);
+
   // Filter Slide 1: Kegiatan Minggu Ini
   const thisWeekSchedules = useMemo(() => {
-    return (schedules || [])
+    return tvFilteredSchedules
       .filter(item => {
         if (!item.date) return false;
         return item.date >= weekBounds.startStr && item.date <= weekBounds.endStr;
@@ -169,11 +186,11 @@ const TUSlider = () => {
         if (cmp !== 0) return cmp;
         return (a.startTime || '').localeCompare(b.startTime || '');
       });
-  }, [schedules, weekBounds]);
+  }, [tvFilteredSchedules, weekBounds]);
 
   // Filter Slide 2: Kegiatan Yang Akan Datang
   const upcomingSchedules = useMemo(() => {
-    return (schedules || [])
+    return tvFilteredSchedules
       .filter(item => {
         if (!item.date) return false;
         return item.date > weekBounds.endStr;
@@ -183,7 +200,7 @@ const TUSlider = () => {
         if (cmp !== 0) return cmp;
         return (a.startTime || '').localeCompare(b.startTime || '');
       });
-  }, [schedules, weekBounds]);
+  }, [tvFilteredSchedules, weekBounds]);
 
   // Helper chunk array into pages of ITEMS_PER_PAGE (6)
   const chunkPages = (list) => {

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import { getLocalDateStr } from '../../utils/dateUtils';
 
-const Sidebar = () => {
+const Sidebar = ({ currentTv }) => {
   const scrollRef = useRef(null);
   const contentRef = useRef(null);
   const isPausedRef = useRef(false);
@@ -21,7 +21,22 @@ const Sidebar = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const activeSchedules = schedules.filter(item => {
+  // Filter schedules berdasarkan target_tvs jika dibuka pada layar TV tertentu
+  const tvFilteredSchedules = (schedules || []).filter(item => {
+    if (!currentTv) return true; // Tidak ada filter TV khusus, tampilkan semua
+    const targets = item.targetTvs || item.target_tvs;
+    if (!targets || !Array.isArray(targets) || targets.length === 0 || targets.includes('all')) {
+      return true; // Disetel global (Semua TV)
+    }
+    const currentIdStr = String(currentTv.id);
+    const currentCodeStr = String(currentTv.code || '').toLowerCase();
+    return targets.some(t => {
+      const tStr = String(t).trim().toLowerCase();
+      return tStr === currentIdStr || tStr === currentCodeStr || tStr === `tv-${currentIdStr}`;
+    });
+  });
+
+  const activeSchedules = tvFilteredSchedules.filter(item => {
     try {
       let scheduleDateStr = item.date || getLocalDateStr();
       if (typeof scheduleDateStr === 'string' && scheduleDateStr.includes('T')) {

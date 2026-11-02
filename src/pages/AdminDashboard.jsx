@@ -32,6 +32,7 @@ import {
   getDynamicStatus 
 } from '../utils/adminAlerts';
 import { getLocalDateStr, getStartOfMonthStr, getEndOfMonthStr } from '../utils/dateUtils';
+import { DEFAULT_CAMPUS_TVS, fetchCampusTvDevices } from '../utils/tvDevices';
 
 function AdminDashboard() {
   const [croppingImage, setCroppingImage] = useState(null);
@@ -104,6 +105,24 @@ function AdminDashboard() {
   useEffect(() => {
     fetchMasterRooms();
   }, [prefix]);
+
+  // Master Perangkat TV (sinkron antara Slide dan Kegiatan)
+  const [availableTvs, setAvailableTvs] = useState(DEFAULT_CAMPUS_TVS);
+  const fetchTvDevices = async () => {
+    try {
+      const activeFaculty = currentUser?.faculty_prefix || prefix || 'main';
+      const data = await fetchCampusTvDevices(activeFaculty);
+      if (Array.isArray(data) && data.length > 0) {
+        setAvailableTvs(data);
+      }
+    } catch (e) {
+      console.error('Error fetching tv devices:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchTvDevices();
+  }, [prefix, currentUser?.faculty_prefix]);
 
   const computedSchedules = schedules.map(s => ({ ...s, status: getDynamicStatus(s) }));
 
@@ -372,13 +391,53 @@ function AdminDashboard() {
   // Schedules Handlers
   const handleAddSchedule = () => {
     const today = getLocalDateStr();
-    setEditingSchedule({ id: Date.now(), date: today, startTime: '09:00', endTime: '12:00', title: '', description: '', loc: '', status: 'Otomatis', pic: '', partnerCategory: 'Internal' });
+    setEditingSchedule({
+      id: Date.now(),
+      date: today,
+      startTime: '09:00',
+      endTime: '12:00',
+      title: '',
+      description: '',
+      loc: '',
+      status: 'Otomatis',
+      pic: '',
+      partnerCategory: 'Internal',
+      targetTvs: []
+    });
     setIsScheduleModalOpen(true);
   };
 
   const handleEditSchedule = (schedule) => {
-    setEditingSchedule({ ...schedule });
+    const targets = schedule.targetTvs || schedule.target_tvs;
+    setEditingSchedule({
+      ...schedule,
+      targetTvs: Array.isArray(targets) ? targets : []
+    });
     setIsScheduleModalOpen(true);
+  };
+
+  const updateSchedule = async (id, fieldOrUpdates, value, autoSave = false) => {
+    isSchedulesDirty.current = true;
+    let nextSchedules;
+    setLocalSchedules(prev => {
+      nextSchedules = prev.map(s => {
+        if (s.id !== id) return s;
+        if (typeof fieldOrUpdates === 'object' && fieldOrUpdates !== null) {
+          return { ...s, ...fieldOrUpdates };
+        }
+        return { ...s, [fieldOrUpdates]: value };
+      });
+      return nextSchedules;
+    });
+
+    if (autoSave && isDbConnected && nextSchedules) {
+      try {
+        await saveSchedulesToDb(nextSchedules);
+        isSchedulesDirty.current = false;
+      } catch (err) {
+        console.warn('Auto save schedule error:', err);
+      }
+    }
   };
 
   const handleSaveModalSchedule = async (passedSchedule) => {
@@ -1070,8 +1129,10 @@ function AdminDashboard() {
               setLocalScheduleSpeed={setLocalScheduleSpeed}
               localScheduleScrollType={localScheduleScrollType}
               setLocalScheduleScrollType={setLocalScheduleScrollType}
+              availableTvs={availableTvs}
               handleAddSchedule={handleAddSchedule}
               handleEditSchedule={handleEditSchedule}
+              updateSchedule={updateSchedule}
               deleteSchedule={deleteSchedule}
               handleSaveSchedules={handleSaveSchedules}
             />
@@ -1084,6 +1145,7 @@ function AdminDashboard() {
               setLocalSlideDuration={setLocalSlideDuration}
               selectedSlides={selectedSlides}
               setSelectedSlides={setSelectedSlides}
+              availableTvs={availableTvs}
               handleDeleteSelectedSlides={handleDeleteSelectedSlides}
               handleAddSlide={handleAddSlide}
               handleSaveSlides={handleSaveSlides}
@@ -1136,6 +1198,7 @@ function AdminDashboard() {
         setEditingSchedule={setEditingSchedule}
         isExisting={Boolean(localSchedules.find(s => s.id === editingSchedule?.id))}
         masterRooms={masterRooms}
+        availableTvs={availableTvs}
         onSave={handleSaveModalSchedule}
       />
 

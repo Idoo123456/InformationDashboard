@@ -141,18 +141,18 @@ function TVDisplay() {
     // 2. FOKUS AGENDA: Agenda Lebar di Kiri (Hero), Slide Kompak di Kanan
     contentLayout = (
       <>
-        <Sidebar />
+        <Sidebar currentTv={tvDeviceConfig} />
         <Slider currentTv={tvDeviceConfig} />
       </>
     );
   } else if (activeLayout === 'tu') {
     // 3. TEMA TU: 2 Slide Khusus Tata Usaha (Pekan Ini & Yang Akan Datang)
-    contentLayout = <TUSlider />;
+    contentLayout = <TUSlider currentTv={tvDeviceConfig} />;
   } else if (activeLayout === 'admin') {
     // 4. TEMA ADMIN: Sidebar Lebar Eksekutif di Kiri, Slide di Kanan
     contentLayout = (
       <>
-        <Sidebar />
+        <Sidebar currentTv={tvDeviceConfig} />
         <Slider currentTv={tvDeviceConfig} />
       </>
     );
@@ -160,7 +160,7 @@ function TVDisplay() {
     // 5. STANDARD (Default): Kegiatan di Kiri, Slide di Kanan
     contentLayout = (
       <>
-        <Sidebar />
+        <Sidebar currentTv={tvDeviceConfig} />
         <Slider currentTv={tvDeviceConfig} />
       </>
     );

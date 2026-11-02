@@ -8,6 +8,7 @@ import { resolveMediaInfo, sanitizeMediaInput, detectMediaType } from '../../uti
 import SlideMedia from '../display/SlideMedia';
 import { showToastPopup } from '../../utils/adminAlerts';
 import { useDashboard } from '../../context/DashboardContext';
+import { DEFAULT_CAMPUS_TVS, fetchCampusTvDevices } from '../../utils/tvDevices';
 
 export default function SlidesTab({
   localSlides,
@@ -15,6 +16,7 @@ export default function SlidesTab({
   setLocalSlideDuration,
   selectedSlides,
   setSelectedSlides,
+  availableTvs: propTvs,
   handleDeleteSelectedSlides,
   handleAddSlide,
   handleSaveSlides,
@@ -26,8 +28,8 @@ export default function SlidesTab({
   const { prefix, currentUser } = useDashboard();
   const currentFaculty = currentUser?.faculty_prefix || prefix || 'main';
 
-  // State untuk daftar perangkat TV yang terdaftar di database
-  const [availableTvs, setAvailableTvs] = useState([]);
+  // State untuk daftar perangkat TV yang terdaftar di database - default ke daftar TV kampus (TV 1, 2, 3, 6, 8)
+  const [availableTvs, setAvailableTvs] = useState(() => (propTvs && propTvs.length > 0 ? propTvs : DEFAULT_CAMPUS_TVS));
   
   // State untuk modal konfigurasi target TV
   const [targetModalSlide, setTargetModalSlide] = useState(null); // slide yang sedang diatur
@@ -35,19 +37,25 @@ export default function SlidesTab({
   const [isAllTvMode, setIsAllTvMode] = useState(true);
   const [tvSearch, setTvSearch] = useState('');
 
+  // Sinkronisasi data TV dari prop parent
+  useEffect(() => {
+    if (propTvs && propTvs.length > 0) {
+      setAvailableTvs(propTvs);
+    }
+  }, [propTvs]);
+
   // Ambil daftar TV dari backend sesuai akun fakultas yang aktif
   useEffect(() => {
-    const url = `/api/tv-devices?faculty=${currentFaculty}`;
-    fetch(url)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => {
-        if (Array.isArray(data)) setAvailableTvs(data);
-      })
-      .catch(err => console.error('Error fetching tv devices for slides:', err));
+    fetchCampusTvDevices(currentFaculty).then(data => {
+      if (Array.isArray(data) && data.length > 0) setAvailableTvs(data);
+    });
   }, [currentFaculty]);
 
   // Buka modal Target TV untuk slide tertentu
   const handleOpenTargetModal = (slide) => {
+    fetchCampusTvDevices(currentFaculty).then(data => {
+      if (Array.isArray(data) && data.length > 0) setAvailableTvs(data);
+    });
     setTargetModalSlide(slide);
     setTvSearch('');
     const currentTargets = slide.targetTvs || slide.target_tvs;

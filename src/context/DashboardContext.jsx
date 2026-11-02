@@ -198,10 +198,24 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         const resSchedules = await fetch(`/api/schedules/${prefix}?_t=${Date.now()}`, noCacheOptions);
         if (resSchedules.ok) {
           const data = await resSchedules.json();
-          const cleaned = Array.isArray(data) ? data.map(item => ({
-            ...item,
-            date: typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : (item.date || '')
-          })) : [];
+          const cleaned = Array.isArray(data) ? data.map(item => {
+            let targetTvs = [];
+            const rawTargets = item.targetTvs || item.target_tvs;
+            if (rawTargets) {
+              try {
+                targetTvs = typeof rawTargets === 'string' ? JSON.parse(rawTargets) : rawTargets;
+                if (!Array.isArray(targetTvs)) targetTvs = [];
+              } catch {
+                targetTvs = String(rawTargets).split(',').map(s => s.trim()).filter(Boolean);
+              }
+            }
+            return {
+              ...item,
+              date: typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : (item.date || ''),
+              targetTvs: targetTvs,
+              target_tvs: targetTvs
+            };
+          }) : [];
           setSchedules(prev => {
             return JSON.stringify(prev) === JSON.stringify(cleaned) ? prev : cleaned;
           });
@@ -264,10 +278,16 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   }, [fetchAllFromDb]);
 
   const saveSchedulesToDb = async (newSchedules) => {
-    const cleaned = (newSchedules || []).map(s => ({
-      ...s,
-      date: typeof s.date === 'string' && s.date.includes('T') ? s.date.split('T')[0] : (s.date || '')
-    }));
+    const cleaned = (newSchedules || []).map(s => {
+      const targets = s.targetTvs || s.target_tvs || [];
+      const finalTargets = Array.isArray(targets) ? targets : [];
+      return {
+        ...s,
+        date: typeof s.date === 'string' && s.date.includes('T') ? s.date.split('T')[0] : (s.date || ''),
+        targetTvs: finalTargets,
+        target_tvs: finalTargets
+      };
+    });
     const res = await fetch(`/api/schedules/${prefix}/bulk`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
