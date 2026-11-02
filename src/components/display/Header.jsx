@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import logoUnri from '../../assets/logounri.png';
-import { Clock, Award, Building2, MapPin, Sparkles } from 'lucide-react';
+import { Clock, Award, Building2, MapPin, Sparkles, BookOpen } from 'lucide-react';
 
 const Header = ({ currentTv }) => {
   const [time, setTime] = useState(new Date());
@@ -32,21 +32,30 @@ const Header = ({ currentTv }) => {
   const displayUnit = currentTv?.name || subUnitName || (prefix === 'main' ? 'Pusat Informasi & Layanan Terpadu' : 'Pusat Informasi Fakultas');
   const displayLocation = currentTv?.location || campusLocation || 'Kampus Bina Widya, Pekanbaru';
 
+  // Tulisan identitas brand di samping logo (khusus Perpustakaan sesuai permintaan)
+  const isCustomUnit = subUnitName && subUnitName.trim() && subUnitName !== 'Pusat Informasi & Layanan Terpadu' && subUnitName !== 'Pusat Informasi Fakultas';
+  const brandTitle = isCustomUnit ? subUnitName.trim() : 'PERPUSTAKAAN';
+
   return (
     <header className="header glass-panel header-grand">
-      {/* BAGIAN KIRI: LOGO RESMI & UNIT KERJA */}
+      {/* BAGIAN KIRI: LOGO RESMI & EMBLEM IDENTITAS PERPUSTAKAAN */}
       <div className="header-brand">
         <div className="header-logo-wrap">
           <img src={logoUnri} alt="Logo UNRI" className="header-logo-img" />
         </div>
+        
         <div className="header-brand-divider" />
-        <div className="header-brand-text">
-          <span className="header-sub-brand">UNIVERSITAS RIAU</span>
-          <h3 className="header-unit-title">{displayUnit}</h3>
-          <span className="header-campus-info">
-            <MapPin size={11} className="header-pin-icon" />
-            {displayLocation}
-          </span>
+
+        <div className="header-brand-perpustakaan">
+          <div className="header-library-badge">
+            <div className="header-library-icon-wrap">
+              <BookOpen size={22} strokeWidth={2.4} className="header-library-icon" />
+            </div>
+            <div className="header-library-text-wrap">
+              <h2 className="header-library-title">{brandTitle}</h2>
+              <div className="header-library-glow-line" />
+            </div>
+          </div>
         </div>
       </div>
 

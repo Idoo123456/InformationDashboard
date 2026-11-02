@@ -170,7 +170,7 @@ function AdminDashboard() {
 
   // local states for settings
   const [localFaculty, setLocalFaculty] = useState(facultyName);
-  const [localSubUnit, setLocalSubUnit] = useState(subUnitName || "UPA Perpustakaan");
+  const [localSubUnit, setLocalSubUnit] = useState((subUnitName && subUnitName !== 'Pusat Informasi & Layanan Terpadu') ? subUnitName : "Perpustakaan");
   const [localAccreditation, setLocalAccreditation] = useState(accreditation || "Akreditasi Unggul");
   const [localCampusLocation, setLocalCampusLocation] = useState(campusLocation || "Kampus Bina Widya");
   const [localOperationalHours, setLocalOperationalHours] = useState(operationalHours || "08:00 - 16:00 WIB");

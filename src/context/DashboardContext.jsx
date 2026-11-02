@@ -59,7 +59,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
 
   // State Pengaturan (Settings)
   const [facultyName, setFacultyName] = useState(() => defaultFacultyNameOverride || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau'));
-  const [subUnitName, setSubUnitName] = useState(() => loadPreference('subUnitName', 'Pusat Informasi & Layanan Terpadu'));
+  const [subUnitName, setSubUnitName] = useState(() => loadPreference('subUnitName', 'Perpustakaan'));
   const [accreditation, setAccreditation] = useState(() => loadPreference('accreditation', 'Akreditasi Unggul'));
   const [campusLocation, setCampusLocation] = useState(() => loadPreference('campusLocation', 'Kampus Bina Widya'));
   const [operationalHours, setOperationalHours] = useState(() => loadPreference('operationalHours', '08:00 - 16:00 WIB'));
