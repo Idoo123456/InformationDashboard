@@ -17,6 +17,25 @@ async function migrateAll() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
   // 2. users (Pengguna & Operator)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -33,6 +52,25 @@ async function migrateAll() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
   // 3. rooms (Master Ruangan & Studio Kampus)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS rooms (
@@ -46,6 +84,36 @@ async function migrateAll() {
       facilities TEXT,
       is_available BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // 3b. pics (Master PIC & Penanggung Jawab Kegiatan)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS pics (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL DEFAULT 'main',
+      name VARCHAR(150) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_faculty_pic (faculty_prefix, name)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
@@ -95,6 +163,25 @@ async function migrateAll() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
   // Patch target_tvs jika tabel sudah ada dari versi sebelumnya
   try {
     const [cols] = await pool.query("SHOW COLUMNS FROM schedules LIKE 'target_tvs'");
@@ -115,6 +202,25 @@ async function migrateAll() {
       expiry_date DATE,
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
@@ -139,6 +245,25 @@ async function migrateAll() {
       sort_order INT DEFAULT 0,
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
@@ -195,6 +320,25 @@ async function migrateAll() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
   // 10. media_library (Galeri & Arsip Berkas Kampus)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS media_library (
@@ -206,6 +350,25 @@ async function migrateAll() {
       file_size BIGINT DEFAULT 0,
       uploaded_by VARCHAR(50) DEFAULT 'admin',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // 11. tv_requests (Permintaan Penambahan TV dari Fakultas ke Super Admin)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tv_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_prefix VARCHAR(20) NOT NULL,
+      requested_by VARCHAR(50) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      location VARCHAR(150) DEFAULT '',
+      preferred_layout VARCHAR(30) DEFAULT 'standard',
+      reason TEXT,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+      admin_notes TEXT,
+      approved_by VARCHAR(50) NULL,
+      created_device_id INT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 
@@ -239,6 +402,18 @@ async function migrateAll() {
     ('main', 'TGCL - Event & Training Area', 'Area Pelatihan', 'UPA Perpustakaan', 'Lt. 3', 80, 'Proyektor HD, Whiteboard Elektronik, WiFi Dedicated'),
     ('main', 'Ruang Diskusi (Max 15 orang)', 'Ruang Kolaborasi', 'UPA Perpustakaan', 'Lt. 1', 15, 'TV Monitor, Whiteboard, Meja Modular'),
     ('main', 'Ruang Diskusi (Max 8 orang)', 'Ruang Kolaborasi', 'UPA Perpustakaan', 'Lt. 1', 8, 'TV Monitor, Whiteboard, Port Charger')
+    ON DUPLICATE KEY UPDATE name=VALUES(name);
+  `);
+
+  // Seed Master PICs
+  await pool.query(`
+    INSERT INTO pics (faculty_prefix, name) VALUES
+    ('main', 'Evi Susanti, S.Si., M.I.Kom.'),
+    ('main', 'Gusti Maya Sari, S. IP.'),
+    ('main', 'Yuliastuti, S.IP.'),
+    ('main', 'Anton Yuliarto, S.Kom.'),
+    ('main', 'H. Thamrin Hasan, M.Pd.'),
+    ('main', 'Listya Oktaviana, S.Sos.')
     ON DUPLICATE KEY UPDATE name=VALUES(name);
   `);
 

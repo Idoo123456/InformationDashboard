@@ -7,11 +7,15 @@ import {
 import { useDashboard } from '../../context/DashboardContext';
 
 export default function RoomManager() {
-  const { currentFacultyPrefix, isSuperAdmin, FACULTY_LIST } = useDashboard();
+  const { currentFacultyPrefix, isSuperAdmin, currentUser, FACULTY_LIST, prefix } = useDashboard();
+  const activeFaculty = currentUser?.faculty_prefix || currentFacultyPrefix || prefix || 'main';
+  const currentFacultyObj = FACULTY_LIST?.find(f => f.prefix === activeFaculty);
+
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBuilding, setFilterBuilding] = useState('ALL');
+  const [filterFaculty, setFilterFaculty] = useState('ALL');
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +26,7 @@ export default function RoomManager() {
     floor: 'Lt. 1',
     capacity: 30,
     facilities: '',
-    faculty_prefix: currentFacultyPrefix || 'main'
+    faculty_prefix: activeFaculty
   });
 
   const categories = [
@@ -39,7 +43,10 @@ export default function RoomManager() {
   const fetchRooms = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/rooms?faculty=${currentFacultyPrefix || 'main'}`);
+      const endpoint = isSuperAdmin
+        ? '/api/rooms?faculty=main&all=true'
+        : `/api/rooms?faculty=${activeFaculty}`;
+      const res = await fetch(endpoint);
       if (res.ok) {
         const data = await res.json();
         setRooms(data);
@@ -53,17 +60,21 @@ export default function RoomManager() {
 
   useEffect(() => {
     fetchRooms();
-  }, [currentFacultyPrefix]);
+  }, [activeFaculty, isSuperAdmin]);
 
   const handleOpenAdd = () => {
+    const defaultBuilding = isSuperAdmin 
+      ? 'Gedung Rektorat' 
+      : (currentFacultyObj ? `Gedung ${currentFacultyObj.code}` : 'Gedung Fakultas');
+
     setFormData({
       name: '',
       category: 'Ruang Rapat',
-      building: 'Gedung Rektorat',
+      building: defaultBuilding,
       floor: 'Lt. 1',
       capacity: 30,
       facilities: 'AC, Proyektor, Sound System, WiFi Dedicated',
-      faculty_prefix: currentFacultyPrefix || 'main'
+      faculty_prefix: activeFaculty
     });
     setIsModalOpen(true);
   };
@@ -88,9 +99,9 @@ export default function RoomManager() {
       if (res.ok && data.success) {
         Swal.fire({
           title: 'Berhasil!',
-          text: `Ruangan "${formData.name}" berhasil didaftarkan ke sistem.`,
+          text: `Ruangan "${formData.name}" berhasil didaftarkan untuk ${formData.faculty_prefix === 'main' ? 'Pusat' : formData.faculty_prefix.toUpperCase()} dan langsung tersedia di sistem.`,
           icon: 'success',
-          timer: 1600,
+          timer: 1800,
           showConfirmButton: false
         });
         fetchRooms();
@@ -105,6 +116,11 @@ export default function RoomManager() {
   };
 
   const handleDeleteRoom = async (room) => {
+    if (!isSuperAdmin && (!room.faculty_prefix || room.faculty_prefix === 'main')) {
+      Swal.fire('Akses Ditolak', 'Ruangan Pusat / Global Kampus hanya dapat dihapus oleh Super Admin.', 'warning');
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Hapus Ruangan?',
       text: `Apakah Anda yakin ingin menghapus "${room.name}"? Jadwal yang menggunakan ruangan ini tetap tersimpan.`,
@@ -118,7 +134,7 @@ export default function RoomManager() {
 
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`/api/rooms/${room.id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/rooms/${room.id}?faculty_prefix=${activeFaculty}`, { method: 'DELETE' });
         if (res.ok) {
           Swal.fire({
             title: 'Terhapus!',
@@ -129,7 +145,8 @@ export default function RoomManager() {
           });
           fetchRooms();
         } else {
-          Swal.fire('Gagal', 'Tidak dapat menghapus ruangan ini.', 'error');
+          const data = await res.json();
+          Swal.fire('Gagal', data.error || 'Tidak dapat menghapus ruangan ini.', 'error');
         }
       } catch (err) {
         console.error(err);
@@ -140,11 +157,13 @@ export default function RoomManager() {
 
   // Filter Logic
   const filteredRooms = rooms.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = (r.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (r.building && r.building.toLowerCase().includes(searchTerm.toLowerCase())) ||
                           (r.facilities && r.facilities.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesBuilding = filterBuilding === 'ALL' || r.building === filterBuilding;
-    return matchesSearch && matchesBuilding;
+    const rFac = r.faculty_prefix || 'main';
+    const matchesFaculty = filterFaculty === 'ALL' || rFac === filterFaculty;
+    return matchesSearch && matchesBuilding && matchesFaculty;
   });
 
   const uniqueBuildings = Array.from(new Set(rooms.map(r => r.building).filter(Boolean)));
@@ -284,6 +303,38 @@ export default function RoomManager() {
           </select>
         </div>
 
+        {isSuperAdmin && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Fakultas / Unit:</span>
+            <select
+              value={filterFaculty}
+              onChange={(e) => setFilterFaculty(e.target.value)}
+              style={{
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.88rem',
+                background: '#fff',
+                color: '#334155',
+                outline: 'none',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              <option value="ALL">Semua Unit & Fakultas ({rooms.length})</option>
+              <option value="main">Pusat / Rektorat ({rooms.filter(r => !r.faculty_prefix || r.faculty_prefix === 'main').length})</option>
+              {FACULTY_LIST.filter(f => f.prefix !== 'main').map(f => {
+                const count = rooms.filter(r => r.faculty_prefix === f.prefix).length;
+                return (
+                  <option key={f.prefix} value={f.prefix}>
+                    {f.name} ({f.code}) ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
+
         <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
           Total Terdaftar: <strong style={{ color: '#0284c7' }}>{filteredRooms.length} Ruangan</strong>
         </div>
@@ -344,37 +395,72 @@ export default function RoomManager() {
             >
               {/* Category Tag & Action */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    background: '#e0f2fe',
-                    color: '#0369a1'
-                  }}>
-                    {room.category || 'Ruang Rapat'}
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      background: '#e0f2fe',
+                      color: '#0369a1'
+                    }}>
+                      {room.category || 'Ruang Rapat'}
+                    </span>
+
+                    {/* Unit / Faculty Badge */}
+                    {(!room.faculty_prefix || room.faculty_prefix === 'main') ? (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: '#f1f5f9',
+                        color: '#475569',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        🏛️ Pusat / Rektorat
+                      </span>
+                    ) : (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a'
+                      }}>
+                        🎓 {FACULTY_LIST?.find(f => f.prefix === room.faculty_prefix)?.code || room.faculty_prefix.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                   
-                  <button
-                    onClick={() => handleDeleteRoom(room)}
-                    title="Hapus Ruangan"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#cbd5e1',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '6px',
-                      transition: 'color 0.15s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = '#cbd5e1'}
-                  >
-                    <Trash2 size={17} />
-                  </button>
+                  {(!isSuperAdmin && (!room.faculty_prefix || room.faculty_prefix === 'main')) ? (
+                    <span title="Ruangan Global Kampus hanya dapat dihapus oleh Super Admin" style={{ color: '#94a3b8', fontSize: '0.75rem', padding: '4px', cursor: 'not-allowed' }}>
+                      🔒 Pusat
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleDeleteRoom(room)}
+                      title="Hapus Ruangan"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#cbd5e1',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '6px',
+                        transition: 'color 0.15s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#cbd5e1'}
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  )}
                 </div>
 
                 <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
@@ -631,10 +717,10 @@ export default function RoomManager() {
                   />
                 </div>
 
-                {isSuperAdmin && (
+                {isSuperAdmin ? (
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                      Unit / Fakultas Pemilik
+                      Unit / Fakultas Pemilik Ruangan
                     </label>
                     <select
                       value={formData.faculty_prefix}
@@ -648,10 +734,26 @@ export default function RoomManager() {
                         background: '#fff'
                       }}
                     >
-                      {FACULTY_LIST.map(f => (
-                        <option key={f.prefix} value={f.prefix}>{f.name}</option>
+                      <option value="main">Pusat / Rektorat (Global Kampus)</option>
+                      {FACULTY_LIST.filter(f => f.prefix !== 'main').map(f => (
+                        <option key={f.prefix} value={f.prefix}>{f.name} ({f.code})</option>
                       ))}
                     </select>
+                  </div>
+                ) : (
+                  <div style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <span style={{ fontSize: '1.25rem' }}>🏛️</span>
+                    <div style={{ fontSize: '0.82rem', color: '#166534', lineHeight: 1.45 }}>
+                      Ruangan ini akan disimpan untuk <strong>{currentFacultyObj ? currentFacultyObj.name : activeFaculty.toUpperCase()}</strong> dan otomatis dapat dipantau oleh <strong>Super Admin</strong>.
+                    </div>
                   </div>
                 )}
               </div>

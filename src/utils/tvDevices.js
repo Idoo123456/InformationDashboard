@@ -12,28 +12,43 @@ export const DEFAULT_CAMPUS_TVS = [
 ];
 
 export const fetchCampusTvDevices = async (facultyPrefix = 'main') => {
+  const isMainCampus = !facultyPrefix || facultyPrefix === 'main' || facultyPrefix === 'all';
   try {
-    const url = `/api/tv-devices?faculty=${facultyPrefix || 'main'}&include_main=true`;
+    // Untuk fakultas khusus, ambil murni perangkat TV milik fakultas tersebut
+    const url = isMainCampus
+      ? '/api/tv-devices?faculty=main'
+      : `/api/tv-devices?faculty=${encodeURIComponent(facultyPrefix)}`;
+
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return data;
+      if (Array.isArray(data)) {
+        // Fakultas: kembalikan daftar TV fakultas tersebut (bisa array kosong [] jika belum ada yang disetujui)
+        if (!isMainCampus) {
+          return data;
+        }
+        // Kampus pusat: jika ada data dari DB gunakan, jika belum ada gunakan default
+        if (data.length > 0) {
+          return data;
+        }
       }
     }
 
-    // Fallback: ambil semua perangkat TV yang ada di sistem
-    const allRes = await fetch('/api/tv-devices');
-    if (allRes.ok) {
-      const allData = await allRes.json();
-      if (Array.isArray(allData) && allData.length > 0) {
-        return allData;
+    // Jika kampus pusat dan belum ada data di DB, coba ambil fallback
+    if (isMainCampus) {
+      const allRes = await fetch('/api/tv-devices');
+      if (allRes.ok) {
+        const allData = await allRes.json();
+        if (Array.isArray(allData) && allData.length > 0) {
+          return allData;
+        }
       }
+      return DEFAULT_CAMPUS_TVS;
     }
+
+    return [];
   } catch (err) {
     console.warn('Gagal memuat tv-devices:', err);
+    return isMainCampus ? DEFAULT_CAMPUS_TVS : [];
   }
-
-  // Fallback terakhir: default campus TVs agar UI tidak pernah kosong
-  return DEFAULT_CAMPUS_TVS;
 };

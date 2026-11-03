@@ -174,14 +174,6 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ message: 'Username atau password salah!' });
     }
 
-    // Periksa izin faculty:
-    if (user.role !== 'superadmin' && prefix && prefix !== 'main' && user.faculty_prefix !== prefix) {
-      await logActivity(username, prefix, 'LOGIN_DITOLAK', `Mencoba akses fakultas ${prefix} tanpa izin`, req);
-      return res.status(403).json({ 
-        message: `Akses ditolak! Akun "${username}" hanya memiliki izin untuk mengelola fakultas ${user.faculty_prefix.toUpperCase()}.` 
-      });
-    }
-
     // Update last_login
     await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
@@ -309,14 +301,26 @@ app.put('/api/settings/:prefix', async (req, res) => {
 // ==========================================
 app.get('/api/schedules/:prefix', async (req, res) => {
   const { prefix } = req.params;
-  const { tv, device } = req.query;
+  const { tv, device, all } = req.query;
   const targetTvFilter = tv || device;
 
   try {
-    const [rows] = await pool.query(
-      'SELECT * FROM schedules WHERE faculty_prefix = ? ORDER BY date ASC, start_time ASC',
-      [prefix]
-    );
+    let rows;
+    if (prefix === 'main' || all === 'true') {
+      // Super Admin (Pusat): Melihat SELURUH kegiatan dari SELURUH unit & fakultas untuk monitoring terpadu kampus
+      const [allRows] = await pool.query(
+        'SELECT * FROM schedules ORDER BY date ASC, start_time ASC'
+      );
+      rows = allRows;
+    } else {
+      // Unit/Fakultas Spesifik: Melihat kegiatan milik unit/fakultas tersebut
+      const [facRows] = await pool.query(
+        'SELECT * FROM schedules WHERE faculty_prefix = ? ORDER BY date ASC, start_time ASC',
+        [prefix]
+      );
+      rows = facRows;
+    }
+
     const formatted = rows.map(r => {
       let targetTvs = [];
       if (r.target_tvs) {
@@ -385,6 +389,19 @@ app.post('/api/schedules', async (req, res) => {
         }
       } catch (roomErr) {
         console.warn('Auto register room in POST /api/schedules note:', roomErr.message);
+      }
+    }
+
+    // Otomatis daftarkan PIC baru ke tabel pics jika belum terdaftar
+    const picTrimmed = (pic || '').trim();
+    if (picTrimmed && picTrimmed !== '-') {
+      try {
+        await pool.query(
+          'INSERT INTO pics (faculty_prefix, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)',
+          [faculty_prefix, picTrimmed]
+        );
+      } catch (picErr) {
+        console.warn('Auto register pic error in POST /api/schedules:', picErr.message);
       }
     }
 
@@ -463,6 +480,19 @@ app.put('/api/schedules/:prefix/bulk', async (req, res) => {
           console.warn('Auto register room in bulk note:', roomErr.message);
         }
       }
+
+      // Otomatis daftarkan PIC baru ke tabel pics jika belum terdaftar di database
+      const picTrimmed = (s.pic || '').trim();
+      if (picTrimmed && picTrimmed !== '-') {
+        try {
+          await connection.query(
+            'INSERT INTO pics (faculty_prefix, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)',
+            [prefix, picTrimmed]
+          );
+        } catch (picErr) {
+          console.warn('Auto register pic error in bulk note:', picErr.message);
+        }
+      }
     }
 
     await connection.commit();
@@ -534,14 +564,26 @@ app.put('/api/announcements/:prefix/bulk', async (req, res) => {
 // ==========================================
 app.get('/api/slides/:prefix', async (req, res) => {
   const { prefix } = req.params;
-  const { tv, device } = req.query;
+  const { tv, device, all } = req.query;
   const targetTvFilter = tv || device;
 
   try {
-    const [rows] = await pool.query(
-      'SELECT * FROM slides WHERE faculty_prefix = ? ORDER BY sort_order ASC, id ASC',
-      [prefix]
-    );
+    let rows;
+    if (prefix === 'main' || all === 'true') {
+      // Super Admin: Melihat seluruh slide kampus
+      const [allRows] = await pool.query(
+        'SELECT * FROM slides ORDER BY CASE WHEN faculty_prefix = "main" THEN 0 ELSE 1 END, sort_order ASC, id ASC'
+      );
+      rows = allRows;
+    } else {
+      // Fakultas: Hanya melihat slide milik fakultas tersebut
+      const [facRows] = await pool.query(
+        'SELECT * FROM slides WHERE faculty_prefix = ? ORDER BY sort_order ASC, id ASC',
+        [prefix]
+      );
+      rows = facRows;
+    }
+
     const formatted = rows.map(r => {
       let targetTvs = [];
       if (r.target_tvs) {
@@ -857,8 +899,8 @@ app.get('/api/tv-devices', async (req, res) => {
     sql += ' ORDER BY id ASC';
     const [rows] = await pool.query(sql, params);
 
-    // Fallback: Jika fakultas tertentu belum mendaftarkan TV sendiri, otomatis kembalikan TV kampus pusat
-    if (rows.length === 0 && faculty && faculty !== 'main') {
+    // Hanya gunakan fallback TV pusat jika secara eksplisit include_main diaktifkan
+    if (rows.length === 0 && faculty && faculty !== 'main' && include_main === 'true') {
       const [fallbackRows] = await pool.query('SELECT * FROM tv_devices WHERE faculty_prefix = "main" ORDER BY id ASC');
       if (fallbackRows.length > 0) {
         return res.json(fallbackRows);
@@ -1087,6 +1129,214 @@ app.delete('/api/tv-devices/:id', async (req, res) => {
 });
 
 // ==========================================
+// 8C. TV REQUESTS (PENGAJUAN PERANGKAT TV DARI FAKULTAS)
+// ==========================================
+app.get('/api/tv-requests', async (req, res) => {
+  const { faculty, status } = req.query;
+  try {
+    let sql = 'SELECT * FROM tv_requests';
+    const params = [];
+    const conditions = [];
+
+    if (faculty && faculty !== 'all') {
+      conditions.push('faculty_prefix = ?');
+      params.push(faculty);
+    }
+    if (status && status !== 'all') {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    sql += ' ORDER BY id DESC';
+
+    const [rows] = await pool.query(sql, params);
+    res.json(rows);
+  } catch (error) {
+    console.error('Get tv requests error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/tv-requests', async (req, res) => {
+  const {
+    faculty_prefix,
+    requested_by,
+    name,
+    location,
+    preferred_layout,
+    reason
+  } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Nama TV yang diajukan wajib diisi' });
+  }
+  if (!faculty_prefix) {
+    return res.status(400).json({ error: 'Fakultas pemohon wajib disertakan' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO tv_requests (faculty_prefix, requested_by, name, location, preferred_layout, reason, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+      [
+        faculty_prefix,
+        requested_by || 'admin_fakultas',
+        name.trim(),
+        location ? location.trim() : '',
+        preferred_layout || 'standard',
+        reason ? reason.trim() : ''
+      ]
+    );
+
+    const newId = result.insertId;
+    const [created] = await pool.query('SELECT * FROM tv_requests WHERE id = ?', [newId]);
+
+    await logActivity(
+      requested_by || 'admin_fakultas',
+      faculty_prefix,
+      'AJUKAN_TV',
+      `Mengajukan permohonan TV baru: "${name.trim()}" (${location || 'Lokasi belum diisi'})`,
+      req
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Permintaan penambahan TV berhasil dikirim ke Super Admin!',
+      request: created[0]
+    });
+  } catch (error) {
+    console.error('Create tv request error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/tv-requests/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  const {
+    approved_by,
+    name,
+    code,
+    location,
+    layout,
+    theme_color,
+    notes
+  } = req.body;
+
+  try {
+    const [reqRows] = await pool.query('SELECT * FROM tv_requests WHERE id = ?', [id]);
+    if (reqRows.length === 0) {
+      return res.status(404).json({ error: 'Permintaan TV tidak ditemukan' });
+    }
+
+    const tvReq = reqRows[0];
+    const finalName = (name && name.trim()) ? name.trim() : tvReq.name;
+    const finalLoc = location !== undefined ? location.trim() : tvReq.location;
+    const finalLayout = layout || tvReq.preferred_layout || 'standard';
+
+    // Generate code unik
+    let finalCode = (code && code.trim()) ? code.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-') : '';
+    if (!finalCode) {
+      finalCode = `${tvReq.faculty_prefix}-${finalName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`.replace(/-+/g, '-').slice(0, 30);
+    }
+    const [existingCode] = await pool.query('SELECT id FROM tv_devices WHERE code = ?', [finalCode]);
+    if (existingCode.length > 0) {
+      finalCode = `${finalCode}-${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    // Buat perangkat baru di tv_devices
+    const [devResult] = await pool.query(
+      `INSERT INTO tv_devices (code, name, location, faculty_prefix, layout, theme_color, slide_duration, marquee_speed, is_active, notes)
+       VALUES (?, ?, ?, ?, ?, ?, 8, 20, 1, ?)`,
+      [
+        finalCode,
+        finalName,
+        finalLoc,
+        tvReq.faculty_prefix,
+        finalLayout,
+        theme_color || '#1e40af',
+        notes || `Disetujui dari permohonan #${id} oleh ${tvReq.requested_by}`
+      ]
+    );
+
+    const newDeviceId = devResult.insertId;
+
+    // Update status pengajuan
+    await pool.query(
+      'UPDATE tv_requests SET status = "approved", approved_by = ?, created_device_id = ?, admin_notes = ? WHERE id = ?',
+      [approved_by || 'superadmin', newDeviceId, notes || 'Disetujui oleh Super Admin', id]
+    );
+
+    await logActivity(
+      approved_by || 'superadmin',
+      tvReq.faculty_prefix,
+      'SETUJUI_TV',
+      `Menyetujui permohonan TV #${id} dan membuat perangkat baru "${finalName}" (Kode: ${finalCode}) untuk ${tvReq.faculty_prefix}`,
+      req
+    );
+
+    const [createdDev] = await pool.query('SELECT * FROM tv_devices WHERE id = ?', [newDeviceId]);
+
+    res.json({
+      success: true,
+      message: `Permintaan TV "${finalName}" berhasil disetujui dan perangkat aktif!`,
+      device: createdDev[0]
+    });
+  } catch (error) {
+    console.error('Approve tv request error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/tv-requests/:id/reject', async (req, res) => {
+  const { id } = req.params;
+  const { approved_by, admin_notes } = req.body;
+
+  try {
+    const [reqRows] = await pool.query('SELECT * FROM tv_requests WHERE id = ?', [id]);
+    if (reqRows.length === 0) {
+      return res.status(404).json({ error: 'Permintaan TV tidak ditemukan' });
+    }
+
+    const tvReq = reqRows[0];
+
+    await pool.query(
+      'UPDATE tv_requests SET status = "rejected", approved_by = ?, admin_notes = ? WHERE id = ?',
+      [approved_by || 'superadmin', admin_notes || 'Permintaan ditolak oleh Super Admin', id]
+    );
+
+    await logActivity(
+      approved_by || 'superadmin',
+      tvReq.faculty_prefix,
+      'TOLAK_TV',
+      `Menolak pengajuan TV #${id} ("${tvReq.name}") untuk ${tvReq.faculty_prefix}. Alasan: ${admin_notes || '-'}`,
+      req
+    );
+
+    res.json({
+      success: true,
+      message: `Permintaan TV #${id} berhasil ditolak.`
+    });
+  } catch (error) {
+    console.error('Reject tv request error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/tv-requests/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM tv_requests WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Riwayat permohonan TV berhasil dihapus' });
+  } catch (error) {
+    console.error('Delete tv request error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
 // 9. MASTER FAKULTAS (faculties)
 // ==========================================
 app.get('/api/faculties', async (req, res) => {
@@ -1103,12 +1353,23 @@ app.get('/api/faculties', async (req, res) => {
 // 10. MASTER RUANGAN (rooms)
 // ==========================================
 app.get('/api/rooms', async (req, res) => {
-  const { faculty = 'main' } = req.query;
+  const { faculty = 'main', all } = req.query;
   try {
-    const [rows] = await pool.query(
-      'SELECT * FROM rooms WHERE faculty_prefix = ? OR faculty_prefix = "main" ORDER BY building ASC, name ASC',
-      [faculty]
-    );
+    let rows;
+    if (all === 'true' || faculty === 'all') {
+      // Super Admin: Melihat SEMUA ruangan dari SELURUH unit & fakultas
+      const [allRows] = await pool.query(
+        'SELECT * FROM rooms ORDER BY CASE WHEN faculty_prefix = "main" THEN 0 ELSE 1 END, faculty_prefix ASC, building ASC, name ASC'
+      );
+      rows = allRows;
+    } else {
+      // Unit/Fakultas Tertentu: HANYA melihat ruangan milik fakultas tersebut
+      const [facultyRows] = await pool.query(
+        'SELECT * FROM rooms WHERE faculty_prefix = ? ORDER BY building ASC, name ASC',
+        [faculty]
+      );
+      rows = facultyRows;
+    }
     res.json(rows);
   } catch (error) {
     console.error('Get rooms error:', error);
@@ -1124,7 +1385,7 @@ app.post('/api/rooms', async (req, res) => {
       'INSERT INTO rooms (faculty_prefix, name, category, building, floor, capacity, facilities) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [faculty_prefix, name, category || 'Ruang Rapat', building || '', floor || '', capacity || 30, facilities || '']
     );
-    await logActivity('admin', faculty_prefix, 'TAMBAH_RUANGAN', `Menambahkan ruangan baru "${name}" (${category})`, req);
+    await logActivity('admin', faculty_prefix, 'TAMBAH_RUANGAN', `Menambahkan ruangan baru "${name}" (${category}) untuk [${faculty_prefix}]`, req);
     res.json({ success: true, id: result.insertId });
   } catch (error) {
     console.error('Add room error:', error);
@@ -1134,13 +1395,53 @@ app.post('/api/rooms', async (req, res) => {
 
 app.delete('/api/rooms/:id', async (req, res) => {
   const { id } = req.params;
+  const { faculty_prefix } = req.query;
   try {
+    if (faculty_prefix && faculty_prefix !== 'main') {
+      const [room] = await pool.query('SELECT faculty_prefix, name FROM rooms WHERE id = ?', [id]);
+      if (room.length > 0 && room[0].faculty_prefix !== faculty_prefix) {
+        return res.status(403).json({ error: 'Anda hanya dapat menghapus ruangan milik fakultas Anda sendiri.' });
+      }
+    }
     await pool.query('DELETE FROM rooms WHERE id = ?', [id]);
-    await logActivity('admin', 'main', 'HAPUS_RUANGAN', `Menghapus ruangan ID #${id}`, req);
+    await logActivity('admin', faculty_prefix || 'main', 'HAPUS_RUANGAN', `Menghapus ruangan ID #${id}`, req);
     res.json({ success: true });
   } catch (error) {
     console.error('Delete room error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// 10b. MASTER PIC (pics)
+// ==========================================
+app.get('/api/pics', async (req, res) => {
+  const { faculty = 'main' } = req.query;
+  try {
+    const [rows] = await pool.query(
+      'SELECT DISTINCT name FROM pics WHERE faculty_prefix = ? OR faculty_prefix = "main" ORDER BY name ASC',
+      [faculty]
+    );
+    res.json(rows.map(r => r.name));
+  } catch (error) {
+    console.error('Get pics error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/pics', async (req, res) => {
+  const { faculty_prefix = 'main', name } = req.body;
+  const trimmed = (name || '').trim();
+  if (!trimmed) return res.status(400).json({ message: 'Nama PIC wajib diisi!' });
+  try {
+    await pool.query(
+      'INSERT INTO pics (faculty_prefix, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)',
+      [faculty_prefix, trimmed]
+    );
+    res.json({ success: true, name: trimmed });
+  } catch (error) {
+    console.error('Add PIC error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -1189,6 +1490,30 @@ const server = app.listen(PORT, async () => {
       }
     } catch (colErr) {
       console.warn('⚠️ [Database Migration Note]:', colErr.message);
+    }
+
+    // Auto-patch: pastikan tabel tv_requests tersedia
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tv_requests (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          faculty_prefix VARCHAR(20) NOT NULL,
+          requested_by VARCHAR(50) NOT NULL,
+          name VARCHAR(150) NOT NULL,
+          location VARCHAR(150) DEFAULT '',
+          preferred_layout VARCHAR(30) DEFAULT 'standard',
+          reason TEXT,
+          status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+          admin_notes TEXT,
+          approved_by VARCHAR(50) NULL,
+          created_device_id INT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+      console.log('✅ [Database Migration] Tabel tv_requests siap');
+    } catch (reqTblErr) {
+      console.warn('⚠️ [Database Migration Note]:', reqTblErr.message);
     }
   } catch (err) {
     console.error(`❌ [Database ERROR] Gagal terhubung ke MySQL:`, err.message);

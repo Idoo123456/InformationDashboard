@@ -28,8 +28,12 @@ export default function SlidesTab({
   const { prefix, currentUser } = useDashboard();
   const currentFaculty = currentUser?.faculty_prefix || prefix || 'main';
 
-  // State untuk daftar perangkat TV yang terdaftar di database - default ke daftar TV kampus (TV 1, 2, 3, 6, 8)
-  const [availableTvs, setAvailableTvs] = useState(() => (propTvs && propTvs.length > 0 ? propTvs : DEFAULT_CAMPUS_TVS));
+  const isMainCampus = currentFaculty === 'main';
+
+  // State untuk daftar perangkat TV yang terdaftar di database - default ke daftar TV kampus hanya jika main
+  const [availableTvs, setAvailableTvs] = useState(() => (
+    propTvs && propTvs.length > 0 ? propTvs : (isMainCampus ? DEFAULT_CAMPUS_TVS : [])
+  ));
   
   // State untuk modal konfigurasi target TV
   const [targetModalSlide, setTargetModalSlide] = useState(null); // slide yang sedang diatur
@@ -39,7 +43,7 @@ export default function SlidesTab({
 
   // Sinkronisasi data TV dari prop parent
   useEffect(() => {
-    if (propTvs && propTvs.length > 0) {
+    if (propTvs) {
       setAvailableTvs(propTvs);
     }
   }, [propTvs]);
@@ -47,14 +51,14 @@ export default function SlidesTab({
   // Ambil daftar TV dari backend sesuai akun fakultas yang aktif
   useEffect(() => {
     fetchCampusTvDevices(currentFaculty).then(data => {
-      if (Array.isArray(data) && data.length > 0) setAvailableTvs(data);
+      if (Array.isArray(data)) setAvailableTvs(data);
     });
   }, [currentFaculty]);
 
   // Buka modal Target TV untuk slide tertentu
   const handleOpenTargetModal = (slide) => {
     fetchCampusTvDevices(currentFaculty).then(data => {
-      if (Array.isArray(data) && data.length > 0) setAvailableTvs(data);
+      if (Array.isArray(data)) setAvailableTvs(data);
     });
     setTargetModalSlide(slide);
     setTvSearch('');
@@ -520,10 +524,14 @@ export default function SlidesTab({
                   />
                   <div>
                     <div style={{ fontSize: '0.9rem', fontWeight: 800, color: isAllTvMode ? '#1e40af' : '#1e293b' }}>
-                      🌐 Tampilkan di Seluruh Layar TV (Global)
+                      {isMainCampus 
+                        ? '🌐 Tampilkan di Seluruh Layar TV (Global)' 
+                        : `🌐 Tampilkan di Seluruh Layar TV Fakultas (${currentFaculty.toUpperCase()})`}
                     </div>
                     <div style={{ fontSize: '0.78rem', color: isAllTvMode ? '#3b82f6' : '#64748b' }}>
-                      Slide ini akan otomatis tayang di setiap layar TV kampus tanpa batasan (default).
+                      {isMainCampus 
+                        ? 'Slide ini akan otomatis tayang di setiap layar TV kampus tanpa batasan (default).' 
+                        : `Slide ini akan otomatis tayang di seluruh layar TV fakultas ${currentFaculty.toUpperCase()} (default).`}
                     </div>
                   </div>
                 </div>
@@ -552,10 +560,14 @@ export default function SlidesTab({
                   />
                   <div>
                     <div style={{ fontSize: '0.9rem', fontWeight: 800, color: !isAllTvMode ? '#1e40af' : '#1e293b' }}>
-                      🎯 Tampilkan Hanya di TV Tertentu (Contoh: TV 3, TV 6, TV 8)
+                      {isMainCampus 
+                        ? '🎯 Tampilkan Hanya di TV Tertentu (Contoh: TV 3, TV 6, TV 8)' 
+                        : `🎯 Tampilkan Hanya di TV Tertentu (${currentFaculty.toUpperCase()})`}
                     </div>
                     <div style={{ fontSize: '0.78rem', color: !isAllTvMode ? '#3b82f6' : '#64748b' }}>
-                      Pilih satu atau beberapa TV khusus untuk menayangkan slide ini.
+                      {isMainCampus 
+                        ? 'Pilih satu atau beberapa TV khusus untuk menayangkan slide ini.' 
+                        : `Pilih satu atau beberapa TV khusus milik fakultas ${currentFaculty.toUpperCase()} untuk menayangkan slide ini.`}
                     </div>
                   </div>
                 </div>
@@ -566,31 +578,34 @@ export default function SlidesTab({
                 <div style={{ marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569' }}>
-                      Pilih Layar TV Target:
+                      Pilih Layar TV Target ({isMainCampus ? 'Kampus Pusat' : currentFaculty.toUpperCase()}):
                     </span>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTargetTvs(availableTvs.map(t => String(t.id)))}
-                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#2563eb', cursor: 'pointer' }}
-                      >
-                        Pilih Semua
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTargetTvs([])}
-                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#64748b', cursor: 'pointer' }}
-                      >
-                        Hapus Pilihan
-                      </button>
-                    </div>
+                    {availableTvs.length > 0 && (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTargetTvs(availableTvs.map(t => String(t.id)))}
+                          style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#2563eb', cursor: 'pointer' }}
+                        >
+                          Pilih Semua
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTargetTvs([])}
+                          style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#64748b', cursor: 'pointer' }}
+                        >
+                          Hapus Pilihan
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* List TV Cards */}
                   <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '0.65rem', padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', background: '#fafbfc' }}>
                     {availableTvs.length === 0 ? (
-                      <div style={{ padding: '1.5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
-                        Belum ada data TV di sistem. Silakan tambahkan TV di menu 'Kelola Perangkat TV'.
+                      <div style={{ padding: '1.25rem', textAlign: 'center', color: '#b45309', background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '0.5rem', fontSize: '0.85rem' }}>
+                        ⚠️ Belum ada perangkat TV yang terdaftar / disetujui untuk unit <strong>{currentFaculty.toUpperCase()}</strong>.<br />
+                        Silakan ajukan penambahan TV di menu <strong>Layar TV & Pengajuan</strong>.
                       </div>
                     ) : (
                       availableTvs.map(dev => {

@@ -46,7 +46,7 @@ export default function Login() {
           localStorage.setItem('auth_token', data.token);
         }
         const targetPath = data.redirectPath || (basePath ? `${basePath}/admin` : '/admin');
-        navigate(targetPath);
+        window.location.href = targetPath;
       } else {
         setError(data.message || 'Login gagal, periksa username dan password.');
         setIsLoading(false);

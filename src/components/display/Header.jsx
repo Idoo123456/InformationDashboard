@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '../../context/DashboardContext';
 import logoUnri from '../../assets/logounri.png';
-import { Clock, Award, Building2, MapPin, Sparkles, BookOpen } from 'lucide-react';
+import { Clock, Award } from 'lucide-react';
 
 const Header = ({ currentTv }) => {
   const [time, setTime] = useState(new Date());
@@ -29,16 +29,16 @@ const Header = ({ currentTv }) => {
 
   // Nama fakultas / unit kerja resmi (dinamis sesuai prefix & pengaturan)
   const displayFaculty = facultyName || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
-  const displayUnit = currentTv?.name || subUnitName || (prefix === 'main' ? 'Pusat Informasi & Layanan Terpadu' : 'Pusat Informasi Fakultas');
-  const displayLocation = currentTv?.location || campusLocation || 'Kampus Bina Widya, Pekanbaru';
 
-  // Tulisan identitas brand di samping logo (khusus Perpustakaan sesuai permintaan)
+  // Identitas brand di samping logo: hanya teks "Perpustakaan" dengan font hitam tebal yang rapi & diperbesar
   const isCustomUnit = subUnitName && subUnitName.trim() && subUnitName !== 'Pusat Informasi & Layanan Terpadu' && subUnitName !== 'Pusat Informasi Fakultas';
-  const brandTitle = isCustomUnit ? subUnitName.trim() : 'PERPUSTAKAAN';
+  const brandTitle = isCustomUnit 
+    ? (subUnitName.trim().toLowerCase() === 'perpustakaan' ? 'Perpustakaan' : subUnitName.trim()) 
+    : 'Perpustakaan';
 
   return (
     <header className="header glass-panel header-grand">
-      {/* BAGIAN KIRI: LOGO RESMI & EMBLEM IDENTITAS PERPUSTAKAAN */}
+      {/* BAGIAN KIRI: LOGO RESMI & TEKS PERPUSTAKAAN */}
       <div className="header-brand">
         <div className="header-logo-wrap">
           <img src={logoUnri} alt="Logo UNRI" className="header-logo-img" />
@@ -46,16 +46,8 @@ const Header = ({ currentTv }) => {
         
         <div className="header-brand-divider" />
 
-        <div className="header-brand-perpustakaan">
-          <div className="header-library-badge">
-            <div className="header-library-icon-wrap">
-              <BookOpen size={22} strokeWidth={2.4} className="header-library-icon" />
-            </div>
-            <div className="header-library-text-wrap">
-              <h2 className="header-library-title">{brandTitle}</h2>
-              <div className="header-library-glow-line" />
-            </div>
-          </div>
+        <div className="header-brand-text">
+          <h2 className="header-perpustakaan-title">{brandTitle}</h2>
         </div>
       </div>
 

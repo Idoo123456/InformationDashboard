@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertTriangle, Clock, Calendar, MapPin, Briefcase, Tv } from 'lucide-react';
+import { X, Save, AlertTriangle, Clock, Calendar, MapPin, Briefcase, Tv, User } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { useDashboard } from '../../context/DashboardContext';
 import { DEFAULT_CAMPUS_TVS, fetchCampusTvDevices } from '../../utils/tvDevices';
+import { findRoomConflict, showRoomConflictPopup } from '../../utils/adminAlerts';
 
 export default function ScheduleModal({
   isOpen,
@@ -11,10 +13,12 @@ export default function ScheduleModal({
   isExisting,
   masterRooms,
   availableTvs: propTvs,
+  existingSchedules,
   onSave
 }) {
   const { prefix, currentUser } = useDashboard();
   const currentFaculty = currentUser?.faculty_prefix || prefix || 'main';
+  const activeFaculty = currentFaculty;
 
   const PIC_PRESETS = [
     'Evi Susanti, S.Si., M.I.Kom.',
@@ -25,39 +29,107 @@ export default function ScheduleModal({
     'Listya Oktaviana, S.Sos.'
   ];
 
-  const allRooms = Array.from(new Set((masterRooms || []).map(r => r.name).filter(Boolean)));
+  // State master PIC internal dengan sinkronisasi dari database
+  const [picsList, setPicsList] = useState(PIC_PRESETS);
+
+  // State master ruangan internal dengan sinkronisasi dari API backend & props
+  const [internalRooms, setInternalRooms] = useState(() => (Array.isArray(masterRooms) && masterRooms.length > 0 ? masterRooms : []));
+
+  useEffect(() => {
+    if (Array.isArray(masterRooms) && masterRooms.length > 0) {
+      setInternalRooms(masterRooms);
+    }
+  }, [masterRooms]);
+
+  // Ambil data ruangan, PIC, & TV terbaru langsung dari server setiap kali modal dibuka
+  useEffect(() => {
+    if (isOpen) {
+      const activeFaculty = currentUser?.faculty_prefix || prefix || 'main';
+      const isSuper = currentUser?.role === 'superadmin' || activeFaculty === 'main';
+
+      // 1. Ambil data Ruangan (Super Admin melihat semua ruangan, fakultas melihat ruangan fakultasnya + pusat)
+      fetch(`/api/rooms?faculty=${activeFaculty}${isSuper ? '&all=true' : ''}`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setInternalRooms(data);
+          }
+        })
+        .catch(err => console.error('Gagal mengambil data ruangan di ScheduleModal:', err));
+
+      // 2. Ambil data PIC dari database
+      fetch(`/api/pics?faculty=${activeFaculty}`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setPicsList(data);
+          }
+        })
+        .catch(err => console.error('Gagal mengambil data PIC di ScheduleModal:', err));
+
+      // 3. Ambil data TV khusus fakultas ini
+      fetchCampusTvDevices(currentFaculty).then(data => {
+        if (Array.isArray(data)) {
+          setAvailableTvs(data);
+        }
+      });
+    }
+  }, [isOpen, currentFaculty, currentUser?.faculty_prefix, prefix]);
+
+  // Kumpulan seluruh PIC: dari database API, jadwal yang sudah ada, & preset default
+  const allPics = Array.from(new Set([
+    ...(picsList || []),
+    ...(existingSchedules || []).map(s => s?.pic).filter(Boolean),
+    ...PIC_PRESETS
+  ].map(p => (typeof p === 'string' ? p.trim() : '')).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+
+  // Kumpulan seluruh ruangan: dari database API, props masterRooms, dan jadwal fakultas yang bersangkutan
+  const campusDefaultRooms = (activeFaculty === 'main' && (!internalRooms || internalRooms.length === 0)) ? [
+    'Studio Gurindam 12',
+    'Ruang Senat (Lt.5)',
+    'Gedung PKM Gobah',
+    'TGCL - Meetingroom',
+    'TGCL - Podcast',
+    'TGCL - Event & Training Area',
+    'Ruang Diskusi (Max 15 orang)',
+    'Ruang Diskusi (Max 8 orang)',
+    'Ruang Rapat Pimpinan',
+    'Ruang Sidang Lt.3',
+    'Lab Komputer Lt.2',
+    'Lobi Utama Rektorat'
+  ] : [];
+
+  const allRooms = Array.from(new Set([
+    ...(internalRooms || []).map(r => typeof r === 'string' ? r : (r?.name || r?.room_name || '')),
+    ...(masterRooms || []).map(r => typeof r === 'string' ? r : (r?.name || r?.room_name || '')),
+    ...(existingSchedules || []).map(s => s?.loc || s?.location || ''),
+    ...campusDefaultRooms
+  ].map(r => (typeof r === 'string' ? r.trim() : '')).filter(Boolean)));
+
   const [isCustomRoom, setIsCustomRoom] = useState(false);
   const [isCustomPic, setIsCustomPic] = useState(false);
   const [isCustomPartner, setIsCustomPartner] = useState(false);
 
-  // State target TV - default ke daftar TV kampus (TV 1, 2, 3, 6, 8) sehingga tidak pernah kosong
-  const [availableTvs, setAvailableTvs] = useState(() => (propTvs && propTvs.length > 0 ? propTvs : DEFAULT_CAMPUS_TVS));
+  // State target TV - jika fakultas khusus, gunakan propTvs atau [] agar tidak tercampur TV Pusat
+  const isMainCampusModal = currentFaculty === 'main';
+  const [availableTvs, setAvailableTvs] = useState(() => (
+    propTvs && propTvs.length > 0 ? propTvs : (isMainCampusModal ? DEFAULT_CAMPUS_TVS : [])
+  ));
   const [isAllTvMode, setIsAllTvMode] = useState(true);
   const [selectedTargetTvs, setSelectedTargetTvs] = useState([]);
 
   // Sinkronisasi data TV dari prop parent
   useEffect(() => {
-    if (propTvs && propTvs.length > 0) {
+    if (propTvs) {
       setAvailableTvs(propTvs);
     }
   }, [propTvs]);
-
-  // Ambil data TV terbaru dari server setiap kali modal dibuka
-  useEffect(() => {
-    if (isOpen) {
-      fetchCampusTvDevices(currentFaculty).then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setAvailableTvs(data);
-        }
-      });
-    }
-  }, [isOpen, currentFaculty]);
 
   // Update flags saat editingSchedule berganti
   useEffect(() => {
     if (editingSchedule) {
       setIsCustomRoom(!allRooms.includes(editingSchedule.loc) && Boolean(editingSchedule.loc));
-      setIsCustomPic(!PIC_PRESETS.includes(editingSchedule.pic) && Boolean(editingSchedule.pic));
+      setIsCustomPic(!allPics.includes(editingSchedule.pic) && Boolean(editingSchedule.pic));
       const isExt = Boolean(editingSchedule.partnerCategory) && editingSchedule.partnerCategory.trim().toLowerCase() !== 'internal';
       setIsCustomPartner(isExt);
 
@@ -111,6 +183,7 @@ export default function ScheduleModal({
   };
 
   const warning = checkTimeWarning();
+  const roomConflict = findRoomConflict(editingSchedule, existingSchedules);
 
   return (
     <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease' }}>
@@ -132,6 +205,40 @@ export default function ScheduleModal({
         {/* BODY */}
         <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
+          {/* ALERT PENGUNCIAN RUANGAN (ROOM TIME CONFLICT) */}
+          {roomConflict && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1.5px solid #f87171',
+              borderRadius: '0.65rem',
+              padding: '0.9rem 1rem',
+              display: 'flex',
+              gap: '0.75rem',
+              alignItems: 'flex-start',
+              color: '#991b1b',
+              fontSize: '0.85rem',
+              lineHeight: 1.45,
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.08)'
+            }}>
+              <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#dc2626' }} />
+              <div>
+                <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#b91c1c', fontSize: '0.92rem' }}>
+                  ⛔ Ruangan Sudah Dipinjam pada Jam Ini!
+                </strong>
+                Ruangan <strong>{roomConflict.loc || editingSchedule.loc}</strong> pada tanggal <strong>{roomConflict.date}</strong> jam <strong>{editingSchedule.startTime} - {editingSchedule.endTime} WIB</strong> sudah dipesan oleh:
+                <div style={{ marginTop: '0.35rem', background: 'white', padding: '0.45rem 0.65rem', borderRadius: '0.4rem', border: '1px solid #fecaca', color: '#1e293b' }}>
+                  <strong style={{ color: '#0f172a' }}>"{roomConflict.title}"</strong>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
+                    Jam dipinjam: <strong style={{ color: '#dc2626' }}>{String(roomConflict.startTime || roomConflict.start_time).slice(0, 5)} - {String(roomConflict.endTime || roomConflict.end_time).slice(0, 5)} WIB</strong> • PIC: {roomConflict.pic || '-'}
+                  </div>
+                </div>
+                <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#dc2626', fontWeight: 700 }}>
+                  ⚠️ Sistem mengunci jam ruangan ini. Silakan ganti jam kegiatan atau pilih ruangan lain.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ALERT PERINGATAN WAKTU TERLEWAT / WAKTU TERBALIK */}
           {warning && (
             <div style={{
@@ -267,7 +374,9 @@ export default function ScheduleModal({
           {/* PIC & KATEGORI MITRA */}
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PIC Kegiatan</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <User size={13} color="#2563eb" /> PIC Kegiatan
+              </label>
               <select 
                 value={isCustomPic ? 'Lainnya' : (editingSchedule.pic || '')} 
                 onChange={(e) => {
@@ -281,23 +390,29 @@ export default function ScheduleModal({
                   }
                 }} 
                 className="admin-input"
-                style={{ fontWeight: 600 }}
+                style={{ fontWeight: 600, color: editingSchedule.pic ? '#0f172a' : '#64748b' }}
               >
                 <option value="">-- Pilih PIC Penanggung Jawab --</option>
-                {PIC_PRESETS.map(p => (
+                {allPics.map(p => (
                   <option key={p} value={p}>{p}</option>
                 ))}
                 <option value="Lainnya">Lainnya (Ketik Nama Sendiri)...</option>
               </select>
               {isCustomPic && (
-                <input 
-                  type="text" 
-                  value={editingSchedule.pic} 
-                  onChange={(e) => setEditingSchedule({...editingSchedule, pic: e.target.value})} 
-                  className="admin-input" 
-                  placeholder="Ketik nama PIC penanggung jawab..." 
-                  style={{ marginTop: '0.5rem', fontWeight: 600 }} 
-                />
+                <>
+                  <input 
+                    type="text" 
+                    value={editingSchedule.pic} 
+                    onChange={(e) => setEditingSchedule({...editingSchedule, pic: e.target.value})} 
+                    className="admin-input" 
+                    placeholder="Ketik nama PIC penanggung jawab baru..." 
+                    style={{ marginTop: '0.5rem', fontWeight: 600 }} 
+                    autoFocus
+                  />
+                  <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.75rem', color: '#0284c7', fontWeight: 500 }}>
+                    ℹ️ PIC baru yang Anda ketik ini otomatis disimpan ke database & langsung tersedia di pilihan untuk kegiatan berikutnya.
+                  </p>
+                </>
               )}
             </div>
             <div style={{ flex: '1 1 200px' }}>
@@ -379,10 +494,14 @@ export default function ScheduleModal({
               />
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 800, color: isAllTvMode ? '#1e40af' : '#1e293b' }}>
-                  🌐 Tampilkan di Seluruh Layar TV (Global)
+                  {isMainCampusModal 
+                    ? '🌐 Tampilkan di Seluruh Layar TV (Global)' 
+                    : `🌐 Tampilkan di Seluruh Layar TV Fakultas (${activeFaculty.toUpperCase()})`}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: isAllTvMode ? '#3b82f6' : '#64748b' }}>
-                  Kegiatan ini akan otomatis tayang di setiap layar TV kampus tanpa batasan (default).
+                  {isMainCampusModal 
+                    ? 'Kegiatan ini akan otomatis tayang di setiap layar TV kampus tanpa batasan (default).' 
+                    : `Kegiatan ini akan otomatis tayang di setiap layar TV fakultas ${activeFaculty.toUpperCase()} (default).`}
                 </div>
               </div>
             </div>
@@ -411,10 +530,14 @@ export default function ScheduleModal({
               />
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 800, color: !isAllTvMode ? '#1e40af' : '#1e293b' }}>
-                  🎯 Tampilkan Hanya di TV Tertentu (Contoh: TV 1, TV 3)
+                  {isMainCampusModal 
+                    ? '🎯 Tampilkan Hanya di TV Tertentu (Contoh: TV 1, TV 3)' 
+                    : `🎯 Tampilkan Hanya di TV Tertentu (${activeFaculty.toUpperCase()})`}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: !isAllTvMode ? '#3b82f6' : '#64748b' }}>
-                  Pilih satu atau beberapa TV khusus untuk menayangkan kegiatan ini.
+                  {isMainCampusModal 
+                    ? 'Pilih satu atau beberapa TV khusus untuk menayangkan kegiatan ini.' 
+                    : `Pilih satu atau beberapa TV khusus milik fakultas ${activeFaculty.toUpperCase()} untuk menayangkan kegiatan ini.`}
                 </div>
               </div>
             </div>
@@ -424,30 +547,33 @@ export default function ScheduleModal({
               <div style={{ marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>
-                    Pilih Layar TV Target:
+                    Pilih Layar TV Target ({isMainCampusModal ? 'Kampus Pusat' : activeFaculty.toUpperCase()}):
                   </span>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTargetTvs(availableTvs.map(t => String(t.id)))}
-                      style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#2563eb', cursor: 'pointer' }}
-                    >
-                      Pilih Semua
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTargetTvs([])}
-                      style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#64748b', cursor: 'pointer' }}
-                    >
-                      Hapus Pilihan
-                    </button>
-                  </div>
+                  {availableTvs.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTargetTvs(availableTvs.map(t => String(t.id)))}
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#2563eb', cursor: 'pointer' }}
+                      >
+                        Pilih Semua
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTargetTvs([])}
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.35rem', color: '#64748b', cursor: 'pointer' }}
+                      >
+                        Hapus Pilihan
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '0.55rem', padding: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', background: 'white' }}>
                   {availableTvs.length === 0 ? (
-                    <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
-                      Belum ada data TV di sistem. Tambahkan di menu 'Kelola Perangkat TV'.
+                    <div style={{ padding: '1rem', textAlign: 'center', color: '#b45309', background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '0.45rem', fontSize: '0.8rem' }}>
+                      ⚠️ Belum ada perangkat TV yang terdaftar / disetujui untuk unit <strong>{activeFaculty.toUpperCase()}</strong>.<br/>
+                      Silakan ajukan penambahan TV melalui menu <strong>Layar TV & Pengajuan</strong>.
                     </div>
                   ) : (
                     availableTvs.map(dev => {
@@ -517,6 +643,13 @@ export default function ScheduleModal({
           <button onClick={onClose} style={{ padding: '0.65rem 1.35rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.55rem', cursor: 'pointer', fontWeight: 600, color: '#475569', transition: 'all 0.15s' }}>Batal</button>
           <button 
             onClick={() => {
+              // KUNCI RUANGAN: Cek apakah ruangan sudah dipinjam di jam yang sama
+              const conflict = findRoomConflict(editingSchedule, existingSchedules);
+              if (conflict) {
+                showRoomConflictPopup(conflict, editingSchedule);
+                return; // Batalkan dan kunci penyimpanan!
+              }
+
               let finalPartner = editingSchedule.partnerCategory;
               if (isCustomPartner) {
                 finalPartner = (finalPartner && finalPartner.trim()) ? finalPartner.trim() : 'Eksternal';
@@ -530,6 +663,18 @@ export default function ScheduleModal({
                 targetTvs: finalTargets,
                 target_tvs: finalTargets
               };
+
+              // Otomatis simpan PIC ke master database dan perbarui list lokal
+              if (finalSchedule.pic && finalSchedule.pic.trim()) {
+                const picName = finalSchedule.pic.trim();
+                fetch('/api/pics', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ faculty_prefix: currentFaculty, name: picName })
+                }).catch(e => console.warn('Sync pic note:', e));
+                setPicsList(prev => Array.from(new Set([...(prev || []), picName])));
+              }
+
               setEditingSchedule(finalSchedule);
               onSave(finalSchedule);
             }} 

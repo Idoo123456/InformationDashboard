@@ -15,6 +15,7 @@ import localforage from 'localforage';
 import ImageCropper from '../components/admin/ImageCropper';
 import UserManager from '../components/admin/UserManager';
 import TvDeviceManager from '../components/admin/TvDeviceManager';
+import FacultyTvView from '../components/admin/FacultyTvView';
 import RoomManager from '../components/admin/RoomManager';
 import ActivityLogViewer from '../components/admin/ActivityLogViewer';
 import OverviewTab from '../components/admin/OverviewTab';
@@ -29,7 +30,9 @@ import {
   showSuccessPopup, 
   showToastPopup, 
   showConfirmDelete, 
-  getDynamicStatus 
+  getDynamicStatus,
+  findRoomConflict,
+  showRoomConflictPopup
 } from '../utils/adminAlerts';
 import { getLocalDateStr, getStartOfMonthStr, getEndOfMonthStr } from '../utils/dateUtils';
 import { DEFAULT_CAMPUS_TVS, fetchCampusTvDevices } from '../utils/tvDevices';
@@ -77,6 +80,27 @@ function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [overviewLayout, setOverviewLayout] = useState('modern');
+  const [pendingTvCount, setPendingTvCount] = useState(0);
+
+  // Periksa permohonan TV pending untuk badge Super Admin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      const checkPendingRequests = async () => {
+        try {
+          const res = await fetch('/api/tv-requests?status=pending');
+          if (res.ok) {
+            const data = await res.json();
+            setPendingTvCount(data.length);
+          }
+        } catch (e) {
+          // ignore
+        }
+      };
+      checkPendingRequests();
+      const interval = setInterval(checkPendingRequests, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isSuperAdmin]);
 
   // Schedule modal state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -92,7 +116,9 @@ function AdminDashboard() {
   const [masterRooms, setMasterRooms] = useState([]);
   const fetchMasterRooms = async () => {
     try {
-      const res = await fetch(`/api/rooms?faculty=${prefix || 'main'}`);
+      const activeFaculty = currentUser?.faculty_prefix || prefix || 'main';
+      const isSuper = isSuperAdmin || activeFaculty === 'main';
+      const res = await fetch(`/api/rooms?faculty=${activeFaculty}${isSuper ? '&all=true' : ''}`);
       if (res.ok) {
         const data = await res.json();
         setMasterRooms(data);
@@ -104,15 +130,17 @@ function AdminDashboard() {
 
   useEffect(() => {
     fetchMasterRooms();
-  }, [prefix]);
+  }, [prefix, currentUser?.faculty_prefix, isSuperAdmin]);
 
   // Master Perangkat TV (sinkron antara Slide dan Kegiatan)
-  const [availableTvs, setAvailableTvs] = useState(DEFAULT_CAMPUS_TVS);
+  const activeFacPrefix = currentUser?.faculty_prefix || prefix || 'main';
+  const isMainCampusAdmin = activeFacPrefix === 'main';
+  const [availableTvs, setAvailableTvs] = useState(() => (isMainCampusAdmin ? DEFAULT_CAMPUS_TVS : []));
   const fetchTvDevices = async () => {
     try {
       const activeFaculty = currentUser?.faculty_prefix || prefix || 'main';
       const data = await fetchCampusTvDevices(activeFaculty);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setAvailableTvs(data);
       }
     } catch (e) {
@@ -390,6 +418,7 @@ function AdminDashboard() {
 
   // Schedules Handlers
   const handleAddSchedule = () => {
+    fetchMasterRooms();
     const today = getLocalDateStr();
     setEditingSchedule({
       id: Date.now(),
@@ -408,6 +437,7 @@ function AdminDashboard() {
   };
 
   const handleEditSchedule = (schedule) => {
+    fetchMasterRooms();
     const targets = schedule.targetTvs || schedule.target_tvs;
     setEditingSchedule({
       ...schedule,
@@ -514,7 +544,14 @@ function AdminDashboard() {
       return;
     }
 
-    // 5. Alert Peringatan: Jam / Tanggal sudah terlewat
+    // 5. Kunci Ruangan: Cek bentrok jadwal ruangan jika ruangan & jam sama
+    const roomConflict = findRoomConflict(s, localSchedules);
+    if (roomConflict) {
+      await showRoomConflictPopup(roomConflict, s);
+      return;
+    }
+
+    // 6. Alert Peringatan: Jam / Tanggal sudah terlewat
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -949,15 +986,35 @@ function AdminDashboard() {
           <button className={`nav-btn ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => setActiveTab('rooms')}>
             <Building2 size={18} /> Master Ruangan
           </button>
-          <button className={`nav-btn ${activeTab === 'tv_devices' ? 'active' : ''}`} onClick={() => setActiveTab('tv_devices')}>
-            <Tv size={18} /> Kelola Perangkat TV
-          </button>
+
+          {!isSuperAdmin && (
+            <button className={`nav-btn ${activeTab === 'tv_faculty' ? 'active' : ''}`} onClick={() => setActiveTab('tv_faculty')}>
+              <Tv size={18} /> Layar TV & Pengajuan
+            </button>
+          )}
 
           {isSuperAdmin && (
             <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Pusat & Pengguna
               </div>
+              <button className={`nav-btn ${activeTab === 'tv_devices' ? 'active' : ''}`} onClick={() => setActiveTab('tv_devices')}>
+                <Tv size={18} /> Kelola Perangkat TV
+                {pendingTvCount > 0 && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    background: '#ef4444',
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    padding: '0.1rem 0.45rem',
+                    borderRadius: '999px',
+                    boxShadow: '0 2px 6px rgba(239,68,68,0.35)'
+                  }}>
+                    {pendingTvCount}
+                  </span>
+                )}
+              </button>
               <button className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
                 <Users size={18} /> Manajemen Pengguna
               </button>
@@ -990,7 +1047,8 @@ function AdminDashboard() {
               {activeTab === 'announcements' && 'Pengumuman'}
               {activeTab === 'reports' && 'Laporan Agenda'}
               {activeTab === 'rooms' && 'Master Ruangan Kampus'}
-              {activeTab === 'tv_devices' && 'Manajemen Perangkat TV Digital Signage'}
+              {activeTab === 'tv_faculty' && 'Layar TV & Pengajuan Unit Fakultas'}
+              {activeTab === 'tv_devices' && 'Manajemen Perangkat TV (Pusat & Seluruh Fakultas)'}
               {activeTab === 'users' && 'Manajemen Pengguna & Akun Fakultas'}
               {activeTab === 'logs' && 'Log Audit Aktivitas Kampus'}
             </h1>
@@ -1177,8 +1235,12 @@ function AdminDashboard() {
             <RoomManager />
           )}
 
-          {activeTab === 'tv_devices' && (
-            <TvDeviceManager />
+          {activeTab === 'tv_faculty' && !isSuperAdmin && (
+            <FacultyTvView />
+          )}
+
+          {activeTab === 'tv_devices' && isSuperAdmin && (
+            <TvDeviceManager onRequestsUpdated={setPendingTvCount} />
           )}
 
           {activeTab === 'users' && isSuperAdmin && (
@@ -1199,6 +1261,7 @@ function AdminDashboard() {
         isExisting={Boolean(localSchedules.find(s => s.id === editingSchedule?.id))}
         masterRooms={masterRooms}
         availableTvs={availableTvs}
+        existingSchedules={localSchedules}
         onSave={handleSaveModalSchedule}
       />
 
