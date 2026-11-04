@@ -1,4 +1,4 @@
-import { Save, Building2, LayoutDashboard, Palette, Check, Clock } from 'lucide-react';
+import { Save, Building2, LayoutDashboard, Palette, Check, Clock, Lock, LayoutGrid } from 'lucide-react';
 import { PRESET_COLORS } from '../../utils/themeUtils';
 
 export default function SettingsTab({
@@ -16,6 +16,8 @@ export default function SettingsTab({
   setLocalTagline,
   localTvLayout,
   setLocalTvLayout,
+  localTuCardGrid = '3x2',
+  setLocalTuCardGrid,
   activeWorkingColor,
   handleColorChange,
   localSlideDuration,
@@ -93,15 +95,42 @@ export default function SettingsTab({
           </div>
 
           <div className="form-group">
-            <label style={{ fontWeight: 600, color: '#334155' }}>Nama Resmi Fakultas / Unit</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.35rem' }}>
+              <label style={{ fontWeight: 600, color: '#334155', margin: 0 }}>Nama Resmi Fakultas / Unit</label>
+              <span style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '0.35rem', 
+                fontSize: '0.73rem', 
+                fontWeight: 700, 
+                color: '#475569', 
+                background: '#f1f5f9', 
+                padding: '0.2rem 0.65rem', 
+                borderRadius: '999px',
+                border: '1px solid #cbd5e1'
+              }}>
+                <Lock size={12} style={{ color: '#059669' }} /> Sesuai Akun Login (Terkunci)
+              </span>
+            </div>
             <input 
               type="text" 
               value={localFaculty} 
-              onChange={(e) => setLocalFaculty(e.target.value)} 
+              readOnly
+              disabled
               className="admin-input"
-              placeholder="Contoh: Fakultas Keguruan dan Ilmu Pendidikan (FKIP)"
-              style={{ fontWeight: 600 }}
+              placeholder="Nama Resmi Fakultas / Unit"
+              style={{ 
+                fontWeight: 600,
+                backgroundColor: '#f8fafc',
+                color: '#1e293b',
+                borderColor: '#cbd5e1',
+                cursor: 'not-allowed',
+                boxShadow: 'none'
+              }}
             />
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+              Identitas unit resmi ditetapkan otomatis berdasarkan akun hak akses fakultas yang sedang aktif dan tidak dapat diubah.
+            </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -199,6 +228,125 @@ export default function SettingsTab({
               <option value="tu">Tema Tata Usaha (2 Kolom: Agenda Minggu Ini & Mendatang)</option>
               <option value="admin">Tema Admin (Profesional, Sidebar Info Lengkap)</option>
             </select>
+          </div>
+
+          {/* PILIHAN FORMAT GRID KARTU (KHUSUS TATA USAHA / TU) */}
+          <div className="form-group" style={{ 
+            background: '#f8fafc', 
+            padding: '1.15rem', 
+            borderRadius: '0.85rem', 
+            border: '1.5px solid #e2e8f0', 
+            marginBottom: '1.25rem' 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+              <label style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem', margin: 0 }}>
+                <LayoutGrid size={17} style={{ color: '#2563eb' }} />
+                Format Grid Kartu Layar TU
+              </label>
+              <span style={{ 
+                fontSize: '0.72rem', 
+                fontWeight: 700, 
+                color: '#2563eb', 
+                background: '#eff6ff', 
+                padding: '0.2rem 0.6rem', 
+                borderRadius: '999px',
+                border: '1px solid #bfdbfe'
+              }}>
+                Layout Tata Usaha
+              </span>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.85rem 0' }}>
+              Atur jumlah susunan kartu agenda per slide (3x2, 4x2, atau 3x3) agar pas di layar TV:
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+              {/* Opsi 1: 3x2 (6 Kegiatan) */}
+              <button
+                type="button"
+                onClick={() => setLocalTuCardGrid && setLocalTuCardGrid('3x2')}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '0.65rem',
+                  border: localTuCardGrid === '3x2' ? '2.5px solid #2563eb' : '1.5px solid #cbd5e1',
+                  background: localTuCardGrid === '3x2' ? '#eff6ff' : '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: localTuCardGrid === '3x2' ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
+                  transform: localTuCardGrid === '3x2' ? 'translateY(-2px)' : 'none'
+                }}
+              >
+                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: localTuCardGrid === '3x2' ? '#1d4ed8' : '#0f172a' }}>
+                  3 × 2
+                </span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: localTuCardGrid === '3x2' ? '#2563eb' : '#334155', marginTop: '3px' }}>
+                  6 Kegiatan / Slide
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+                  Standar Proporsional
+                </span>
+              </button>
+
+              {/* Opsi 2: 4x2 (8 Kegiatan) */}
+              <button
+                type="button"
+                onClick={() => setLocalTuCardGrid && setLocalTuCardGrid('4x2')}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '0.65rem',
+                  border: localTuCardGrid === '4x2' ? '2.5px solid #2563eb' : '1.5px solid #cbd5e1',
+                  background: localTuCardGrid === '4x2' ? '#eff6ff' : '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: localTuCardGrid === '4x2' ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
+                  transform: localTuCardGrid === '4x2' ? 'translateY(-2px)' : 'none'
+                }}
+              >
+                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: localTuCardGrid === '4x2' ? '#1d4ed8' : '#0f172a' }}>
+                  4 × 2
+                </span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: localTuCardGrid === '4x2' ? '#2563eb' : '#334155', marginTop: '3px' }}>
+                  8 Kegiatan / Slide
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+                  Padat Melebar
+                </span>
+              </button>
+
+              {/* Opsi 3: 3x3 (9 Kegiatan) */}
+              <button
+                type="button"
+                onClick={() => setLocalTuCardGrid && setLocalTuCardGrid('3x3')}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '0.65rem',
+                  border: localTuCardGrid === '3x3' ? '2.5px solid #2563eb' : '1.5px solid #cbd5e1',
+                  background: localTuCardGrid === '3x3' ? '#eff6ff' : '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: localTuCardGrid === '3x3' ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
+                  transform: localTuCardGrid === '3x3' ? 'translateY(-2px)' : 'none'
+                }}
+              >
+                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: localTuCardGrid === '3x3' ? '#1d4ed8' : '#0f172a' }}>
+                  3 × 3
+                </span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: localTuCardGrid === '3x3' ? '#2563eb' : '#334155', marginTop: '3px' }}>
+                  9 Kegiatan / Slide
+                </span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+                  Maksimal & Padat
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* PENGATURAN WARNA IDENTITAS INSTANSI */}

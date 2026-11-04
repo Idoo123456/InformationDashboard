@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getLocalDateStr } from '../../utils/dateUtils';
 import { 
   CalendarDays, 
@@ -11,7 +12,6 @@ import {
   Sparkles, 
   GraduationCap, 
   Building2, 
-  ShieldCheck,
   CheckCircle2,
   Radio,
   Coffee,
@@ -19,14 +19,29 @@ import {
   Layers,
   ChevronRight,
   Flame,
-  Check
+  Check,
+  LayoutGrid
 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
 
-const ITEMS_PER_PAGE = 6; // Grid 3x2 proporsional layar penuh TV
-
 const TUSlider = ({ currentTv }) => {
-  const { schedules, slideDuration, facultyName, isDbConnected } = useDashboard();
+  const { schedules, slideDuration, isDbConnected, tuCardGrid, setTuCardGrid } = useDashboard();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlGridParam = searchParams.get('grid');
+  const activeGrid = urlGridParam || currentTv?.tu_card_grid || tuCardGrid || '3x2';
+
+  const gridConfig = useMemo(() => {
+    if (activeGrid === '4x2') {
+      return { key: '4x2', cols: 4, rows: 2, itemsPerPage: 8, label: '4 × 2 (8 Kartu)', className: 'tu-grid-4x2' };
+    }
+    if (activeGrid === '3x3') {
+      return { key: '3x3', cols: 3, rows: 3, itemsPerPage: 9, label: '3 × 3 (9 Kartu)', className: 'tu-grid-3x3' };
+    }
+    return { key: '3x2', cols: 3, rows: 2, itemsPerPage: 6, label: '3 × 2 (6 Kartu)', className: 'tu-grid-3x2' };
+  }, [activeGrid]);
+
+  const itemsPerPage = gridConfig.itemsPerPage;
+
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [slideTimerKey, setSlideTimerKey] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -202,18 +217,18 @@ const TUSlider = ({ currentTv }) => {
       });
   }, [tvFilteredSchedules, weekBounds]);
 
-  // Helper chunk array into pages of ITEMS_PER_PAGE (6)
+  // Helper chunk array into pages of itemsPerPage (sesuai konfigurasi grid)
   const chunkPages = (list) => {
     if (!list || list.length === 0) return [[]];
     const pages = [];
-    for (let i = 0; i < list.length; i += ITEMS_PER_PAGE) {
-      pages.push(list.slice(i, i + ITEMS_PER_PAGE));
+    for (let i = 0; i < list.length; i += itemsPerPage) {
+      pages.push(list.slice(i, i + itemsPerPage));
     }
     return pages;
   };
 
-  const thisWeekPages = useMemo(() => chunkPages(thisWeekSchedules), [thisWeekSchedules]);
-  const upcomingPages = useMemo(() => chunkPages(upcomingSchedules), [upcomingSchedules]);
+  const thisWeekPages = useMemo(() => chunkPages(thisWeekSchedules), [thisWeekSchedules, itemsPerPage]);
+  const upcomingPages = useMemo(() => chunkPages(upcomingSchedules), [upcomingSchedules, itemsPerPage]);
 
   // Flat list of all slides (combining pages of thisWeek and upcoming)
   const allSlides = useMemo(() => {
@@ -556,7 +571,7 @@ const TUSlider = ({ currentTv }) => {
 
             {/* Execution Time Pill (Always on the right) */}
             <div className="tu-card-time-pill" title="Waktu Pelaksanaan">
-              <Clock size={13} className="tu-time-icon" />
+              <Clock size={15} className="tu-time-icon" />
               <span className="tu-time-text">
                 {item.startTime || item.time || '00:00'} - {item.endTime || '00:00'} WIB
               </span>
@@ -583,7 +598,7 @@ const TUSlider = ({ currentTv }) => {
             {/* Ruangan */}
             <div className="tu-deck-cell" title="Lokasi Ruangan">
               <div className="tu-cell-icon cell-loc">
-                <MapPin size={14} />
+                <MapPin size={24} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">LOKASI / TEMPAT</span>
@@ -594,7 +609,7 @@ const TUSlider = ({ currentTv }) => {
             {/* PIC */}
             <div className="tu-deck-cell" title="Penanggung Jawab">
               <div className="tu-cell-icon cell-pic">
-                <User size={14} />
+                <User size={24} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">PENANGGUNG JAWAB</span>
@@ -605,7 +620,7 @@ const TUSlider = ({ currentTv }) => {
             {/* Kategori Mitra */}
             <div className="tu-deck-cell" title="Kategori Mitra">
               <div className="tu-cell-icon cell-cat">
-                <Briefcase size={14} />
+                <Briefcase size={24} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">KATEGORI MITRA</span>
@@ -616,24 +631,13 @@ const TUSlider = ({ currentTv }) => {
             {/* Durasi & Tahun */}
             <div className="tu-deck-cell" title="Estimasi & Kalender">
               <div className="tu-cell-icon cell-time">
-                <Hourglass size={14} />
+                <Hourglass size={24} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">ESTIMASI DURASI</span>
                 <span className="tu-cell-value">{durationText ? `${durationText} Pelaksanaan` : 'Jadwal Reguler'}</span>
               </div>
             </div>
-          </div>
-
-          {/* SECTION 4: CARD FOOTER */}
-          <div className="tu-card-footer">
-            <div className="tu-card-verification">
-              <ShieldCheck size={15} className="tu-verify-icon" />
-              <span>Agenda Resmi Terverifikasi • {facultyName || 'Universitas Riau'}</span>
-            </div>
-            <span className={`tu-partner-tag ${item.partnerCategory && item.partnerCategory.trim().toLowerCase() !== 'internal' ? 'partner-external' : 'partner-internal'}`}>
-              {item.partnerCategory || 'INTERNAL'}
-            </span>
           </div>
         </div>
       );
@@ -780,6 +784,24 @@ const TUSlider = ({ currentTv }) => {
             </span>
           </div>
 
+          {/* Quick Grid Selector Pill */}
+          <div 
+            className="tu-grid-selector-pill" 
+            title="Klik untuk beralih format susunan kartu (3x2 ➔ 4x2 ➔ 3x3)"
+            onClick={() => {
+              const nextGrid = gridConfig.key === '3x2' ? '4x2' : gridConfig.key === '4x2' ? '3x3' : '3x2';
+              if (setTuCardGrid) setTuCardGrid(nextGrid);
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('grid', nextGrid);
+                return next;
+              }, { replace: true });
+            }}
+          >
+            <LayoutGrid size={13} style={{ color: '#2563eb' }} />
+            <span>Grid {gridConfig.key}</span>
+          </div>
+
           {/* Auto Timer Countdown */}
           <div className="tu-countdown-pill" title="Penayangan Otomatis Signage">
             <Radio size={13} className="tu-broadcast-dot" />
@@ -848,8 +870,8 @@ const TUSlider = ({ currentTv }) => {
                       </p>
                     </div>
                   ) : (
-                    <div className="tu-cards-grid">
-                      {renderScheduleCards(slide.items, slide.pageIndex * ITEMS_PER_PAGE)}
+                    <div className={`tu-cards-grid ${gridConfig.className}`}>
+                      {renderScheduleCards(slide.items, slide.pageIndex * itemsPerPage)}
                     </div>
                   )}
                 </div>

@@ -5,14 +5,14 @@ import { Clock, Award } from 'lucide-react';
 
 const Header = ({ currentTv }) => {
   const [time, setTime] = useState(new Date());
-  const { 
+  const {
     prefix,
-    facultyName, 
-    subUnitName, 
-    accreditation, 
-    campusLocation, 
-    operationalHours, 
-    tagline 
+    facultyName,
+    subUnitName,
+    accreditation,
+    campusLocation,
+    operationalHours,
+    tagline
   } = useDashboard();
 
   useEffect(() => {
@@ -30,11 +30,11 @@ const Header = ({ currentTv }) => {
   // Nama fakultas / unit kerja resmi (dinamis sesuai prefix & pengaturan)
   const displayFaculty = facultyName || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
 
-  // Identitas brand di samping logo: hanya teks "Perpustakaan" dengan font hitam tebal yang rapi & diperbesar
+  // Identitas brand di samping logo: hanya teks "PW" dengan font hitam tebal yang rapi & diperbesar
   const isCustomUnit = subUnitName && subUnitName.trim() && subUnitName !== 'Pusat Informasi & Layanan Terpadu' && subUnitName !== 'Pusat Informasi Fakultas';
-  const brandTitle = isCustomUnit 
-    ? (subUnitName.trim().toLowerCase() === 'perpustakaan' ? 'Perpustakaan' : subUnitName.trim()) 
-    : 'Perpustakaan';
+  const brandTitle = isCustomUnit
+    ? (subUnitName.trim().toLowerCase() === 'perpustakaan' ? 'PERPUSTAKAAN' : subUnitName.trim())
+    : 'perpustakaan';
 
   return (
     <header className="header glass-panel header-grand">
@@ -43,7 +43,7 @@ const Header = ({ currentTv }) => {
         <div className="header-logo-wrap">
           <img src={logoUnri} alt="Logo UNRI" className="header-logo-img" />
         </div>
-        
+
         <div className="header-brand-divider" />
 
         <div className="header-brand-text">

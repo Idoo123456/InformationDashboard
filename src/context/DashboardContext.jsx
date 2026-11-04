@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 const DashboardContext = createContext();
 
@@ -18,18 +18,40 @@ const defaultTimeOn = "06:00";
 const defaultTimeOff = "22:00";
 const defaultAutoRefresh = true;
 
+export const FACULTY_MAP = {
+  main: 'Universitas Riau (Kantor Pusat)',
+  fkip: 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)',
+  fisip: 'Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)',
+  feb: 'Fakultas Ekonomi dan Bisnis (FEB)',
+  fmipa: 'Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)',
+  ft: 'Fakultas Teknik (FT)',
+  fp: 'Fakultas Pertanian (FP)',
+  fpk: 'Fakultas Perikanan dan Kelautan (FPK)',
+  fk: 'Fakultas Kedokteran (FK)',
+  hukum: 'Fakultas Hukum (FH)',
+  fkp: 'Fakultas Keperawatan (FKp)'
+};
+
+export const getOfficialFacultyName = (user, activePrefix = 'main') => {
+  if (user && user.role !== 'superadmin' && user.faculty_prefix && user.faculty_prefix !== 'main') {
+    return FACULTY_MAP[user.faculty_prefix.toLowerCase()] || FACULTY_MAP.main;
+  }
+  const key = (activePrefix || 'main').toLowerCase();
+  return FACULTY_MAP[key] || FACULTY_MAP.main;
+};
+
 export const FACULTY_LIST = [
   { prefix: 'main', code: 'PUSAT', name: 'Universitas Riau (Kantor Pusat)', path: '/admin', tvPath: '/tv' },
-  { prefix: 'fkip', code: 'FKIP', name: 'Fakultas Keguruan dan Ilmu Pendidikan', path: '/fkip/admin', tvPath: '/fkip/tv' },
-  { prefix: 'fisip', code: 'FISIP', name: 'Fakultas Ilmu Sosial dan Ilmu Politik', path: '/fisip/admin', tvPath: '/fisip/tv' },
-  { prefix: 'feb', code: 'FEB', name: 'Fakultas Ekonomi dan Bisnis', path: '/feb/admin', tvPath: '/feb/tv' },
-  { prefix: 'fmipa', code: 'FMIPA', name: 'Fakultas Matematika dan Ilmu Pengetahuan Alam', path: '/fmipa/admin', tvPath: '/fmipa/tv' },
-  { prefix: 'ft', code: 'FT', name: 'Fakultas Teknik', path: '/ft/admin', tvPath: '/ft/tv' },
-  { prefix: 'fp', code: 'FP', name: 'Fakultas Pertanian', path: '/fp/admin', tvPath: '/fp/tv' },
-  { prefix: 'fpk', code: 'FPK', name: 'Fakultas Perikanan dan Kelautan', path: '/fpk/admin', tvPath: '/fpk/tv' },
-  { prefix: 'fk', code: 'FK', name: 'Fakultas Kedokteran', path: '/fk/admin', tvPath: '/fk/tv' },
-  { prefix: 'hukum', code: 'FH', name: 'Fakultas Hukum', path: '/hukum/admin', tvPath: '/hukum/tv' },
-  { prefix: 'fkp', code: 'FKp', name: 'Fakultas Keperawatan', path: '/fkp/admin', tvPath: '/fkp/tv' }
+  { prefix: 'fkip', code: 'FKIP', name: 'Fakultas Keguruan dan Ilmu Pendidikan (FKIP)', path: '/fkip/admin', tvPath: '/fkip/tv' },
+  { prefix: 'fisip', code: 'FISIP', name: 'Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)', path: '/fisip/admin', tvPath: '/fisip/tv' },
+  { prefix: 'feb', code: 'FEB', name: 'Fakultas Ekonomi dan Bisnis (FEB)', path: '/feb/admin', tvPath: '/feb/tv' },
+  { prefix: 'fmipa', code: 'FMIPA', name: 'Fakultas Matematika dan Ilmu Pengetahuan Alam (FMIPA)', path: '/fmipa/admin', tvPath: '/fmipa/tv' },
+  { prefix: 'ft', code: 'FT', name: 'Fakultas Teknik (FT)', path: '/ft/admin', tvPath: '/ft/tv' },
+  { prefix: 'fp', code: 'FP', name: 'Fakultas Pertanian (FP)', path: '/fp/admin', tvPath: '/fp/tv' },
+  { prefix: 'fpk', code: 'FPK', name: 'Fakultas Perikanan dan Kelautan (FPK)', path: '/fpk/admin', tvPath: '/fpk/tv' },
+  { prefix: 'fk', code: 'FK', name: 'Fakultas Kedokteran (FK)', path: '/fk/admin', tvPath: '/fk/tv' },
+  { prefix: 'hukum', code: 'FH', name: 'Fakultas Hukum (FH)', path: '/hukum/admin', tvPath: '/hukum/tv' },
+  { prefix: 'fkp', code: 'FKp', name: 'Fakultas Keperawatan (FKp)', path: '/fkp/admin', tvPath: '/fkp/tv' }
 ];
 
 export function DashboardProvider({ children, prefix = 'main', defaultFacultyNameOverride = 'Universitas Riau' }) {
@@ -57,36 +79,6 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
     }
   };
 
-  // State Pengaturan (Settings)
-  const [facultyName, setFacultyName] = useState(() => defaultFacultyNameOverride || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau'));
-  const [subUnitName, setSubUnitName] = useState(() => loadPreference('subUnitName', 'Perpustakaan'));
-  const [accreditation, setAccreditation] = useState(() => loadPreference('accreditation', 'Akreditasi Unggul'));
-  const [campusLocation, setCampusLocation] = useState(() => loadPreference('campusLocation', 'Kampus Bina Widya'));
-  const [operationalHours, setOperationalHours] = useState(() => loadPreference('operationalHours', '08:00 - 16:00 WIB'));
-  const [tagline, setTagline] = useState(() => loadPreference('tagline', defaultTagline));
-  const [primaryColor, setPrimaryColor] = useState(() => loadPreference('primaryColor', defaultPrimaryColor));
-  const [templateColors, setTemplateColors] = useState(() => loadPreference('templateColors', defaultTemplateColors));
-  const [tvLayout, setTvLayout] = useState(() => loadPreference('tvLayout', defaultTvLayout));
-  const [language, setLanguage] = useState(() => loadPreference('language', defaultLanguage));
-  const [timezone, setTimezone] = useState(() => loadPreference('timezone', defaultTimezone));
-  const [timeOn, setTimeOn] = useState(() => loadPreference('timeOn', defaultTimeOn));
-  const [timeOff, setTimeOff] = useState(() => loadPreference('timeOff', defaultTimeOff));
-  const [autoRefresh, setAutoRefresh] = useState(() => loadPreference('autoRefresh', defaultAutoRefresh));
-  const [slideDuration, setSlideDuration] = useState(() => loadPreference('slideDuration', 8));
-  const [marqueeSpeed, setMarqueeSpeed] = useState(() => loadPreference('marqueeSpeed', 20));
-  const [scheduleSpeed, setScheduleSpeed] = useState(() => loadPreference('scheduleSpeed', 1));
-  const [scheduleScrollType, setScheduleScrollType] = useState(() => loadPreference('scheduleScrollType', 'step'));
-
-  // DATA DINAMIS HANYA DARI DATABASE (TIDAK DARI KODE)
-  // Saat database mati / kosong, state ini bernilai [] (kosong)
-  const [schedules, setSchedules] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
-  const [slides, setSlides] = useState([]);
-
-  // Status Koneksi Database
-  const [isDbConnected, setIsDbConnected] = useState(false);
-  const isLoadedFromDb = useRef(false);
-
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
@@ -108,6 +100,47 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   });
 
   const isSuperAdmin = currentUser?.role === 'superadmin' || currentUser?.username === 'admin';
+
+  // Identitas resmi nama fakultas otomatis sesuai akun yang login / prefix unit aktif
+  const officialFacultyName = useMemo(() => {
+    return getOfficialFacultyName(currentUser, prefix);
+  }, [currentUser, prefix]);
+
+  // State Pengaturan (Settings)
+  const [facultyName, setFacultyName] = useState(() => officialFacultyName);
+
+  useEffect(() => {
+    setFacultyName(officialFacultyName);
+  }, [officialFacultyName]);
+
+  const [subUnitName, setSubUnitName] = useState(() => loadPreference('subUnitName', 'Perpustakaan'));
+  const [accreditation, setAccreditation] = useState(() => loadPreference('accreditation', 'Akreditasi Unggul'));
+  const [campusLocation, setCampusLocation] = useState(() => loadPreference('campusLocation', 'Kampus Bina Widya'));
+  const [operationalHours, setOperationalHours] = useState(() => loadPreference('operationalHours', '08:00 - 16:00 WIB'));
+  const [tagline, setTagline] = useState(() => loadPreference('tagline', defaultTagline));
+  const [primaryColor, setPrimaryColor] = useState(() => loadPreference('primaryColor', defaultPrimaryColor));
+  const [templateColors, setTemplateColors] = useState(() => loadPreference('templateColors', defaultTemplateColors));
+  const [tvLayout, setTvLayout] = useState(() => loadPreference('tvLayout', defaultTvLayout));
+  const [language, setLanguage] = useState(() => loadPreference('language', defaultLanguage));
+  const [timezone, setTimezone] = useState(() => loadPreference('timezone', defaultTimezone));
+  const [timeOn, setTimeOn] = useState(() => loadPreference('timeOn', defaultTimeOn));
+  const [timeOff, setTimeOff] = useState(() => loadPreference('timeOff', defaultTimeOff));
+  const [autoRefresh, setAutoRefresh] = useState(() => loadPreference('autoRefresh', defaultAutoRefresh));
+  const [slideDuration, setSlideDuration] = useState(() => loadPreference('slideDuration', 8));
+  const [marqueeSpeed, setMarqueeSpeed] = useState(() => loadPreference('marqueeSpeed', 20));
+  const [scheduleSpeed, setScheduleSpeed] = useState(() => loadPreference('scheduleSpeed', 1));
+  const [scheduleScrollType, setScheduleScrollType] = useState(() => loadPreference('scheduleScrollType', 'step'));
+  const [tuCardGrid, setTuCardGrid] = useState(() => loadPreference('tuCardGrid', '3x2'));
+
+  // DATA DINAMIS HANYA DARI DATABASE (TIDAK DARI KODE)
+  // Saat database mati / kosong, state ini bernilai [] (kosong)
+  const [schedules, setSchedules] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [slides, setSlides] = useState([]);
+
+  // Status Koneksi Database
+  const [isDbConnected, setIsDbConnected] = useState(false);
+  const isLoadedFromDb = useRef(false);
 
   useEffect(() => {
     localStorage.setItem('isAuthenticated', JSON.stringify(isAuthenticated));
@@ -140,6 +173,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   useEffect(() => localStorage.setItem(getKey('marqueeSpeed'), JSON.stringify(marqueeSpeed)), [marqueeSpeed, prefix]);
   useEffect(() => localStorage.setItem(getKey('scheduleSpeed'), JSON.stringify(scheduleSpeed)), [scheduleSpeed, prefix]);
   useEffect(() => localStorage.setItem(getKey('scheduleScrollType'), JSON.stringify(scheduleScrollType)), [scheduleScrollType, prefix]);
+  useEffect(() => localStorage.setItem(getKey('tuCardGrid'), JSON.stringify(tuCardGrid)), [tuCardGrid, prefix]);
 
   // ========================================================
   // SINKRONISASI MURNI DENGAN DATABASE MYSQL
@@ -169,7 +203,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
         if (resSettings.ok) {
           const data = await resSettings.json();
           if (data) {
-            if (data.faculty_name) setFacultyName(data.faculty_name);
+            setFacultyName(officialFacultyName);
             if (data.sub_unit_name) setSubUnitName(data.sub_unit_name);
             if (data.accreditation) setAccreditation(data.accreditation);
             if (data.campus_location) setCampusLocation(data.campus_location);
@@ -187,6 +221,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
             if (data.marquee_speed) setMarqueeSpeed(data.marquee_speed);
             if (data.schedule_speed) setScheduleSpeed(data.schedule_speed);
             if (data.schedule_scroll_type) setScheduleScrollType(data.schedule_scroll_type);
+            if (data.tu_card_grid) setTuCardGrid(data.tu_card_grid);
           }
         }
       } catch (err) {
@@ -321,10 +356,15 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
   };
 
   const saveSettingsToDb = async (newSettings) => {
+    const payload = {
+      ...newSettings,
+      faculty_name: officialFacultyName,
+      tu_card_grid: newSettings.tu_card_grid || tuCardGrid
+    };
     const res = await fetch(`/api/settings/${prefix}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newSettings)
+      body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Gagal menyimpan pengaturan ke database MySQL');
     return await res.json();
@@ -358,6 +398,7 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       marqueeSpeed, setMarqueeSpeed,
       scheduleSpeed, setScheduleSpeed,
       scheduleScrollType, setScheduleScrollType,
+      tuCardGrid, setTuCardGrid,
       isDbConnected, checkDbConnection: fetchAllFromDb,
       refreshFromDb: fetchAllFromDb,
       saveSchedulesToDb,

@@ -64,6 +64,7 @@ function AdminDashboard() {
     marqueeSpeed, setMarqueeSpeed,
     scheduleSpeed, setScheduleSpeed,
     scheduleScrollType, setScheduleScrollType,
+    tuCardGrid, setTuCardGrid,
     isDbConnected,
     saveSchedulesToDb,
     saveAnnouncementsToDb,
@@ -198,6 +199,13 @@ function AdminDashboard() {
 
   // local states for settings
   const [localFaculty, setLocalFaculty] = useState(facultyName);
+
+  // Sinkronkan nama resmi fakultas secara otomatis sesuai akun / prefix aktif
+  useEffect(() => {
+    if (facultyName) {
+      setLocalFaculty(facultyName);
+    }
+  }, [facultyName]);
   const [localSubUnit, setLocalSubUnit] = useState((subUnitName && subUnitName !== 'Pusat Informasi & Layanan Terpadu') ? subUnitName : "Perpustakaan");
   const [localAccreditation, setLocalAccreditation] = useState(accreditation || "Akreditasi Unggul");
   const [localCampusLocation, setLocalCampusLocation] = useState(campusLocation || "Kampus Bina Widya");
@@ -222,6 +230,11 @@ function AdminDashboard() {
   const [localMarqueeSpeed, setLocalMarqueeSpeed] = useState(marqueeSpeed);
   const [localScheduleSpeed, setLocalScheduleSpeed] = useState(scheduleSpeed);
   const [localScheduleScrollType, setLocalScheduleScrollType] = useState(scheduleScrollType || 'step');
+  const [localTuCardGrid, setLocalTuCardGrid] = useState(tuCardGrid || '3x2');
+
+  useEffect(() => {
+    if (tuCardGrid) setLocalTuCardGrid(tuCardGrid);
+  }, [tuCardGrid]);
 
   const activeWorkingColor = selectedTemplateTab === 'all'
     ? localPrimaryColor
@@ -268,8 +281,10 @@ function AdminDashboard() {
         slide_duration: localSlideDuration,
         marquee_speed: localMarqueeSpeed,
         schedule_speed: localScheduleSpeed,
-        schedule_scroll_type: localScheduleScrollType
+        schedule_scroll_type: localScheduleScrollType,
+        tu_card_grid: localTuCardGrid
       });
+      if (setTuCardGrid) setTuCardGrid(localTuCardGrid);
       setFacultyName(localFaculty);
       setSubUnitName(localSubUnit);
       setAccreditation(localAccreditation);
@@ -1150,6 +1165,8 @@ function AdminDashboard() {
               setLocalTagline={setLocalTagline}
               localTvLayout={localTvLayout}
               setLocalTvLayout={setLocalTvLayout}
+              localTuCardGrid={localTuCardGrid}
+              setLocalTuCardGrid={setLocalTuCardGrid}
               activeWorkingColor={activeWorkingColor}
               handleColorChange={handleColorChange}
               localSlideDuration={localSlideDuration}

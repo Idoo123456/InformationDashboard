@@ -38,7 +38,7 @@ const Footer = ({ customAnnouncement }) => {
       {/* RUNNING ANNOUNCEMENTS BAR */}
       <div className="announcement-bar">
         <div className="announcement-badge">
-          <Megaphone size={15} className="announcement-badge-icon" />
+          <Megaphone size={18} className="announcement-badge-icon" />
           <span>PENGUMUMAN</span>
         </div>
         <div className="marquee-container">
@@ -47,7 +47,7 @@ const Footer = ({ customAnnouncement }) => {
             <div className="marquee-group">
               {displayAnnouncements.length === 0 ? (
                 <span className="marquee-item">
-                  <Info size={14} className="marquee-item-icon" />
+                  <Info size={17} className="marquee-item-icon" />
                   <span className="marquee-item-text">{emptyText}</span>
                   <span className="marquee-separator">•</span>
                 </span>
@@ -56,7 +56,7 @@ const Footer = ({ customAnnouncement }) => {
                   const text = typeof item === 'string' ? item : item.text;
                   return (
                     <span key={i} className="marquee-item">
-                      <Info size={14} className="marquee-item-icon" />
+                      <Info size={17} className="marquee-item-icon" />
                       <span className="marquee-item-text">{text}</span>
                       <span className="marquee-separator">•</span>
                     </span>
@@ -68,7 +68,7 @@ const Footer = ({ customAnnouncement }) => {
             <div className="marquee-group" aria-hidden="true">
               {displayAnnouncements.length === 0 ? (
                 <span className="marquee-item">
-                  <Info size={14} className="marquee-item-icon" />
+                  <Info size={17} className="marquee-item-icon" />
                   <span className="marquee-item-text">{emptyText}</span>
                   <span className="marquee-separator">•</span>
                 </span>
@@ -77,7 +77,7 @@ const Footer = ({ customAnnouncement }) => {
                   const text = typeof item === 'string' ? item : item.text;
                   return (
                     <span key={`clone-${i}`} className="marquee-item">
-                      <Info size={14} className="marquee-item-icon" />
+                      <Info size={17} className="marquee-item-icon" />
                       <span className="marquee-item-text">{text}</span>
                       <span className="marquee-separator">•</span>
                     </span>
@@ -103,7 +103,7 @@ const Footer = ({ customAnnouncement }) => {
         </div>
         <div className="footer-social-side">
           <a href="https://lib.unri.ac.id" target="_blank" rel="noreferrer" className="footer-social-pill">
-            <Globe size={13} />
+            <Globe size={16} />
             <span>lib.unri.ac.id</span>
           </a>
           <span className="footer-social-pill">

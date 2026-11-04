@@ -244,8 +244,8 @@ app.put('/api/settings/:prefix', async (req, res) => {
         faculty_prefix, faculty_name, sub_unit_name, accreditation, campus_location,
         operational_hours, tagline, primary_color, template_colors, tv_layout,
         language, timezone, time_on, time_off, auto_refresh, slide_duration,
-        marquee_speed, schedule_speed, schedule_scroll_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        marquee_speed, schedule_speed, schedule_scroll_type, tu_card_grid
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         faculty_name = VALUES(faculty_name),
         sub_unit_name = VALUES(sub_unit_name),
@@ -264,7 +264,8 @@ app.put('/api/settings/:prefix', async (req, res) => {
         slide_duration = VALUES(slide_duration),
         marquee_speed = VALUES(marquee_speed),
         schedule_speed = VALUES(schedule_speed),
-        schedule_scroll_type = VALUES(schedule_scroll_type)
+        schedule_scroll_type = VALUES(schedule_scroll_type),
+        tu_card_grid = VALUES(tu_card_grid)
     `;
 
     await pool.query(query, [
@@ -286,7 +287,8 @@ app.put('/api/settings/:prefix', async (req, res) => {
       s.slide_duration || 8,
       s.marquee_speed || 20,
       s.schedule_speed || 1,
-      s.schedule_scroll_type || 'step'
+      s.schedule_scroll_type || 'step',
+      s.tu_card_grid || '3x2'
     ]);
 
     res.json({ success: true, message: 'Settings berhasil disimpan!' });
