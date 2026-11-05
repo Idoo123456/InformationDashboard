@@ -1199,6 +1199,45 @@ body {
   color: var(--theme-color);
 }
 
+.footer-social-icons-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.footer-icon-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.footer-icon-badge:hover {
+  transform: scale(1.15);
+  background: var(--theme-color, #2563eb);
+}
+
+.footer-social-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-social-link:hover {
+  color: var(--theme-color, #2563eb);
+}
+
+.footer-npp-pill {
+  letter-spacing: 0.02em;
+  font-weight: 750;
+}
+
 .social-links a {
   gap: 0.4rem;
   transition: color 0.2s;
