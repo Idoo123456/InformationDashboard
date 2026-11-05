@@ -12,3 +12,4 @@ export const formatDateSafe = (d) => {
   }
   return String(d).slice(0, 10);
 };
+

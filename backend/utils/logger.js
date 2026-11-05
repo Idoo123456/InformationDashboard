@@ -14,3 +14,4 @@ export const logActivity = async (username, faculty_prefix, action, details, req
     console.error('Logging error:', err.message);
   }
 };
+
