@@ -4,7 +4,7 @@ import { useDashboard } from '../context/DashboardContext';
 import { Lock, User, ArrowRight, Eye, EyeOff, LayoutDashboard, MonitorPlay, Zap } from 'lucide-react';
 import logoUnri from '../assets/logounri.png';
 import bgPerpus from '../assets/bg-perpus.png';
-import '../modern-login.css';
+import '../styles/modern-login.css';
 
 export default function Login() {
   const { isAuthenticated, setIsAuthenticated, setCurrentUser, basePath, prefix } = useDashboard();

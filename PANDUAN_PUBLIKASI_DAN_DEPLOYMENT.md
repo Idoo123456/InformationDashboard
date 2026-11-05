@@ -37,7 +37,7 @@ Sistem dibangun dengan arsitektur **Enterprise Multi-Tenant**:
 3. Buat database baru bernama `db_pusat_informasi` (Collation: `utf8mb4_unicode_ci`).
 4. Klik tab **Import**, pilih berkas:
    ```
-   c:\Dashboard Pusat Informasi\database.sql
+   c:\Dashboard Pusat Informasi\database\database.sql
    ```
 5. Klik tombol **Import** di bagian bawah. Seluruh 10 tabel enterprise, relasi, dan data awal akan terpasang otomatis.
 

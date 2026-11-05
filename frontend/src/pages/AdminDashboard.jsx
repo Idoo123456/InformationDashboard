@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import '../admin.css';
+import '../styles/admin.css';
 import logoUnri from '../assets/LogoUnri2.png';
 import localforage from 'localforage';
 

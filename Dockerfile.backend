@@ -14,13 +14,14 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy backend source code
+COPY backend/ ./backend/
 COPY server/ ./server/
 
 # Ensure uploads directory exists
-RUN mkdir -p server/uploads
+RUN mkdir -p backend/uploads server/uploads
 
 # Expose backend port
 EXPOSE 5000
 
 # Start Express Server
-CMD ["node", "server/index.js"]
+CMD ["node", "backend/index.js"]

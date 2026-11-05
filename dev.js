@@ -20,13 +20,13 @@ const killProcess = (proc) => {
 };
 
 // 1. Jalankan Backend Express Server (dengan --watch auto-reload)
-const server = spawn('node', ['--watch', 'server/index.js'], {
+const server = spawn('node', ['--watch', 'backend/index.js'], {
   stdio: 'inherit',
   shell: process.platform === 'win32'
 });
 
 // 2. Jalankan Frontend Vite
-const client = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['vite'], {
+const client = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['vite', 'frontend'], {
   stdio: 'inherit',
   shell: process.platform === 'win32'
 });
