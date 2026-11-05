@@ -55,7 +55,7 @@ const Header = ({ currentTv }) => {
       <div className="header-center">
         <div className="header-center-pretitle">
           <span className="header-pretitle-line" />
-          <span className="header-pretitle-text">KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI • UNIVERSITAS RIAU</span>
+          <span className="header-pretitle-text">KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI</span>
           <span className="header-pretitle-line" />
         </div>
 
