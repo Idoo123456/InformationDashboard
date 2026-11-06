@@ -5,6 +5,7 @@ import {
   Search, RefreshCw, Layers, ShieldCheck, Tag
 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
+import Pagination from './Pagination';
 
 export default function RoomManager() {
   const { currentFacultyPrefix, isSuperAdmin, currentUser, FACULTY_LIST, prefix } = useDashboard();
@@ -16,6 +17,10 @@ export default function RoomManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBuilding, setFilterBuilding] = useState('ALL');
   const [filterFaculty, setFilterFaculty] = useState('ALL');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -165,6 +170,17 @@ export default function RoomManager() {
     const matchesFaculty = filterFaculty === 'ALL' || rFac === filterFaculty;
     return matchesSearch && matchesBuilding && matchesFaculty;
   });
+
+  // Reset ke halaman 1 saat pencarian / filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterBuilding, filterFaculty]);
+
+  // Data terpaginasi
+  const paginatedRooms = filteredRooms.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const uniqueBuildings = Array.from(new Set(rooms.map(r => r.building).filter(Boolean)));
 
@@ -366,7 +382,7 @@ export default function RoomManager() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
           gap: '18px'
         }}>
-          {filteredRooms.map((room) => (
+          {paginatedRooms.map((room) => (
             <div
               key={room.id}
               style={{
@@ -526,6 +542,22 @@ export default function RoomManager() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Pagination Ruangan */}
+      {!loading && filteredRooms.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredRooms.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newPerPage) => {
+            setItemsPerPage(newPerPage);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[4, 8, 12, 24]}
+          itemLabel="ruangan"
+        />
       )}
 
       {/* Add Room Modal */}

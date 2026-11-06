@@ -1,9 +1,30 @@
-import { useState, useEffect } from 'react';
-import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity, Briefcase, Tv, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { List, Calendar, LayoutGrid, Plus, Save, Search, User, Edit, Trash2, ChevronLeft, ChevronRight, Activity, Briefcase, Tv, X, ListFilter, Check } from 'lucide-react';
 import { getDynamicStatus, showToastPopup } from '../../utils/adminAlerts';
 import { getLocalDateStr } from '../../utils/dateUtils';
 import { useDashboard } from '../../context/DashboardContext';
 import { DEFAULT_CAMPUS_TVS, fetchCampusTvDevices } from '../../utils/tvDevices';
+import Pagination from './Pagination';
+
+const FILTER_LABELS = {
+  all: 'Semua (All)',
+  minggu_ini: 'Minggu Ini',
+  minggu_depan: 'Minggu Depan',
+  bulan_ini: 'Bulan Ini',
+  berlangsung: 'Sedang Berlangsung',
+  akan_datang: 'Akan Datang',
+  riwayat: 'Riwayat'
+};
+
+const FILTER_SECTION_TITLES = {
+  all: 'Aktivitas Mendatang & Berlangsung',
+  minggu_ini: 'Kegiatan Minggu Ini',
+  minggu_depan: 'Kegiatan Minggu Depan',
+  bulan_ini: 'Kegiatan Bulan Ini',
+  berlangsung: 'Kegiatan Sedang Berlangsung',
+  akan_datang: 'Kegiatan Akan Datang',
+  riwayat: 'Log Riwayat Kegiatan (Selesai)'
+};
 
 export default function SchedulesTab({
   localSchedules,
@@ -139,6 +160,14 @@ export default function SchedulesTab({
   const [scheduleSearch, setScheduleSearch] = useState('');
   const [scheduleDateFrom, setScheduleDateFrom] = useState('');
   const [scheduleDateTo, setScheduleDateTo] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'minggu_ini', 'minggu_depan', 'bulan_ini', 'berlangsung', 'akan_datang', 'riwayat'
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const filterDropdownRef = useRef(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
@@ -146,22 +175,276 @@ export default function SchedulesTab({
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
 
+  // Menutup dropdown saat klik di luar
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+        setFilterDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Helper rentang tanggal kalender
+  const getWeekRange = (offsetWeeks = 0) => {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1) - day + (offsetWeeks * 7);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const format = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: format(monday), end: format(sunday) };
+  };
+
+  const getMonthRange = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const first = new Date(y, m, 1);
+    const last = new Date(y, m + 1, 0);
+    const format = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: format(first), end: format(last) };
+  };
+
   const schedulesWithDynamicStatus = localSchedules.map(s => ({ ...s, dynamicStatus: getDynamicStatus(s) }));
   
   const filteredSchedulesView = schedulesWithDynamicStatus.filter(s => {
+    // 1. Pencarian teks
     const q = scheduleSearch.toLowerCase().trim();
     const matchSearch = !q || 
       (s.title && s.title.toLowerCase().includes(q)) ||
       (s.loc && s.loc.toLowerCase().includes(q)) ||
       (s.pic && s.pic.toLowerCase().includes(q)) ||
       (s.partnerCategory && s.partnerCategory.toLowerCase().includes(q));
-    const matchDateFrom = !scheduleDateFrom || s.date >= scheduleDateFrom;
-    const matchDateTo = !scheduleDateTo || s.date <= scheduleDateTo;
-    return matchSearch && matchDateFrom && matchDateTo;
+    if (!matchSearch) return false;
+
+    // 2. Filter Opsi Sesuai Permintaan
+    const isFinishedOrCancelled = s.dynamicStatus === 'Selesai' || s.dynamicStatus === 'Dibatalkan';
+
+    if (activeFilter === 'riwayat') {
+      // Khusus filter Riwayat: HANYA tampilkan kegiatan yang sudah selesai / lewat
+      if (!isFinishedOrCancelled) return false;
+    } else {
+      // Filter operasional aktif: riwayat yang sudah selesai DIKECUALIKAN
+      if (isFinishedOrCancelled) return false;
+
+      if (activeFilter === 'minggu_ini') {
+        const w = getWeekRange(0);
+        if (s.date < w.start || s.date > w.end) return false;
+      } else if (activeFilter === 'minggu_depan') {
+        const w = getWeekRange(1);
+        if (s.date < w.start || s.date > w.end) return false;
+      } else if (activeFilter === 'bulan_ini') {
+        const m = getMonthRange();
+        if (s.date < m.start || s.date > m.end) return false;
+      } else if (activeFilter === 'berlangsung') {
+        if (s.dynamicStatus !== 'Berlangsung') return false;
+      } else if (activeFilter === 'akan_datang') {
+        const isUpcoming = s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Otomatis';
+        if (!isUpcoming) return false;
+      }
+    }
+
+    // 3. Rentang tanggal jika diisi
+    if (scheduleDateFrom && s.date < scheduleDateFrom) return false;
+    if (scheduleDateTo && s.date > scheduleDateTo) return false;
+
+    return true;
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const activeSchedulesList = filteredSchedulesView.filter(s => s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Berlangsung' || s.dynamicStatus === 'Otomatis');
-  const historySchedulesList = filteredSchedulesView.filter(s => s.dynamicStatus === 'Selesai' || s.dynamicStatus === 'Dibatalkan').sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Reset ke halaman 1 saat pencarian / filter / tampilan berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [scheduleSearch, activeFilter, scheduleDateFrom, scheduleDateTo, scheduleView]);
+
+  // Data terpaginasi
+  const paginatedSchedules = filteredSchedulesView.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const todayStr = getLocalDateStr();
+
+  const formatScheduleDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      const [y, m, d] = parts;
+      const dateObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+      const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      return `${dayNames[dateObj.getDay()]}, ${parseInt(d, 10)} ${monthNames[dateObj.getMonth()]} ${y}`;
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  const renderScheduleCard = (s, isHistory = false) => {
+    const isToday = s.date === todayStr;
+    const isOngoing = s.dynamicStatus === 'Berlangsung';
+    const isUpcoming = s.dynamicStatus === 'Akan Datang';
+    const isFinished = s.dynamicStatus === 'Selesai';
+    const isCancelled = s.dynamicStatus === 'Dibatalkan';
+
+    let borderLeftColor = '#3b82f6';
+    let statusBg = '#eff6ff';
+    let statusText = '#2563eb';
+    let statusBorder = '#bfdbfe';
+
+    if (isOngoing) {
+      borderLeftColor = '#10b981';
+      statusBg = '#ecfdf5';
+      statusText = '#059669';
+      statusBorder = '#a7f3d0';
+    } else if (isFinished) {
+      borderLeftColor = '#cbd5e1';
+      statusBg = '#f1f5f9';
+      statusText = '#64748b';
+      statusBorder = '#e2e8f0';
+    } else if (isCancelled) {
+      borderLeftColor = '#fca5a5';
+      statusBg = '#fef2f2';
+      statusText = '#dc2626';
+      statusBorder = '#fecaca';
+    }
+
+    return (
+      <div 
+        key={s.id} 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          background: 'white', 
+          padding: '1.15rem 1.4rem', 
+          borderRadius: '1rem', 
+          boxShadow: isOngoing ? '0 4px 15px rgba(16, 185, 129, 0.12)' : '0 2px 8px rgba(0,0,0,0.03)', 
+          border: `1px solid ${isOngoing ? '#a7f3d0' : '#f1f5f9'}`, 
+          transition: 'all 0.2s', 
+          position: 'relative', 
+          overflow: 'hidden',
+          opacity: isFinished ? 0.9 : 1
+        }} 
+        onMouseOver={e => {
+          e.currentTarget.style.transform = 'translateY(-2px)'; 
+          e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)';
+        }} 
+        onMouseOut={e => {
+          e.currentTarget.style.transform = 'translateY(0)'; 
+          e.currentTarget.style.boxShadow = isOngoing ? '0 4px 15px rgba(16, 185, 129, 0.12)' : '0 2px 8px rgba(0,0,0,0.03)';
+        }}
+      >
+        {/* Accent left bar */}
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: borderLeftColor }}></div>
+        
+        {/* Waktu & Durasi */}
+        <div style={{ width: '150px', paddingLeft: '0.4rem', flexShrink: 0 }}>
+          <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.15rem', letterSpacing: '-0.3px' }}>
+            {s.startTime || '00:00'}
+          </div>
+          <div style={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 500 }}>
+            s/d {s.endTime || '23:59'}
+          </div>
+        </div>
+        
+        {/* Konten Utama */}
+        <div style={{ flex: 1, minWidth: 0, paddingRight: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+            <h4 style={{ margin: 0, fontSize: '1.05rem', color: isFinished ? '#334155' : '#0f172a', fontWeight: 700, wordBreak: 'break-word' }}>
+              {s.title}
+            </h4>
+            {renderTargetBadge(s)}
+            {isToday && (
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#065f46', background: '#d1fae5', padding: '0.15rem 0.55rem', borderRadius: '999px', border: '1px solid #a7f3d0' }}>
+                🌟 Hari Ini
+              </span>
+            )}
+            {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                padding: '0.12rem 0.55rem',
+                borderRadius: '0.45rem',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                backgroundColor: '#fff7ed',
+                color: '#c2410c',
+                border: '1px solid #ffedd5'
+              }}>
+                <Briefcase size={11} color="#ea580c" /> {s.partnerCategory}
+              </span>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.82rem', color: '#64748b', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Calendar size={13} color="#3b82f6" /> {formatScheduleDate(s.date)}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <LayoutGrid size={13} color="#64748b" /> {s.loc || '-'}
+            </span>
+            {s.pic && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <User size={13} color="#64748b" /> {s.pic}
+              </span>
+            )}
+            {(!s.partnerCategory || s.partnerCategory.trim().toLowerCase() === 'internal') && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#94a3b8', fontSize: '0.78rem' }}>
+                <Briefcase size={11} /> Internal
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <div style={{ width: '130px', textAlign: 'center', flexShrink: 0 }}>
+          <span style={{ 
+            padding: '0.35rem 0.75rem', 
+            borderRadius: '999px', 
+            fontSize: '0.74rem', 
+            fontWeight: 700, 
+            backgroundColor: statusBg, 
+            color: statusText, 
+            border: `1px solid ${statusBorder}`, 
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.3rem'
+          }}>
+            {isOngoing && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>}
+            {s.dynamicStatus}
+          </span>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.75rem', flexShrink: 0 }}>
+          <button 
+            type="button"
+            onClick={() => handleEditSchedule(s)} 
+            style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.15s' }} 
+            title="Edit Kegiatan" 
+            onMouseOver={e => e.currentTarget.style.background = '#e2e8f0'} 
+            onMouseOut={e => e.currentTarget.style.background = '#f8fafc'}
+          >
+            <Edit size={15} />
+          </button>
+          <button 
+            type="button"
+            onClick={() => deleteSchedule(s.id)} 
+            style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer', transition: 'all 0.15s' }} 
+            title="Hapus Kegiatan" 
+            onMouseOver={e => e.currentTarget.style.background = '#fee2e2'} 
+            onMouseOut={e => e.currentTarget.style.background = '#fef2f2'}
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="card" style={{ maxWidth: '100%', margin: '0 auto 2rem', background: 'transparent', boxShadow: 'none', padding: 0 }}>
@@ -188,209 +471,327 @@ export default function SchedulesTab({
         </div>
       </div>
 
-      {/* MODERN FILTER BAR */}
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem', background: 'white', padding: '1rem', borderRadius: '1rem', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', alignItems: 'center' }}>
-        <div style={{ flex: '2 1 250px', position: 'relative' }}>
-          <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}><Search size={18} /></div>
-          <input type="text" value={scheduleSearch} onChange={(e) => setScheduleSearch(e.target.value)} placeholder="Cari judul kegiatan, PIC, atau ruangan..." style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.8rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: '#f8fafc', outline: 'none', fontSize: '0.95rem', color: '#1e293b', transition: 'border-color 0.2s' }} onFocus={e => e.target.style.borderColor = '#3b82f6'} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px' }}>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <input type="date" value={scheduleDateFrom} onChange={(e) => setScheduleDateFrom(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: '#f8fafc', outline: 'none', fontSize: '0.9rem', color: '#475569' }} />
-            <span style={{ position: 'absolute', top: '-8px', left: '12px', background: 'white', padding: '0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#64748b', borderRadius: '4px' }}>Mulai</span>
+      {/* FILTER BAR BERSIH DENGAN TOMBOL GARIS 3 (FILTER DROPDOWN) */}
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        
+        {/* Kolom Pencarian Teks */}
+        <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+          <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+            <Search size={18} />
           </div>
-          <span style={{ color: '#cbd5e1' }}>—</span>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <input type="date" value={scheduleDateTo} onChange={(e) => setScheduleDateTo(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: '#f8fafc', outline: 'none', fontSize: '0.9rem', color: '#475569' }} />
-            <span style={{ position: 'absolute', top: '-8px', left: '12px', background: 'white', padding: '0 4px', fontSize: '0.7rem', fontWeight: 600, color: '#64748b', borderRadius: '4px' }}>Akhir</span>
-          </div>
+          <input 
+            type="text" 
+            value={scheduleSearch} 
+            onChange={(e) => setScheduleSearch(e.target.value)} 
+            placeholder="Cari judul kegiatan, PIC, atau ruangan..." 
+            style={{ 
+              width: '100%', 
+              padding: '0.8rem 1rem 0.8rem 2.8rem', 
+              borderRadius: '0.75rem', 
+              border: '1px solid #e2e8f0', 
+              background: 'white', 
+              outline: 'none', 
+              fontSize: '0.92rem', 
+              color: '#1e293b', 
+              boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+              transition: 'border-color 0.2s' 
+            }} 
+            onFocus={e => e.target.style.borderColor = '#3b82f6'} 
+            onBlur={e => e.target.style.borderColor = '#e2e8f0'} 
+          />
+          {scheduleSearch && (
+            <button 
+              type="button" 
+              onClick={() => setScheduleSearch('')} 
+              style={{ position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.2rem' }}
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
+
+        {/* Tombol Garis 3 Filter (Dropdown Popover) */}
+        <div style={{ position: 'relative' }} ref={filterDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setFilterDropdownOpen(prev => !prev)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.8rem 1.25rem',
+              borderRadius: '0.75rem',
+              background: activeFilter !== 'all' ? '#eff6ff' : 'white',
+              border: `1.5px solid ${activeFilter !== 'all' ? '#3b82f6' : '#e2e8f0'}`,
+              color: activeFilter !== 'all' ? '#1d4ed8' : '#334155',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+              transition: 'all 0.15s'
+            }}
+            title="Klik tombol garis 3 untuk memfilter"
+          >
+            <ListFilter size={18} />
+            <span>Filter</span>
+            {activeFilter !== 'all' && (
+              <span style={{
+                padding: '0.15rem 0.55rem',
+                borderRadius: '999px',
+                background: '#2563eb',
+                color: 'white',
+                fontSize: '0.72rem',
+                fontWeight: 800
+              }}>
+                {FILTER_LABELS[activeFilter] || 'Aktif'}
+              </span>
+            )}
+          </button>
+
+          {/* Pop-up Dropdown Filter Menu */}
+          {filterDropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              right: 0,
+              top: 'calc(100% + 8px)',
+              background: 'white',
+              borderRadius: '0.85rem',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 15px 35px -5px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.06)',
+              width: '260px',
+              padding: '0.5rem',
+              zIndex: 100,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
+            }}>
+              <div style={{ padding: '0.45rem 0.75rem', fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Pilihan Filter
+              </div>
+
+              {[
+                { id: 'all', label: 'Semua Kegiatan (All)', icon: '📋' },
+                { id: 'minggu_ini', label: 'Minggu Ini', icon: '📆' },
+                { id: 'minggu_depan', label: 'Minggu Depan', icon: '⏭️' },
+                { id: 'bulan_ini', label: 'Bulan Ini', icon: '🗓️' },
+                { id: 'berlangsung', label: 'Sedang Berlangsung / Tayang', icon: '⚡' },
+                { id: 'akan_datang', label: 'Akan Datang', icon: '🕒' },
+                { id: 'riwayat', label: 'Riwayat (Sudah Selesai)', icon: '📜' },
+              ].map(opt => {
+                const isSelected = activeFilter === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveFilter(opt.id);
+                      setFilterDropdownOpen(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '0.55rem',
+                      border: 'none',
+                      background: isSelected ? '#eff6ff' : 'transparent',
+                      color: isSelected ? '#1d4ed8' : '#334155',
+                      fontWeight: isSelected ? 700 : 500,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.12s'
+                    }}
+                    onMouseOver={e => {
+                      if (!isSelected) e.currentTarget.style.background = '#f8fafc';
+                    }}
+                    onMouseOut={e => {
+                      if (!isSelected) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>{opt.icon}</span>
+                      <span>{opt.label}</span>
+                    </span>
+                    {isSelected && <Check size={16} color="#2563eb" />}
+                  </button>
+                );
+              })}
+
+              {activeFilter !== 'all' && (
+                <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '0.3rem', paddingTop: '0.3rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveFilter('all');
+                      setFilterDropdownOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.45rem 0.75rem',
+                      borderRadius: '0.45rem',
+                      border: 'none',
+                      background: '#fef2f2',
+                      color: '#ef4444',
+                      fontWeight: 700,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <X size={13} /> Reset ke Semua (All)
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* VIEW: DAFTAR (TIMELINE LAYOUT) */}
       {scheduleView === 'daftar' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
-          {/* ACTIVE SCHEDULES */}
-          <section>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <div style={{ width: '8px', height: '24px', background: '#3b82f6', borderRadius: '4px' }}></div>
-              <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.25rem' }}>Aktivitas Mendatang & Berlangsung</h4>
-              <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{activeSchedulesList.length}</span>
-            </div>
+          {/* Header Seksi Sesuai Filter yang Dipilih */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+            <div style={{ width: '6px', height: '22px', background: activeFilter === 'riwayat' ? '#94a3b8' : '#3b82f6', borderRadius: '3px' }}></div>
+            <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.25rem', fontWeight: 700 }}>
+              {FILTER_SECTION_TITLES[activeFilter] || 'Daftar Kegiatan'}
+            </h4>
+            <span style={{ 
+              background: activeFilter === 'riwayat' ? '#f1f5f9' : '#eff6ff', 
+              color: activeFilter === 'riwayat' ? '#475569' : '#1d4ed8', 
+              border: `1px solid ${activeFilter === 'riwayat' ? '#e2e8f0' : '#bfdbfe'}`, 
+              padding: '0.2rem 0.65rem', 
+              borderRadius: '999px', 
+              fontSize: '0.75rem', 
+              fontWeight: 800 
+            }}>
+              {filteredSchedulesView.length} Kegiatan
+            </span>
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {activeSchedulesList.map((s) => (
-                <div key={s.id} style={{ display: 'flex', alignItems: 'center', background: 'white', padding: '1.25rem 1.5rem', borderRadius: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', transition: 'transform 0.2s, box-shadow 0.2s', position: 'relative', overflow: 'hidden' }} onMouseOver={e => {e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.05)';}} onMouseOut={e => {e.currentTarget.style.transform = 'translateX(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';}}>
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: s.dynamicStatus === 'Berlangsung' ? '#10b981' : '#3b82f6' }}></div>
-                  
-                  <div style={{ width: '160px', paddingLeft: '0.5rem' }}>
-                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.2rem', letterSpacing: '-0.5px' }}>{s.startTime}</div>
-                    <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500 }}>s/d {s.endTime}</div>
-                  </div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
-                      <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>{s.title}</h4>
-                      {renderTargetBadge(s)}
-                      {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.15rem 0.6rem',
-                          borderRadius: '0.45rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          backgroundColor: '#fff7ed',
-                          color: '#c2410c',
-                          border: '1px solid #ffedd5',
-                          boxShadow: '0 1px 2px rgba(234, 88, 12, 0.08)'
-                        }}>
-                          <Briefcase size={12} color="#ea580c" /> {s.partnerCategory}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: '#64748b', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={14}/> {s.date}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><LayoutGrid size={14}/> {s.loc || '-'}</span>
-                      {s.pic && <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><User size={14}/> {s.pic}</span>}
-                      {(!s.partnerCategory || s.partnerCategory.trim().toLowerCase() === 'internal') && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                          <Briefcase size={12} /> Internal (UNRI)
-                        </span>
-                      )}
-                    </div>
-                  </div>
+          {/* Daftar Kegiatan Terfokus */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {paginatedSchedules.map(s => renderScheduleCard(s, activeFilter === 'riwayat'))}
+          </div>
 
-                  <div style={{ width: '130px', textAlign: 'center' }}>
-                     <span style={{ padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#ecfdf5' : '#eff6ff', color: s.dynamicStatus === 'Berlangsung' ? '#059669' : '#2563eb', border: `1px solid ${s.dynamicStatus === 'Berlangsung' ? '#a7f3d0' : '#bfdbfe'}`, display: 'inline-block' }}>
-                      {s.dynamicStatus}
-                    </span>
-                  </div>
+          {/* Pagination Jadwal Timeline */}
+          {filteredSchedulesView.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredSchedulesView.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(newPerPage) => {
+                setItemsPerPage(newPerPage);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[5, 10, 20, 50]}
+              itemLabel="kegiatan"
+            />
+          )}
 
-                  <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-                    <button onClick={() => handleEditSchedule(s)} style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.2s' }} title="Edit" onMouseOver={e => {e.currentTarget.style.background = '#e2e8f0';}} onMouseOut={e => {e.currentTarget.style.background = '#f8fafc';}}><Edit size={16} /></button>
-                    <button onClick={() => deleteSchedule(s.id)} style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer', transition: 'all 0.2s' }} title="Hapus" onMouseOver={e => {e.currentTarget.style.background = '#fee2e2';}} onMouseOut={e => {e.currentTarget.style.background = '#fef2f2';}}><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))}
-              {activeSchedulesList.length === 0 && (
-                <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px dashed #cbd5e1' }}>
-                  <Calendar size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
-                  <h4 style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>Belum ada aktivitas baru.</h4>
-                </div>
+          {/* Kondisi Jika Tidak Ada Data untuk Filter Ini */}
+          {filteredSchedulesView.length === 0 && (
+            <div style={{ padding: '3.5rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px dashed #cbd5e1' }}>
+              <Calendar size={42} style={{ color: '#cbd5e1', marginBottom: '0.75rem' }} />
+              <h4 style={{ color: '#64748b', margin: '0 0 0.35rem 0', fontWeight: 600 }}>Tidak ada agenda untuk filter ini.</h4>
+              <p style={{ margin: '0 0 1rem 0', color: '#94a3b8', fontSize: '0.85rem' }}>Coba pilih filter lain atau sesuaikan pencarian.</p>
+              {activeFilter !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter('all')}
+                  style={{
+                    padding: '0.45rem 1rem',
+                    borderRadius: '0.55rem',
+                    background: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Kembali ke Semua Kegiatan
+                </button>
               )}
             </div>
-          </section>
+          )}
 
-          {/* HISTORY LOG */}
-          <section>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', opacity: 0.8 }}>
-              <div style={{ width: '8px', height: '24px', background: '#94a3b8', borderRadius: '4px' }}></div>
-              <h4 style={{ margin: 0, color: '#475569', fontSize: '1.25rem' }}>Log Historis</h4>
-              <span style={{ background: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{historySchedulesList.length}</span>
-            </div>
-
-            <div style={{ position: 'relative', paddingLeft: '1.5rem' }}>
-              {/* Timeline line */}
-              <div style={{ position: 'absolute', left: '7px', top: '10px', bottom: '10px', width: '2px', background: '#e2e8f0' }}></div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {historySchedulesList.map((s) => (
-                  <div key={s.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'transparent', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', transition: 'all 0.2s', opacity: 0.75 }} onMouseOver={e => e.currentTarget.style.opacity = 1} onMouseOut={e => e.currentTarget.style.opacity = 0.75}>
-                    {/* Timeline dot */}
-                    <div style={{ position: 'absolute', left: '-22px', top: '50%', transform: 'translateY(-50%)', width: '12px', height: '12px', borderRadius: '50%', background: s.dynamicStatus === 'Selesai' ? '#cbd5e1' : '#fca5a5', border: '2px solid white', zIndex: 2 }}></div>
-                    
-                    <div style={{ width: '120px' }}>
-                      <div style={{ fontWeight: 600, color: '#475569', fontSize: '0.95rem' }}>{s.date}</div>
-                      <div style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{s.startTime}</div>
-                    </div>
-                    
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '1rem', color: '#334155', fontWeight: 600 }}>{s.title}</h4>
-                        {renderTargetBadge(s)}
-                        {s.partnerCategory && s.partnerCategory.trim().toLowerCase() !== 'internal' && (
-                          <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#ea580c', background: '#fff7ed', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid #fed7aa' }}>
-                            Mitra: {s.partnerCategory}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{s.loc} {s.pic ? `• ${s.pic}` : ''}</div>
-                    </div>
-
-                    <div style={{ width: '110px', textAlign: 'center' }}>
-                       <span style={{ padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.7rem', fontWeight: 600, backgroundColor: s.dynamicStatus === 'Selesai' ? '#f1f5f9' : '#fef2f2', color: s.dynamicStatus === 'Selesai' ? '#64748b' : '#dc2626' }}>
-                        {s.dynamicStatus}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.25rem', marginLeft: '1rem' }}>
-                      <button onClick={() => handleEditSchedule(s)} style={{ padding: '0.4rem', background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer' }}><Edit size={14} /></button>
-                      <button onClick={() => deleteSchedule(s.id)} style={{ padding: '0.4rem', background: 'transparent', color: '#f87171', border: 'none', cursor: 'pointer' }}><Trash2 size={14} /></button>
-                    </div>
-                  </div>
-                ))}
-                {historySchedulesList.length === 0 && (
-                  <div style={{ padding: '2rem', color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                    Riwayat bersih.
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
         </div>
       )}
 
       {/* VIEW: GRID (KANVAS) */}
       {scheduleView === 'grid' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
-          {filteredSchedulesView.map(s => (
-            <div key={s.id} style={{ position: 'relative', background: 'white', borderRadius: '1.25rem', padding: '1.75rem', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01)', border: '1px solid rgba(226, 232, 240, 0.8)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'default' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-6px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-              {/* Decorative Gradient Blob */}
-              <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '120px', height: '120px', background: s.dynamicStatus === 'Berlangsung' ? 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(255,255,255,0) 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', borderRadius: '50%', zIndex: 0 }}></div>
-              
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <span style={{ padding: '0.35rem 0.85rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#10b981' : s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Otomatis' ? '#3b82f6' : s.dynamicStatus === 'Selesai' ? '#94a3b8' : '#ef4444', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                    {s.dynamicStatus}
-                  </span>
-                  {renderTargetBadge(s)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
+            {paginatedSchedules.map(s => (
+              <div key={s.id} style={{ position: 'relative', background: 'white', borderRadius: '1.25rem', padding: '1.75rem', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01)', border: '1px solid rgba(226, 232, 240, 0.8)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'default' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-6px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                {/* Decorative Gradient Blob */}
+                <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '120px', height: '120px', background: s.dynamicStatus === 'Berlangsung' ? 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(255,255,255,0) 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', borderRadius: '50%', zIndex: 0 }}></div>
+                
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ padding: '0.35rem 0.85rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backgroundColor: s.dynamicStatus === 'Berlangsung' ? '#10b981' : s.dynamicStatus === 'Akan Datang' || s.dynamicStatus === 'Otomatis' ? '#3b82f6' : s.dynamicStatus === 'Selesai' ? '#94a3b8' : '#ef4444', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      {s.dynamicStatus}
+                    </span>
+                    {renderTargetBadge(s)}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Calendar size={12} /> {s.date}</span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Calendar size={12} /> {s.date}</span>
+                
+                <h4 style={{ position: 'relative', zIndex: 1, margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#0f172a', lineHeight: 1.3, fontWeight: 800 }}>{s.title}</h4>
+                
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '2rem', fontSize: '0.9rem', color: '#475569' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '0.5rem', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><Activity size={14} /></div>
+                    <span style={{ fontWeight: 600, color: '#334155' }}>{s.startTime} - {s.endTime}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '0.5rem', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><LayoutGrid size={14} /></div>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.loc || 'Belum diatur'}</span>
+                  </div>
+                </div>
+                
+                <div style={{ marginTop: 'auto', position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.25rem', borderTop: '1px dashed #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#64748b' }}>
+                    <User size={14} />
+                    <span style={{ fontWeight: 500, maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.pic || 'Tanpa PIC'}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => handleEditSchedule(s)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f1f5f9', color: '#475569', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#e2e8f0'} onMouseOut={e => e.currentTarget.style.background = '#f1f5f9'}><Edit size={14} /></button>
+                    <button onClick={() => deleteSchedule(s.id)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#fef2f2', color: '#ef4444', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fee2e2'} onMouseOut={e => e.currentTarget.style.background = '#fef2f2'}><Trash2 size={14} /></button>
+                  </div>
+                </div>
               </div>
-              
-              <h4 style={{ position: 'relative', zIndex: 1, margin: '0 0 1rem 0', fontSize: '1.25rem', color: '#0f172a', lineHeight: 1.3, fontWeight: 800 }}>{s.title}</h4>
-              
-              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '2rem', fontSize: '0.9rem', color: '#475569' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '0.5rem', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><Activity size={14} /></div>
-                  <span style={{ fontWeight: 600, color: '#334155' }}>{s.startTime} - {s.endTime}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '0.5rem', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><LayoutGrid size={14} /></div>
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.loc || 'Belum diatur'}</span>
-                </div>
+            ))}
+            {filteredSchedulesView.length === 0 && (
+              <div style={{ gridColumn: '1 / -1', padding: '4rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px dashed #cbd5e1' }}>
+                <LayoutGrid size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
+                <h4 style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>Kanvas kosong. Tidak ada data.</h4>
               </div>
-              
-              <div style={{ marginTop: 'auto', position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.25rem', borderTop: '1px dashed #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#64748b' }}>
-                  <User size={14} />
-                  <span style={{ fontWeight: 500, maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.pic || 'Tanpa PIC'}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => handleEditSchedule(s)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f1f5f9', color: '#475569', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#e2e8f0'} onMouseOut={e => e.currentTarget.style.background = '#f1f5f9'}><Edit size={14} /></button>
-                  <button onClick={() => deleteSchedule(s.id)} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#fef2f2', color: '#ef4444', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fee2e2'} onMouseOut={e => e.currentTarget.style.background = '#fef2f2'}><Trash2 size={14} /></button>
-                </div>
-              </div>
-            </div>
-          ))}
-          {filteredSchedulesView.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', padding: '4rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px dashed #cbd5e1' }}>
-              <LayoutGrid size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
-              <h4 style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>Kanvas kosong. Tidak ada data.</h4>
-            </div>
+            )}
+          </div>
+
+          {/* Pagination Jadwal Grid */}
+          {filteredSchedulesView.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredSchedulesView.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(newPerPage) => {
+                setItemsPerPage(newPerPage);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[6, 12, 24, 48]}
+              itemLabel="kegiatan"
+            />
           )}
         </div>
       )}

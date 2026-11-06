@@ -20,7 +20,7 @@ export default function ReportsTab({
         <h3 style={{ margin: 0 }}>Laporan Transkrip Agenda</h3>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button className="btn-save" onClick={handleExportCSV} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: '#10b981' }}>
-            <Download size={16} /> Export CSV
+            <Download size={16} /> Export Excel (.xls)
           </button>
           <button className="btn-save" onClick={() => window.print()} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <Activity size={16} /> Cetak PDF/Print

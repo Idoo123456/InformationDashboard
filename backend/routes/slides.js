@@ -57,7 +57,11 @@ router.get('/:prefix', async (req, res) => {
         mediaFit: r.media_fit || 'cover',
         targetTvs: targetTvs,
         target_tvs: targetTvs,
-        sortOrder: r.sort_order || 0
+        sortOrder: r.sort_order || 0,
+        createdAt: r.created_at || null,
+        created_at: r.created_at || null,
+        isActive: r.is_active !== undefined ? Boolean(r.is_active) : true,
+        is_active: r.is_active !== undefined ? Boolean(r.is_active) : true
       };
     });
 

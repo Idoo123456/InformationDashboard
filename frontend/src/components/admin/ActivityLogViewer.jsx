@@ -72,28 +72,69 @@ export default function ActivityLogViewer() {
     return matchesSearch && matchesFilter;
   });
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     if (filteredLogs.length === 0) return;
     const headers = ['ID', 'Waktu', 'Pengguna', 'Fakultas', 'Aksi', 'Keterangan', 'IP Address'];
     const rows = filteredLogs.map(l => [
       l.id,
       new Date(l.created_at).toLocaleString('id-ID'),
-      `"${l.username || ''}"`,
-      `"${l.faculty_prefix || ''}"`,
-      `"${l.action || ''}"`,
-      `"${(l.details || '').replace(/"/g, '""')}"`,
-      `"${l.ip_address || ''}"`
+      l.username || '-',
+      l.faculty_prefix || '-',
+      l.action || '-',
+      l.details || '-',
+      l.ip_address || '-'
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const tableRows = rows.map(r => `
+      <tr>
+        ${r.map(cell => `<td style="border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 10pt;">${String(cell).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`).join('')}
+      </tr>
+    `).join('');
+
+    const excelTemplate = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"/>
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: Calibri, Arial, sans-serif; }
+          th { background-color: #0f172a; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 8px 12px; font-size: 11pt; text-align: left; }
+          td { border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 10pt; }
+          tr:nth-child(even) { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <h3 style="font-family: Calibri, Arial, sans-serif; color: #0f172a; margin-bottom: 8px;">
+          Audit Log Aktivitas - Universitas Riau
+        </h3>
+        <p style="font-family: Calibri, Arial, sans-serif; color: #64748b; font-size: 10pt; margin-top: 0; margin-bottom: 16px;">
+          Tanggal Ekspor: ${new Date().toLocaleString('id-ID')} | Total Catatan: ${filteredLogs.length}
+        </p>
+        <table>
+          <thead>
+            <tr>
+              ${headers.map(h => `<th>${h}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Audit_Log_UNRI_${getLocalDateStr()}.csv`);
+    link.href = url;
+    link.download = `Audit_Log_UNRI_${getLocalDateStr()}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
+
+  const exportToCSV = exportToExcel;
 
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
@@ -171,7 +212,7 @@ export default function ActivityLogViewer() {
             }}
           >
             <Download size={16} />
-            Ekspor CSV
+            Ekspor Excel (.xls)
           </button>
         </div>
       </div>

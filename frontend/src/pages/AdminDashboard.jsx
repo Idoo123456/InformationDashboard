@@ -167,26 +167,68 @@ function AdminDashboard() {
     return matchDate && matchStatus && matchSearch;
   }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     const headers = ['Tanggal', 'Waktu', 'Nama Kegiatan', 'Status', 'Ruangan', 'PIC', 'Mitra'];
     const rows = filteredSchedules.map(s => [
-      s.date,
-      `${s.startTime} - ${s.endTime}`,
-      `"${(s.title || '').replace(/"/g, '""')}"`,
-      s.status,
-      `"${(s.loc || '').replace(/"/g, '""')}"`,
-      `"${(s.pic || '-').replace(/"/g, '""')}"`,
-      `"${(s.partnerCategory || 'Internal').replace(/"/g, '""')}"`
+      s.date || '-',
+      `${s.startTime || '00:00'} - ${s.endTime || '23:59'}`,
+      s.title || '-',
+      s.status || 'Aktif',
+      s.loc || '-',
+      s.pic || '-',
+      s.partnerCategory || 'Internal'
     ]);
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+
+    const tableRows = rows.map(r => `
+      <tr>
+        ${r.map(cell => `<td style="border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 10pt;">${String(cell).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`).join('')}
+      </tr>
+    `).join('');
+
+    const excelTemplate = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"/>
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: Calibri, Arial, sans-serif; }
+          th { background-color: #1e40af; color: #ffffff; font-weight: bold; border: 1px solid #0f172a; padding: 8px 12px; font-size: 11pt; text-align: left; }
+          td { border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 10pt; }
+          tr:nth-child(even) { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <h3 style="font-family: Calibri, Arial, sans-serif; color: #0f172a; margin-bottom: 8px;">
+          Laporan Transkrip Agenda - ${facultyName || 'Universitas Riau'}
+        </h3>
+        <p style="font-family: Calibri, Arial, sans-serif; color: #64748b; font-size: 10pt; margin-top: 0; margin-bottom: 16px;">
+          Periode: ${reportStartDate || '-'} s/d ${reportEndDate || '-'} | Total Kegiatan: ${filteredSchedules.length}
+        </p>
+        <table>
+          <thead>
+            <tr>
+              ${headers.map(h => `<th>${h}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `laporan_agenda_${reportStartDate}_sd_${reportEndDate}.csv`);
+    link.href = url;
+    link.download = `laporan_agenda_${reportStartDate}_sd_${reportEndDate}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
+
+  const handleExportCSV = handleExportExcel;
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -316,6 +358,7 @@ function AdminDashboard() {
   // Flag penanda apakah pengguna sedang memiliki perubahan draft lokal yang belum disimpan
   const isAnnouncementsDirty = useRef(false);
   const isSchedulesDirty = useRef(false);
+  const isScheduleSettingsDirty = useRef(false);
   const isSlidesDirty = useRef(false);
   const prevPrefixRef = useRef(prefix);
 
@@ -325,6 +368,7 @@ function AdminDashboard() {
       prevPrefixRef.current = prefix;
       isAnnouncementsDirty.current = false;
       isSchedulesDirty.current = false;
+      isScheduleSettingsDirty.current = false;
       isSlidesDirty.current = false;
       setLocalSchedules(schedules);
       setLocalAnnouncements(announcements);
@@ -366,11 +410,15 @@ function AdminDashboard() {
   }, [tvLayout]);
 
   useEffect(() => {
-    if (scheduleSpeed) setLocalScheduleSpeed(scheduleSpeed);
+    if (scheduleSpeed && !isScheduleSettingsDirty.current) {
+      setLocalScheduleSpeed(scheduleSpeed);
+    }
   }, [scheduleSpeed]);
 
   useEffect(() => {
-    if (scheduleScrollType) setLocalScheduleScrollType(scheduleScrollType);
+    if (scheduleScrollType && !isScheduleSettingsDirty.current) {
+      setLocalScheduleScrollType(scheduleScrollType);
+    }
   }, [scheduleScrollType]);
 
   // Announcements Handlers
@@ -652,6 +700,24 @@ function AdminDashboard() {
     });
   };
 
+  const handleScheduleScrollTypeChange = (newType) => {
+    isScheduleSettingsDirty.current = true;
+    setLocalScheduleScrollType(newType);
+    setScheduleScrollType(newType);
+    saveSettingsToDb({ schedule_scroll_type: newType }).catch(err => {
+      console.warn('Gagal menyimpan mode gulir ke database:', err);
+    });
+  };
+
+  const handleScheduleSpeedChange = (newSpeed) => {
+    isScheduleSettingsDirty.current = true;
+    setLocalScheduleSpeed(newSpeed);
+    setScheduleSpeed(newSpeed);
+    saveSettingsToDb({ schedule_speed: newSpeed }).catch(err => {
+      console.warn('Gagal menyimpan kecepatan gulir ke database:', err);
+    });
+  };
+
   const handleSaveSchedules = async () => {
     if (!isDbConnected) {
       Swal.fire({
@@ -664,10 +730,19 @@ function AdminDashboard() {
     }
     try {
       await saveSchedulesToDb(localSchedules);
+      try {
+        await saveSettingsToDb({
+          schedule_speed: localScheduleSpeed,
+          schedule_scroll_type: localScheduleScrollType
+        });
+      } catch (settingsErr) {
+        console.warn('Gagal simpan schedule settings ke DB:', settingsErr);
+      }
       isSchedulesDirty.current = false;
+      isScheduleSettingsDirty.current = false;
       setScheduleSpeed(localScheduleSpeed);
       setScheduleScrollType(localScheduleScrollType);
-      showSuccessPopup('Jadwal berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
+      showSuccessPopup('Jadwal dan Pengaturan Gulir TV berhasil disimpan ke database MySQL dan diperbarui di layar TV!');
     } catch (err) {
       Swal.fire('Gagal Menyimpan', err.message, 'error');
     }
@@ -704,8 +779,9 @@ function AdminDashboard() {
       targetTvs: [],
       target_tvs: []
     };
-    setLocalSlides([...localSlides, newSlide]);
-    showToastPopup('Slide berhasil ditambahkan ke daftar draft.');
+    setLocalSlides(prev => [...prev, newSlide]);
+    showToastPopup('Slide baru berhasil dibuat! Silakan atur detailnya.');
+    return newSlide;
   };
 
   const updateSlide = (id, fieldOrUpdates, value) => {
@@ -975,9 +1051,49 @@ function AdminDashboard() {
   return (
     <div className="admin-layout">
       <div className="admin-sidebar">
-        <div className="admin-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <img src={logoUnri} alt="Logo UNRI" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
-          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Dashboard</h2>
+        <div className="admin-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.25rem 1.15rem' }}>
+          <img 
+            src={logoUnri} 
+            alt="Logo UNRI" 
+            style={{ 
+              width: '42px', 
+              height: '42px', 
+              objectFit: 'contain',
+              flexShrink: 0,
+              filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.06))' 
+            }} 
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.15, fontFamily: "'Outfit', sans-serif" }}>
+            <span style={{ 
+              fontSize: '0.68rem', 
+              fontWeight: 800, 
+              letterSpacing: '1.2px', 
+              textTransform: 'uppercase', 
+              color: '#3b82f6' 
+            }}>
+              Information
+            </span>
+            <span style={{ 
+              fontSize: '1.08rem', 
+              fontWeight: 800, 
+              color: '#0f172a', 
+              letterSpacing: '-0.3px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              marginTop: '1px'
+            }}>
+              <span>Dashboard</span>
+              <span style={{ 
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%)', 
+                WebkitBackgroundClip: 'text', 
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900
+              }}>
+                UPA
+              </span>
+            </span>
+          </div>
         </div>
         <nav className="admin-nav" style={{ flex: 1 }}>
           <button className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
@@ -1201,9 +1317,9 @@ function AdminDashboard() {
             <SchedulesTab 
               localSchedules={localSchedules}
               localScheduleSpeed={localScheduleSpeed}
-              setLocalScheduleSpeed={setLocalScheduleSpeed}
+              setLocalScheduleSpeed={handleScheduleSpeedChange}
               localScheduleScrollType={localScheduleScrollType}
-              setLocalScheduleScrollType={setLocalScheduleScrollType}
+              setLocalScheduleScrollType={handleScheduleScrollTypeChange}
               availableTvs={availableTvs}
               handleAddSchedule={handleAddSchedule}
               handleEditSchedule={handleEditSchedule}

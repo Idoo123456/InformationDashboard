@@ -367,6 +367,12 @@ export function DashboardProvider({ children, prefix = 'main', defaultFacultyNam
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Gagal menyimpan pengaturan ke database MySQL');
+    if (newSettings.schedule_scroll_type) {
+      setScheduleScrollType(newSettings.schedule_scroll_type);
+    }
+    if (newSettings.schedule_speed !== undefined) {
+      setScheduleSpeed(newSettings.schedule_speed);
+    }
     return await res.json();
   };
 

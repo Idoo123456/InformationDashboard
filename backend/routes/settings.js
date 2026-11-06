@@ -27,9 +27,35 @@ router.put('/:prefix', async (req, res) => {
   const s = req.body;
 
   try {
+    // 1. Ambil data settings yang ada sebelumnya agar partial update tidak mereset data lain ke default
+    const [existing] = await pool.query('SELECT * FROM settings WHERE faculty_prefix = ?', [prefix]);
+    const prev = existing.length > 0 ? existing[0] : {};
+
     const templateColorsJson = typeof s.template_colors === 'object' 
       ? JSON.stringify(s.template_colors) 
-      : s.template_colors;
+      : (s.template_colors !== undefined ? s.template_colors : (typeof prev.template_colors === 'string' ? prev.template_colors : JSON.stringify(prev.template_colors || {})));
+
+    const merged = {
+      faculty_name: s.faculty_name !== undefined ? s.faculty_name : (prev.faculty_name || ''),
+      sub_unit_name: s.sub_unit_name !== undefined ? s.sub_unit_name : (prev.sub_unit_name || ''),
+      accreditation: s.accreditation !== undefined ? s.accreditation : (prev.accreditation || ''),
+      campus_location: s.campus_location !== undefined ? s.campus_location : (prev.campus_location || ''),
+      operational_hours: s.operational_hours !== undefined ? s.operational_hours : (prev.operational_hours || ''),
+      tagline: s.tagline !== undefined ? s.tagline : (prev.tagline || ''),
+      primary_color: s.primary_color !== undefined ? s.primary_color : (prev.primary_color || '#1e40af'),
+      template_colors: templateColorsJson,
+      tv_layout: s.tv_layout !== undefined ? s.tv_layout : (prev.tv_layout || 'standard'),
+      language: s.language !== undefined ? s.language : (prev.language || 'id'),
+      timezone: s.timezone !== undefined ? s.timezone : (prev.timezone || 'WIB'),
+      time_on: s.time_on !== undefined ? s.time_on : (prev.time_on || '06:00'),
+      time_off: s.time_off !== undefined ? s.time_off : (prev.time_off || '22:00'),
+      auto_refresh: s.auto_refresh !== undefined ? s.auto_refresh : (prev.auto_refresh ?? true),
+      slide_duration: s.slide_duration !== undefined ? s.slide_duration : (prev.slide_duration || 8),
+      marquee_speed: s.marquee_speed !== undefined ? s.marquee_speed : (prev.marquee_speed || 20),
+      schedule_speed: s.schedule_speed !== undefined ? s.schedule_speed : (prev.schedule_speed || 1),
+      schedule_scroll_type: s.schedule_scroll_type !== undefined ? s.schedule_scroll_type : (prev.schedule_scroll_type || 'step'),
+      tu_card_grid: s.tu_card_grid !== undefined ? s.tu_card_grid : (prev.tu_card_grid || '3x2')
+    };
 
     const query = `
       INSERT INTO settings (
@@ -62,25 +88,25 @@ router.put('/:prefix', async (req, res) => {
 
     await pool.query(query, [
       prefix,
-      s.faculty_name || '',
-      s.sub_unit_name || '',
-      s.accreditation || '',
-      s.campus_location || '',
-      s.operational_hours || '',
-      s.tagline || '',
-      s.primary_color || '#1e40af',
-      templateColorsJson,
-      s.tv_layout || 'standard',
-      s.language || 'id',
-      s.timezone || 'WIB',
-      s.time_on || '06:00',
-      s.time_off || '22:00',
-      s.auto_refresh ?? true,
-      s.slide_duration || 8,
-      s.marquee_speed || 20,
-      s.schedule_speed || 1,
-      s.schedule_scroll_type || 'step',
-      s.tu_card_grid || '3x2'
+      merged.faculty_name,
+      merged.sub_unit_name,
+      merged.accreditation,
+      merged.campus_location,
+      merged.operational_hours,
+      merged.tagline,
+      merged.primary_color,
+      merged.template_colors,
+      merged.tv_layout,
+      merged.language,
+      merged.timezone,
+      merged.time_on,
+      merged.time_off,
+      merged.auto_refresh,
+      merged.slide_duration,
+      merged.marquee_speed,
+      merged.schedule_speed,
+      merged.schedule_scroll_type,
+      merged.tu_card_grid
     ]);
 
     res.json({ success: true, message: 'Settings berhasil disimpan!' });
