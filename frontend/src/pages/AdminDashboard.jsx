@@ -3,7 +3,8 @@ import { useDashboard } from '../context/DashboardContext';
 import { 
   Bell, Cog, Settings, Image as ImageIcon, Calendar, MessageSquare, 
   LogOut, ChevronRight, User, LayoutDashboard, MonitorPlay, 
-  Activity, ShieldCheck, ClipboardList, Database, Building2, Tv, Users 
+  Activity, ShieldCheck, ClipboardList, Database, Building2, Tv, Users,
+  Menu, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -82,6 +83,32 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [overviewLayout, setOverviewLayout] = useState('modern');
   const [pendingTvCount, setPendingTvCount] = useState(0);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Tutup sidebar mobile saat resize ke desktop atau saat menekan Escape
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsMobileSidebarOpen(false);
+  };
 
   // Periksa permohonan TV pending untuk badge Super Admin
   useEffect(() => {
@@ -107,9 +134,9 @@ function AdminDashboard() {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
 
-  // Filter Reports States
-  const [reportStartDate, setReportStartDate] = useState(getStartOfMonthStr);
-  const [reportEndDate, setReportEndDate] = useState(getEndOfMonthStr);
+  // Filter Reports States: Default string kosong agar menampilkan seluruh agenda secara lengkap
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
   const [reportStatus, setReportStatus] = useState('Semua');
   const [reportSearch, setReportSearch] = useState('');
 
@@ -221,7 +248,8 @@ function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `laporan_agenda_${reportStartDate}_sd_${reportEndDate}.xls`;
+    const periodLabel = reportStartDate && reportEndDate ? `${reportStartDate}_sd_${reportEndDate}` : 'semua_periode';
+    link.download = `laporan_agenda_${periodLabel}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1051,76 +1079,96 @@ function AdminDashboard() {
 
   return (
     <div className="admin-layout">
-      <div className="admin-sidebar">
-        <div className="admin-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.25rem 1.15rem' }}>
-          <img 
-            src={logoUnri} 
-            alt="Logo UNRI" 
-            style={{ 
-              width: '42px', 
-              height: '42px', 
-              objectFit: 'contain',
-              flexShrink: 0,
-              filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.06))' 
-            }} 
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.15, fontFamily: "'Outfit', sans-serif" }}>
-            <span style={{ 
-              fontSize: '0.68rem', 
-              fontWeight: 800, 
-              letterSpacing: '1.2px', 
-              textTransform: 'uppercase', 
-              color: '#3b82f6' 
-            }}>
-              Information
-            </span>
-            <span style={{ 
-              fontSize: '1.08rem', 
-              fontWeight: 800, 
-              color: '#0f172a', 
-              letterSpacing: '-0.3px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              marginTop: '1px'
-            }}>
-              <span>Dashboard</span>
+      {/* Backdrop overlay saat sidebar terbuka di layar mobile */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="admin-sidebar-backdrop" 
+          onClick={() => setIsMobileSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <div className={`admin-sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
+        <div className="admin-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.85rem', padding: '1.25rem 1.15rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <img 
+              src={logoUnri} 
+              alt="Logo UNRI" 
+              style={{ 
+                width: '42px', 
+                height: '42px', 
+                objectFit: 'contain',
+                flexShrink: 0,
+                filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.06))' 
+              }} 
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.15, fontFamily: "'Outfit', sans-serif" }}>
               <span style={{ 
-                background: 'linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%)', 
-                WebkitBackgroundClip: 'text', 
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 900
+                fontSize: '0.68rem', 
+                fontWeight: 800, 
+                letterSpacing: '1.2px', 
+                textTransform: 'uppercase', 
+                color: '#3b82f6' 
               }}>
-                UPA
+                Information
               </span>
-            </span>
+              <span style={{ 
+                fontSize: '1.08rem', 
+                fontWeight: 800, 
+                color: '#0f172a', 
+                letterSpacing: '-0.3px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                marginTop: '1px'
+              }}>
+                <span>Dashboard</span>
+                <span style={{ 
+                  background: 'linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%)', 
+                  WebkitBackgroundClip: 'text', 
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: 900
+                }}>
+                  UPA
+                </span>
+              </span>
+            </div>
           </div>
+          <button 
+            type="button" 
+            className="admin-sidebar-close-btn"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-label="Tutup Menu Dasbor"
+            title="Tutup Menu"
+          >
+            <X size={20} />
+          </button>
         </div>
         <nav className="admin-nav" style={{ flex: 1 }}>
-          <button className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+          <button className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => handleTabChange('overview')}>
             <LayoutDashboard size={18} /> Ringkasan
           </button>
-          <button className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+          <button className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => handleTabChange('settings')}>
             <Settings size={18} /> Pengaturan Umum
           </button>
-          <button className={`nav-btn ${activeTab === 'slides' ? 'active' : ''}`} onClick={() => setActiveTab('slides')}>
+          <button className={`nav-btn ${activeTab === 'slides' ? 'active' : ''}`} onClick={() => handleTabChange('slides')}>
             <ImageIcon size={18} /> Manajemen Slide
           </button>
-          <button className={`nav-btn ${activeTab === 'schedules' ? 'active' : ''}`} onClick={() => setActiveTab('schedules')}>
+          <button className={`nav-btn ${activeTab === 'schedules' ? 'active' : ''}`} onClick={() => handleTabChange('schedules')}>
             <Calendar size={18} /> Jadwal Kegiatan
           </button>
-          <button className={`nav-btn ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => setActiveTab('announcements')}>
+          <button className={`nav-btn ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => handleTabChange('announcements')}>
             <MessageSquare size={18} /> Pengumuman
           </button>
-          <button className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
+          <button className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => handleTabChange('reports')}>
             <Activity size={18} /> Laporan Agenda
           </button>
-          <button className={`nav-btn ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => setActiveTab('rooms')}>
+          <button className={`nav-btn ${activeTab === 'rooms' ? 'active' : ''}`} onClick={() => handleTabChange('rooms')}>
             <Building2 size={18} /> Master Ruangan
           </button>
 
           {!isSuperAdmin && (
-            <button className={`nav-btn ${activeTab === 'tv_faculty' ? 'active' : ''}`} onClick={() => setActiveTab('tv_faculty')}>
+            <button className={`nav-btn ${activeTab === 'tv_faculty' ? 'active' : ''}`} onClick={() => handleTabChange('tv_faculty')}>
               <Tv size={18} /> Layar TV & Pengajuan
             </button>
           )}
@@ -1130,7 +1178,7 @@ function AdminDashboard() {
               <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Pusat & Pengguna
               </div>
-              <button className={`nav-btn ${activeTab === 'tv_devices' ? 'active' : ''}`} onClick={() => setActiveTab('tv_devices')}>
+              <button className={`nav-btn ${activeTab === 'tv_devices' ? 'active' : ''}`} onClick={() => handleTabChange('tv_devices')}>
                 <Tv size={18} /> Kelola Perangkat TV
                 {pendingTvCount > 0 && (
                   <span style={{
@@ -1147,20 +1195,20 @@ function AdminDashboard() {
                   </span>
                 )}
               </button>
-              <button className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+              <button className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => handleTabChange('users')}>
                 <Users size={18} /> Manajemen Pengguna
               </button>
-              <button className={`nav-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>
+              <button className={`nav-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => handleTabChange('logs')}>
                 <ClipboardList size={18} /> Log Aktivitas Kampus
               </button>
             </div>
           )}
         </nav>
         <div className="admin-nav-footer" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <button onClick={() => window.open(tvDisplayUrl, '_blank')} className="nav-btn nav-btn-tv">
+          <button onClick={() => { setIsMobileSidebarOpen(false); window.open(tvDisplayUrl, '_blank'); }} className="nav-btn nav-btn-tv">
             <MonitorPlay size={18} /> Lihat TV Display
           </button>
-          <button onClick={handleLogout} className="nav-btn nav-btn-logout">
+          <button onClick={() => { setIsMobileSidebarOpen(false); handleLogout(); }} className="nav-btn nav-btn-logout">
             <LogOut size={18} /> Keluar Dasbor
           </button>
         </div>
@@ -1168,89 +1216,117 @@ function AdminDashboard() {
       
       <div className="admin-content">
         <header className="admin-header">
-          <div className="admin-breadcrumbs">
-            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Admin Dasbor</span>
-            <ChevronRight size={14} style={{ color: '#94a3b8', margin: '0 0.5rem' }} />
-            <h1 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>
-              {activeTab === 'overview' && 'Ringkasan Dasbor'}
-              {activeTab === 'settings' && 'Pengaturan Umum'}
-              {activeTab === 'slides' && 'Manajemen Slide'}
-              {activeTab === 'schedules' && 'Jadwal Kegiatan'}
-              {activeTab === 'announcements' && 'Pengumuman'}
-              {activeTab === 'reports' && 'Laporan Agenda'}
-              {activeTab === 'rooms' && 'Master Ruangan Kampus'}
-              {activeTab === 'tv_faculty' && 'Layar TV & Pengajuan Unit Fakultas'}
-              {activeTab === 'tv_devices' && 'Manajemen Perangkat TV (Pusat & Seluruh Fakultas)'}
-              {activeTab === 'users' && 'Manajemen Pengguna & Akun Fakultas'}
-              {activeTab === 'logs' && 'Log Audit Aktivitas Kampus'}
-            </h1>
+          <div className="admin-header-row">
+            <div className="admin-header-left">
+              <button 
+                type="button"
+                className="admin-mobile-toggle"
+                onClick={() => setIsMobileSidebarOpen(prev => !prev)}
+                aria-label={isMobileSidebarOpen ? "Tutup menu dasbor" : "Buka menu dasbor"}
+                title="Menu Navigasi"
+              >
+                {isMobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+              <div className="admin-breadcrumbs">
+                <span className="breadcrumb-parent" style={{ color: '#64748b', fontSize: '0.9rem' }}>Admin Dasbor</span>
+                <ChevronRight size={14} className="breadcrumb-sep" style={{ color: '#94a3b8', margin: '0 0.5rem' }} />
+                <h1 className="breadcrumb-title" style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>
+                  {activeTab === 'overview' && 'Ringkasan Dasbor'}
+                  {activeTab === 'settings' && 'Pengaturan Umum'}
+                  {activeTab === 'slides' && 'Manajemen Slide'}
+                  {activeTab === 'schedules' && 'Jadwal Kegiatan'}
+                  {activeTab === 'announcements' && 'Pengumuman'}
+                  {activeTab === 'reports' && 'Laporan Agenda'}
+                  {activeTab === 'rooms' && 'Master Ruangan Kampus'}
+                  {activeTab === 'tv_faculty' && 'Layar TV & Pengajuan Unit Fakultas'}
+                  {activeTab === 'tv_devices' && 'Manajemen Perangkat TV (Pusat & Seluruh Fakultas)'}
+                  {activeTab === 'users' && 'Manajemen Pengguna & Akun Fakultas'}
+                  {activeTab === 'logs' && 'Log Audit Aktivitas Kampus'}
+                </h1>
+              </div>
+            </div>
+
+            <div className="admin-header-actions">
+              {/* Selector Fakultas untuk tampilan Desktop */}
+              {isSuperAdmin && (
+                <div className="admin-faculty-select-wrapper desktop-only">
+                  <Building2 size={16} color="#2563eb" />
+                  <span className="admin-faculty-label">Fakultas:</span>
+                  <select 
+                    value={prefix}
+                    onChange={(e) => {
+                      const sel = FACULTY_LIST.find(f => f.prefix === e.target.value);
+                      if (sel) navigate(sel.path);
+                    }}
+                    className="admin-faculty-select"
+                  >
+                    {FACULTY_LIST.map(f => (
+                      <option key={f.prefix} value={f.prefix}>{f.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div 
+                className="admin-db-status"
+                title={isDbConnected ? 'Koneksi database MySQL aktif & tersinkronisasi' : 'Koneksi database terputus. Pastikan server/index.js & MySQL berjalan.'}
+                style={{
+                  background: isDbConnected ? '#ecfdf5' : '#fef2f2',
+                  border: `1px solid ${isDbConnected ? '#a7f3d0' : '#fecaca'}`,
+                  color: isDbConnected ? '#065f46' : '#991b1b',
+                }}
+              >
+                <Database size={15} color={isDbConnected ? '#059669' : '#dc2626'} />
+                <span className="db-status-text">{isDbConnected ? 'MySQL Terhubung' : 'Database Offline'}</span>
+                <span className="db-status-dot" style={{
+                  background: isDbConnected ? '#10b981' : '#ef4444',
+                  boxShadow: isDbConnected ? '0 0 6px #10b981' : 'none'
+                }} />
+              </div>
+
+              <a href={tvDisplayUrl} target="_blank" rel="noreferrer" className="view-btn" title="Buka Layar TV Display">
+                <MonitorPlay size={15} className="view-btn-icon" />
+                <span className="view-btn-text">Lihat Layar TV</span>
+              </a>
+
+              <div className="admin-user-profile" title={currentUser?.name || (isSuperAdmin ? 'Super Administrator' : 'Admin Fakultas')}>
+                <div className="admin-user-avatar" style={{ background: isSuperAdmin ? '#eff6ff' : '#e2e8f0', color: isSuperAdmin ? '#2563eb' : '#64748b' }}>
+                  {isSuperAdmin ? <ShieldCheck size={18} /> : <User size={16} />}
+                </div>
+                <div className="admin-user-info">
+                  <span className="admin-user-name">
+                    {currentUser?.name || (isSuperAdmin ? 'Super Administrator' : 'Admin Fakultas')}
+                  </span>
+                  <span className="admin-user-role" style={{ color: isSuperAdmin ? '#2563eb' : '#64748b' }}>
+                    {isSuperAdmin ? 'Super Admin (Akses Semua)' : `Admin ${prefix ? prefix.toUpperCase() : ''}`}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-            {isSuperAdmin && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.85rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}>
-                <Building2 size={16} color="#2563eb" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>Fakultas:</span>
+
+          {/* Baris Khusus Selector Fakultas untuk Layar Ponsel (Mobile Only) */}
+          {isSuperAdmin && (
+            <div className="admin-mobile-subbar mobile-only">
+              <div className="admin-faculty-select-mobile">
+                <Building2 size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', flexShrink: 0 }}>Unit:</span>
                 <select 
                   value={prefix}
                   onChange={(e) => {
                     const sel = FACULTY_LIST.find(f => f.prefix === e.target.value);
                     if (sel) navigate(sel.path);
                   }}
-                  style={{ border: 'none', background: 'transparent', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', cursor: 'pointer', outline: 'none' }}
+                  className="admin-faculty-select"
+                  style={{ flex: 1, minWidth: 0, textOverflow: 'ellipsis' }}
                 >
                   {FACULTY_LIST.map(f => (
                     <option key={f.prefix} value={f.prefix}>{f.name}</option>
                   ))}
                 </select>
               </div>
-            )}
-            <div style={{ position: 'relative', cursor: 'pointer' }}>
-              <Bell size={20} color="#67748e" />
-              <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', background: '#ea0606', borderRadius: '50%', border: '2px solid white' }}></span>
             </div>
-            <div style={{ cursor: 'pointer' }}>
-              <Cog size={20} color="#67748e" />
-            </div>
-            <div 
-              title={isDbConnected ? 'Koneksi database MySQL aktif & tersinkronisasi' : 'Koneksi database terputus. Pastikan server/index.js & MySQL berjalan.'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.45rem 0.85rem',
-                borderRadius: '999px',
-                background: isDbConnected ? '#ecfdf5' : '#fef2f2',
-                border: `1px solid ${isDbConnected ? '#a7f3d0' : '#fecaca'}`,
-                color: isDbConnected ? '#065f46' : '#991b1b',
-                fontSize: '0.8rem',
-                fontWeight: 700
-              }}
-            >
-              <Database size={15} color={isDbConnected ? '#059669' : '#dc2626'} />
-              <span>{isDbConnected ? 'MySQL Terhubung' : 'Database Offline'}</span>
-              <span style={{
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                background: isDbConnected ? '#10b981' : '#ef4444',
-                boxShadow: isDbConnected ? '0 0 6px #10b981' : 'none'
-              }} />
-            </div>
-            <a href={tvDisplayUrl} target="_blank" rel="noreferrer" className="view-btn">Lihat Layar TV</a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: '1px solid #e2e8f0', paddingLeft: '1.5rem' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: isSuperAdmin ? '#eff6ff' : '#e2e8f0', color: isSuperAdmin ? '#2563eb' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {isSuperAdmin ? <ShieldCheck size={20} /> : <User size={18} />}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
-                  {currentUser?.name || (isSuperAdmin ? 'Super Administrator' : 'Admin Fakultas')}
-                </span>
-                <span style={{ fontSize: '0.75rem', color: isSuperAdmin ? '#2563eb' : '#64748b', fontWeight: 600 }}>
-                  {isSuperAdmin ? 'Super Admin (Akses Semua)' : `Admin ${prefix.toUpperCase()}`}
-                </span>
-              </div>
-            </div>
-          </div>
+          )}
         </header>
 
         <main className="admin-main">

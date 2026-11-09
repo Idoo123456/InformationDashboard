@@ -33,8 +33,8 @@ const Header = ({ currentTv }) => {
   // Identitas brand di samping logo: hanya teks "PW" dengan font hitam tebal yang rapi & diperbesar
   const isCustomUnit = subUnitName && subUnitName.trim() && subUnitName !== 'Pusat Informasi & Layanan Terpadu' && subUnitName !== 'Pusat Informasi Fakultas';
   const brandTitle = isCustomUnit
-    ? (subUnitName.trim().toLowerCase() === 'perpustakaan' ? 'PERPUSTAKAAN' : subUnitName.trim())
-    : 'perpustakaan';
+    ? (subUnitName.trim().toLowerCase() === 'PERPUSTAKAAN' ? 'PERPUSTAKAAN' : subUnitName.trim())
+    : 'PERPUSTAKAAN';
 
   return (
     <header className="header glass-panel header-grand">
@@ -47,7 +47,7 @@ const Header = ({ currentTv }) => {
         <div className="header-brand-divider" />
 
         <div className="header-brand-text">
-          <h2 className="header-perpustakaan-title">{brandTitle}</h2>
+          <h2 className="header-PERPUSTAKAAN-title">{brandTitle}</h2>
         </div>
       </div>
 

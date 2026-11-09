@@ -388,284 +388,199 @@ export default function SlidesTab({
     <div className="card" style={{ maxWidth: '100%', margin: '0 auto 2rem', background: 'transparent', boxShadow: 'none', padding: 0 }}>
       
       {/* HEADER UTAMA */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '1.25rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h3 style={{ margin: '0 0 0.35rem 0', fontSize: '1.5rem', color: '#0f172a', fontWeight: 800 }}>
-            Daftar Slide Konten
-          </h3>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
+      <div className="slides-header-bar">
+        <div className="slides-header-info">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            <h3 className="slides-header-title">
+              Daftar Slide Konten
+            </h3>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.15rem 0.55rem', borderRadius: '999px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+              {localSlides.length} Slide Aktif
+            </span>
+          </div>
+          <p className="slides-header-desc">
             Kelola urutan dan tayangan visual TV. Klik baris slide mana saja untuk membuka popup detail lengkap.
           </p>
         </div>
         
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Durasi Per Slide */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'white', padding: '0.45rem 0.85rem', borderRadius: '0.65rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
-            <label style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Activity size={15} color="#64748b" /> Durasi:
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '0.45rem', padding: '0.15rem 0.4rem', gap: '0.2rem' }}>
-              <input 
-                type="number" 
-                value={localSlideDuration} 
-                onChange={(e) => setLocalSlideDuration(Number(e.target.value))} 
-                min="1"
-                style={{ width: '38px', border: 'none', background: 'transparent', outline: 'none', fontWeight: 800, color: '#2563eb', textAlign: 'center', fontSize: '0.88rem', padding: 0 }}
-              />
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>dtk</span>
+        <div className="slides-header-toolbar">
+          {/* Baris Utilitas: Durasi Default & Tombol Hapus Terpilih */}
+          <div className="slides-toolbar-utility-row">
+            {/* Durasi Per Slide */}
+            <div className="slides-duration-box">
+              <label style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}>
+                <Activity size={14} color="#64748b" /> Durasi Standar:
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.45rem', padding: '0.15rem 0.4rem', gap: '0.2rem' }}>
+                <input 
+                  type="number" 
+                  value={localSlideDuration} 
+                  onChange={(e) => setLocalSlideDuration(Number(e.target.value))} 
+                  min="1"
+                  style={{ width: '36px', border: 'none', background: 'transparent', outline: 'none', fontWeight: 800, color: '#2563eb', textAlign: 'center', fontSize: '0.88rem', padding: 0 }}
+                />
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>dtk</span>
+              </div>
             </div>
+
+            {/* Tombol Hapus Terpilih (Tampil jika ada slide yang dipilih) */}
+            {selectedSlides.length > 0 && (
+              <button 
+                type="button"
+                onClick={handleDeleteSelectedSlides} 
+                className="slides-delete-selected-btn"
+                title="Hapus semua slide yang dicentang"
+              >
+                <Trash2 size={15} /> <span>Hapus ({selectedSlides.length})</span>
+              </button>
+            )}
           </div>
 
-          {/* Tombol Hapus Terpilih */}
-          <button 
-            onClick={handleDeleteSelectedSlides} 
-            disabled={selectedSlides.length === 0} 
-            style={{ 
-              padding: '0.65rem 1.1rem', 
-              background: selectedSlides.length > 0 ? '#fef2f2' : 'white', 
-              color: selectedSlides.length > 0 ? '#ef4444' : '#cbd5e1', 
-              border: `1px solid ${selectedSlides.length > 0 ? '#fecaca' : '#e2e8f0'}`, 
-              borderRadius: '0.65rem', 
-              cursor: selectedSlides.length > 0 ? 'pointer' : 'not-allowed', 
-              fontWeight: 600, 
-              fontSize: '0.85rem',
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.45rem', 
-              transition: 'all 0.2s' 
-            }}
-          >
-            <Trash2 size={15} /> Hapus ({selectedSlides.length})
-          </button>
+          {/* Baris Tombol Aksi Utama: Tambah Slide & Simpan ke TV */}
+          <div className="slides-toolbar-actions-row">
+            <button 
+              type="button"
+              onClick={handleAddNewSlide} 
+              className="slides-add-btn"
+            >
+              <Plus size={16} /> <span>Tambah Slide</span>
+            </button>
 
-          {/* Tombol Tambah Slide (Membuka popup langsung) */}
-          <button 
-            onClick={handleAddNewSlide} 
-            style={{ 
-              padding: '0.65rem 1.25rem', 
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '0.65rem', 
-              cursor: 'pointer', 
-              fontWeight: 700, 
-              fontSize: '0.88rem',
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.45rem', 
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)', 
-              transition: 'transform 0.2s' 
-            }} 
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} 
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <Plus size={17} /> Tambah Slide
-          </button>
-
-          {/* Tombol Publikasikan ke TV */}
-          <button 
-            onClick={handleSaveSlides} 
-            style={{ 
-              padding: '0.65rem 1.35rem', 
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '0.65rem', 
-              cursor: 'pointer', 
-              fontWeight: 700, 
-              fontSize: '0.88rem',
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.45rem', 
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', 
-              transition: 'transform 0.2s' 
-            }} 
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} 
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <Save size={17} /> Publikasikan ke TV
-          </button>
+            <button 
+              type="button"
+              onClick={handleSaveSlides} 
+              className="slides-publish-btn"
+            >
+              <Save size={16} /> <span>Publikasikan ke TV</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* FILTER BAR BERSIH DENGAN TOMBOL GARIS 3 (FILTER DROPDOWN) */}
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+      <div className="slides-filter-row">
         
         {/* Kolom Pencarian Teks */}
-        <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-          <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-            <Search size={18} />
-          </div>
+        <div className="slides-search-box">
+          <Search size={17} style={{ color: '#94a3b8', flexShrink: 0 }} />
           <input 
             type="text" 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
-            placeholder="Cari slide berdasarkan judul, tag kategori, atau isi konten..." 
-            style={{ 
-              width: '100%', 
-              padding: '0.8rem 1rem 0.8rem 2.8rem', 
-              borderRadius: '0.75rem', 
-              border: '1px solid #e2e8f0', 
-              background: 'white', 
-              outline: 'none', 
-              fontSize: '0.92rem', 
-              color: '#1e293b', 
-              boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
-              transition: 'border-color 0.2s' 
-            }} 
-            onFocus={e => e.target.style.borderColor = '#3b82f6'} 
-            onBlur={e => e.target.style.borderColor = '#e2e8f0'} 
+            placeholder="Cari slide berdasarkan judul, tag, atau isi..." 
+            className="slides-search-input"
           />
           {searchQuery && (
             <button 
               type="button" 
               onClick={() => setSearchQuery('')} 
-              style={{ position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.2rem' }}
+              style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
             >
               <X size={15} />
             </button>
           )}
         </div>
 
-        {/* Tombol Garis 3 Filter (Dropdown Popover) */}
-        <div style={{ position: 'relative' }} ref={filterDropdownRef}>
-          <button
-            type="button"
-            onClick={() => setFilterDropdownOpen(prev => !prev)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.8rem 1.25rem',
-              borderRadius: '0.75rem',
-              background: activeSlideFilter !== 'all' ? '#eff6ff' : 'white',
-              border: `1.5px solid ${activeSlideFilter !== 'all' ? '#3b82f6' : '#e2e8f0'}`,
-              color: activeSlideFilter !== 'all' ? '#1d4ed8' : '#334155',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-              transition: 'all 0.15s'
-            }}
-            title="Klik tombol garis 3 untuk memfilter slide"
-          >
-            <ListFilter size={18} />
-            <span>Filter</span>
-            {activeSlideFilter !== 'all' && (
-              <span style={{
-                padding: '0.15rem 0.55rem',
-                borderRadius: '999px',
-                background: '#2563eb',
-                color: 'white',
-                fontSize: '0.72rem',
-                fontWeight: 800
-              }}>
-                {SLIDE_FILTER_LABELS[activeSlideFilter] || 'Aktif'}
-              </span>
-            )}
-          </button>
-
-          {/* Pop-up Dropdown Filter Menu */}
-          {filterDropdownOpen && (
-            <div style={{
-              position: 'absolute',
-              right: 0,
-              top: 'calc(100% + 8px)',
-              background: 'white',
-              borderRadius: '0.85rem',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 15px 35px -5px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.06)',
-              width: '270px',
-              padding: '0.5rem',
-              zIndex: 100,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem'
-            }}>
-              <div style={{ padding: '0.45rem 0.75rem', fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Pilihan Filter Slide
-              </div>
-
-              {[
-                { id: 'all', label: 'Semua Slide (All)', icon: '📋' },
-                { id: 'minggu_ini', label: 'Minggu Ini', icon: '📆' },
-                { id: 'bulan_ini', label: 'Bulan Ini', icon: '🗓️' },
-                { id: 'global', label: 'Tayang Semua TV (Global)', icon: '🌐' },
-                { id: 'spesifik', label: 'Tayang di TV Tertentu', icon: '🎯' },
-                { id: 'image', label: 'Format Gambar', icon: '🖼️' },
-                { id: 'video', label: 'Format Video', icon: '🎥' },
-                { id: 'none', label: 'Format Teks & Warna', icon: '🎨' },
-              ].map(opt => {
-                const isSelected = activeSlideFilter === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveSlideFilter(opt.id);
-                      setFilterDropdownOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '0.6rem 0.8rem',
-                      borderRadius: '0.55rem',
-                      background: isSelected ? '#eff6ff' : 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      fontSize: '0.85rem',
-                      fontWeight: isSelected ? 700 : 500,
-                      color: isSelected ? '#1d4ed8' : '#334155',
-                      transition: 'background 0.15s'
-                    }}
-                    onMouseOver={e => {
-                      if (!isSelected) e.currentTarget.style.background = '#f8fafc';
-                    }}
-                    onMouseOut={e => {
-                      if (!isSelected) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span>{opt.icon}</span>
-                      <span>{opt.label}</span>
-                    </span>
-                    {isSelected && <Check size={16} color="#2563eb" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Ringkasan & Reset Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
-          <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
-            Menampilkan <strong style={{ color: '#0f172a' }}>{filteredSlides.length}</strong> dari {localSlides.length} Slide
-          </span>
-          {isSlideFilterActive && (
+        {/* Filter Actions */}
+        <div className="slides-filter-actions">
+          {/* Tombol Garis 3 Filter (Dropdown Popover) */}
+          <div style={{ position: 'relative' }} ref={filterDropdownRef}>
             <button
               type="button"
-              onClick={handleResetSlideFilters}
+              onClick={() => setFilterDropdownOpen(prev => !prev)}
+              className="slides-filter-toggle-btn"
               style={{
-                padding: '0.4rem 0.75rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                background: '#fef2f2',
-                color: '#ef4444',
-                border: '1px solid #fecaca',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem'
+                background: activeSlideFilter !== 'all' ? '#eff6ff' : 'white',
+                border: `1.5px solid ${activeSlideFilter !== 'all' ? '#3b82f6' : '#e2e8f0'}`,
+                color: activeSlideFilter !== 'all' ? '#1d4ed8' : '#334155',
               }}
+              title="Klik tombol filter untuk memfilter slide"
             >
-              <X size={13} /> Reset Filter
+              <ListFilter size={17} />
+              <span>Filter</span>
+              {activeSlideFilter !== 'all' && (
+                <span className="slides-filter-active-pill">
+                  {SLIDE_FILTER_LABELS[activeSlideFilter] || 'Aktif'}
+                </span>
+              )}
             </button>
-          )}
+
+            {/* Pop-up Dropdown Filter Menu */}
+            {filterDropdownOpen && (
+              <div className="slides-filter-dropdown-menu">
+                <div style={{ padding: '0.45rem 0.75rem', fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Pilihan Filter Slide
+                </div>
+
+                {[
+                  { id: 'all', label: 'Semua Slide (All)', icon: '📋' },
+                  { id: 'minggu_ini', label: 'Minggu Ini', icon: '📆' },
+                  { id: 'bulan_ini', label: 'Bulan Ini', icon: '🗓️' },
+                  { id: 'global', label: 'Tayang Semua TV (Global)', icon: '🌐' },
+                  { id: 'spesifik', label: 'Tayang di TV Tertentu', icon: '🎯' },
+                  { id: 'image', label: 'Format Gambar', icon: '🖼️' },
+                  { id: 'video', label: 'Format Video', icon: '🎥' },
+                  { id: 'none', label: 'Format Teks & Warna', icon: '🎨' },
+                ].map(opt => {
+                  const isSelected = activeSlideFilter === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSlideFilter(opt.id);
+                        setFilterDropdownOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '0.6rem 0.8rem',
+                        borderRadius: '0.55rem',
+                        background: isSelected ? '#eff6ff' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontSize: '0.85rem',
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? '#1d4ed8' : '#334155',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseOver={e => {
+                        if (!isSelected) e.currentTarget.style.background = '#f8fafc';
+                      }}
+                      onMouseOut={e => {
+                        if (!isSelected) e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </span>
+                      {isSelected && <Check size={16} color="#2563eb" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Ringkasan & Reset Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="slides-count-label">
+              <strong style={{ color: '#0f172a' }}>{filteredSlides.length}</strong> / {localSlides.length} Slide
+            </span>
+            {isSlideFilterActive && (
+              <button
+                type="button"
+                onClick={handleResetSlideFilters}
+                className="slides-filter-reset-btn"
+              >
+                <X size={13} /> Reset
+              </button>
+            )}
+          </div>
         </div>
 
       </div>
@@ -683,193 +598,146 @@ export default function SlidesTab({
             <div
               key={slide.id}
               onClick={() => setEditingSlideId(slide.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                background: isSelected ? '#f8faff' : 'white',
-                padding: '0.85rem 1.25rem',
-                borderRadius: '0.85rem',
-                border: `1.5px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                position: 'relative'
-              }}
-              onMouseOver={e => {
-                if (!isSelected) {
-                  e.currentTarget.style.borderColor = '#93c5fd';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 14px rgba(0,0,0,0.06)';
-                }
-              }}
-              onMouseOut={e => {
-                if (!isSelected) {
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)';
-                }
-              }}
+              className={`slide-list-item ${isSelected ? 'selected' : ''}`}
             >
-              {/* Checkbox Multi-Select */}
-              <div 
-                onClick={(e) => e.stopPropagation()} 
-                style={{ display: 'flex', alignItems: 'center' }}
-              >
-                <input 
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedSlides(prev => [...prev, slide.id]);
-                    else setSelectedSlides(prev => prev.filter(id => id !== slide.id));
-                  }}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
-                />
+              {/* Header Baris Mobile: Checkbox, Urutan, dan Aksi */}
+              <div className="slide-list-header-mobile">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{ display: 'flex', alignItems: 'center' }}
+                  >
+                    <input 
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedSlides(prev => [...prev, slide.id]);
+                        else setSelectedSlides(prev => prev.filter(id => id !== slide.id));
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
+                    />
+                  </div>
+                  <div className="slide-order-badge">#{index + 1}</div>
+                  <span className="slide-tag-badge">{slide.tag || 'Slide'}</span>
+                </div>
+
+                {/* Aksi Mobile di Pojok Kanan Atas */}
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="slide-actions-mobile"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setEditingSlideId(slide.id)}
+                    className="slide-btn-edit"
+                  >
+                    <Edit3 size={13} /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSlide(slide.id)}
+                    className="slide-btn-delete"
+                    title="Hapus Slide"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
-              {/* Nomor Urut Slide */}
-              <div style={{
-                minWidth: '38px',
-                height: '38px',
-                borderRadius: '0.5rem',
-                background: '#f1f5f9',
-                color: '#334155',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '0.88rem'
-              }}>
-                #{index + 1}
-              </div>
-
-              {/* Thumbnail Cuplikan Visual */}
-              <div style={{
-                width: '84px',
-                height: '52px',
-                borderRadius: '0.5rem',
-                overflow: 'hidden',
-                flexShrink: 0,
-                border: '1px solid #cbd5e1',
-                background: slide.bg || slide.bgColor || '#1e293b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative'
-              }}>
-                {slide.mediaType === 'image' && (slide.mediaUrl || previewMediaInfo?.imageUrl) ? (
-                  <img
-                    src={previewMediaInfo?.imageUrl || slide.mediaUrl}
-                    alt="Thumbnail"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              {/* Konten Utama: Thumbnail + Teks Info */}
+              <div className="slide-list-content-body">
+                {/* Kontrol Desktop: Checkbox & Nomor Urut */}
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="slide-desktop-select-box desktop-only-flex"
+                  style={{ alignItems: 'center', gap: '0.65rem', flexShrink: 0 }}
+                >
+                  <input 
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedSlides(prev => [...prev, slide.id]);
+                      else setSelectedSlides(prev => prev.filter(id => id !== slide.id));
+                    }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
                   />
-                ) : slide.mediaType === 'video' ? (
-                  <div style={{ width: '100%', height: '100%', background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
-                    <Video size={20} />
-                    <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>VIDEO</span>
-                  </div>
-                ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                      WARNA
-                    </span>
-                  </div>
-                )}
-              </div>
+                  <div className="slide-order-badge">#{index + 1}</div>
+                </div>
 
-              {/* Info Utama Slide (Klik untuk Buka Detail) */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                  {/* Badge Tag */}
-                  <span style={{
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '0.35rem',
-                    background: '#f1f5f9',
-                    color: '#475569',
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase'
-                  }}>
-                    {slide.tag || 'Slide'}
-                  </span>
-
-                  {/* Tipe Media */}
-                  {renderMediaTypeBadge(slide.mediaType)}
-
-                  {/* Indikator Durasi Slide */}
-                  {renderDurationBadge(slide)}
-
-                  {/* Indikator Target TV */}
-                  {renderTargetBadge(slide)}
-
-                  {/* Indikator Layar Penuh */}
-                  {isFullMedia && (
-                    <span style={{
-                      padding: '0.15rem 0.5rem',
-                      borderRadius: '0.35rem',
-                      background: '#fef3c7',
-                      color: '#92400e',
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.2rem'
-                    }}>
-                      <Maximize2 size={10} /> Layar Penuh 100%
-                    </span>
+                {/* Thumbnail Cuplikan Visual */}
+                <div 
+                  className="slide-thumb-box"
+                  style={{ background: slide.bg || slide.bgColor || '#1e293b' }}
+                >
+                  {slide.mediaType === 'image' && (slide.mediaUrl || previewMediaInfo?.imageUrl) ? (
+                    <img
+                      src={previewMediaInfo?.imageUrl || slide.mediaUrl}
+                      alt="Thumbnail"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : slide.mediaType === 'video' ? (
+                    <div style={{ width: '100%', height: '100%', background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                      <Video size={18} />
+                      <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 700 }}>VIDEO</span>
+                    </div>
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
+                        WARNA
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                {/* Judul Slide */}
-                <div style={{
-                  fontSize: '0.98rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {rawTitle}
-                </div>
+                {/* Info Utama Slide (Klik untuk Buka Detail) */}
+                <div className="slide-info-box">
+                  <div className="slide-badges-row desktop-only-flex">
+                    <span className="slide-tag-badge">{slide.tag || 'Slide'}</span>
+                    {renderMediaTypeBadge(slide.mediaType)}
+                    {renderDurationBadge(slide)}
+                    {renderTargetBadge(slide)}
+                    {isFullMedia && (
+                      <span className="slide-fullmedia-badge">
+                        <Maximize2 size={10} /> Layar Penuh 100%
+                      </span>
+                    )}
+                  </div>
 
-                {/* Cuplikan Deskripsi */}
-                <div style={{
-                  fontSize: '0.8rem',
-                  color: '#64748b',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {rawDesc || <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>Tidak ada deskripsi tambahan</span>}
+                  {/* Judul Slide */}
+                  <div className="slide-title-text">
+                    {rawTitle}
+                  </div>
+
+                  {/* Cuplikan Deskripsi */}
+                  <div className="slide-desc-text">
+                    {rawDesc || <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>Tidak ada deskripsi tambahan</span>}
+                  </div>
+
+                  {/* Badges Baris di Layar Mobile */}
+                  <div className="slide-badges-row mobile-only-flex">
+                    {renderMediaTypeBadge(slide.mediaType)}
+                    {renderDurationBadge(slide)}
+                    {renderTargetBadge(slide)}
+                    {isFullMedia && (
+                      <span className="slide-fullmedia-badge">
+                        <Maximize2 size={10} /> 100%
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Tombol Aksi di Baris List */}
+              {/* Tombol Aksi di Baris List (Desktop Only) */}
               <div 
                 onClick={(e) => e.stopPropagation()} 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}
+                className="slide-actions-desktop"
               >
                 {/* Tombol Buka Detail / Edit */}
                 <button
                   type="button"
                   onClick={() => setEditingSlideId(slide.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    padding: '0.45rem 0.85rem',
-                    borderRadius: '0.5rem',
-                    background: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    color: '#2563eb',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = '#dbeafe'}
-                  onMouseOut={e => e.currentTarget.style.background = '#eff6ff'}
+                  className="slide-btn-edit"
                   title="Buka popup untuk mengedit teks, media, & target TV"
                 >
                   <Edit3 size={14} /> Detail / Edit
@@ -879,29 +747,7 @@ export default function SlidesTab({
                 <button
                   type="button"
                   onClick={() => deleteSlide(slide.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '0.5rem',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseOver={e => {
-                    e.currentTarget.style.color = '#ef4444';
-                    e.currentTarget.style.background = '#fef2f2';
-                    e.currentTarget.style.borderColor = '#fecaca';
-                  }}
-                  onMouseOut={e => {
-                    e.currentTarget.style.color = '#94a3b8';
-                    e.currentTarget.style.background = '#f8fafc';
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                  }}
+                  className="slide-btn-delete"
                   title="Hapus Slide"
                 >
                   <Trash2 size={15} />
@@ -976,51 +822,24 @@ export default function SlidesTab({
       )}
 
       {/* FOOTER ACTIONS BAR */}
-      <div style={{ marginTop: '2rem', padding: '1.25rem 1.5rem', background: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="slides-footer-bar">
         <div style={{ color: '#64748b', fontSize: '0.88rem' }}>
           Total: <strong style={{ color: '#0f172a' }}>{localSlides.length} Slide</strong> aktif di daftar putar TV.
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="slides-footer-btn-group">
           <button
+            type="button"
             onClick={handleAddNewSlide}
-            style={{
-              padding: '0.65rem 1.25rem',
-              background: '#f8fafc',
-              color: '#334155',
-              border: '1px solid #cbd5e1',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.88rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.15s'
-            }}
+            className="slides-footer-btn-add"
           >
-            <Plus size={16} /> Tambah Slide Baru
+            <Plus size={16} /> <span>Tambah Slide</span>
           </button>
           <button
+            type="button"
             onClick={handleSaveSlides}
-            style={{
-              padding: '0.65rem 1.5rem',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 4px 10px rgba(16, 185, 129, 0.25)',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+            className="slides-footer-btn-save"
           >
-            <Save size={16} /> Publikasikan ke TV
+            <Save size={16} /> <span>Publikasikan ke TV</span>
           </button>
         </div>
       </div>
@@ -1030,48 +849,24 @@ export default function SlidesTab({
       {/* ======================================================== */}
       {editingSlide && (
         <div 
-          style={{ 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            width: '100vw', 
-            height: '100vh', 
-            background: 'rgba(15, 23, 42, 0.7)', 
-            backdropFilter: 'blur(5px)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            zIndex: 9999, 
-            padding: '1rem' 
-          }}
+          className="slide-modal-overlay"
           onClick={() => setEditingSlideId(null)}
         >
           <div 
-            style={{ 
-              background: 'white', 
-              borderRadius: '1.25rem', 
-              width: '100%', 
-              maxWidth: '820px', 
-              maxHeight: '92vh', 
-              overflowY: 'auto', 
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)', 
-              display: 'flex', 
-              flexDirection: 'column',
-              position: 'relative'
-            }}
+            className="slide-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(to right, #f8fafc, #ffffff)', position: 'sticky', top: 0, zIndex: 10 }}>
+            <div className="slide-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '0.75rem', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Edit3 size={22} />
+                <div style={{ width: '40px', height: '40px', borderRadius: '0.65rem', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Edit3 size={20} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
                     Detail Slide #{localSlides.findIndex(s => s.id === editingSlide.id) + 1}
                   </h3>
-                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
                     Sesuaikan isi teks, media visual (foto/video), dan target layar TV
                   </p>
                 </div>
@@ -1079,7 +874,7 @@ export default function SlidesTab({
               <button
                 type="button"
                 onClick={() => setEditingSlideId(null)}
-                style={{ background: '#f1f5f9', border: 'none', color: '#64748b', fontSize: '1.3rem', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                style={{ background: '#f1f5f9', border: 'none', color: '#64748b', fontSize: '1.3rem', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0 }}
                 onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a'; }}
                 onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
                 title="Tutup Popup"
@@ -1089,7 +884,7 @@ export default function SlidesTab({
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="slide-modal-body">
               
               {/* SEKSI 1: KONTEN TEKS */}
               <div className="slide-section" style={{ background: '#f8fafc', borderRadius: '1rem', padding: '1.25rem', border: '1px solid #e2e8f0' }}>
@@ -1097,7 +892,7 @@ export default function SlidesTab({
                   <MessageSquare size={16} color="#2563eb" /> INFORMASI TEKS SLIDE
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginBottom: '0.85rem' }}>
+                <div className="slide-form-2col">
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem', display: 'block' }}>
                       Label Kategori / Tag
@@ -1281,7 +1076,7 @@ export default function SlidesTab({
                   <Sparkles size={16} color="#2563eb" /> TOMBOL AKSI & KODE QR (OPSIONAL)
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
+                <div className="slide-form-2col-equal">
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem', display: 'block' }}>
                       Teks Tombol
@@ -1701,44 +1496,23 @@ export default function SlidesTab({
             </div>
 
             {/* Modal Footer */}
-            <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbfc', borderRadius: '0 0 1.25rem 1.25rem', position: 'sticky', bottom: 0, zIndex: 10 }}>
+            <div className="slide-modal-footer">
               <button
                 type="button"
                 onClick={() => {
                   deleteSlide(editingSlide.id);
                   setEditingSlideId(null);
                 }}
-                style={{
-                  padding: '0.6rem 1rem',
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '0.55rem',
-                  color: '#ef4444',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem'
-                }}
+                className="slide-modal-delete-btn"
               >
-                <Trash2 size={15} /> Hapus Slide Ini
+                <Trash2 size={15} /> <span>Hapus Slide Ini</span>
               </button>
 
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div className="slide-modal-footer-right">
                 <button
                   type="button"
                   onClick={() => setEditingSlideId(null)}
-                  style={{
-                    padding: '0.6rem 1.25rem',
-                    background: 'white',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '0.55rem',
-                    color: '#475569',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer'
-                  }}
+                  className="slide-modal-close-btn"
                 >
                   Tutup
                 </button>
@@ -1748,20 +1522,7 @@ export default function SlidesTab({
                     setEditingSlideId(null);
                     showToastPopup('Perubahan slide tersimpan di draft! (Klik "Publikasikan ke TV" untuk sinkronisasi)');
                   }}
-                  style={{
-                    padding: '0.6rem 1.45rem',
-                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                    border: 'none',
-                    borderRadius: '0.55rem',
-                    color: 'white',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    boxShadow: '0 4px 12px rgba(37,99,235,0.25)'
-                  }}
+                  className="slide-modal-save-btn"
                 >
                   <Check size={16} /> Selesai & Simpan
                 </button>

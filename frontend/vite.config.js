@@ -14,6 +14,7 @@ export default defineConfig({
     emptyOutDir: true
   },
   server: {
+    host: true, // Mengizinkan akses dari HP / perangkat lain di jaringan Wi-Fi yang sama
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

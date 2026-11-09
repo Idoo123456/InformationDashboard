@@ -639,9 +639,16 @@ export default function ScheduleModal({
         </div>
 
         {/* FOOTER ACTION BUTTONS */}
-        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#f8fafc', borderRadius: '0 0 0.85rem 0.85rem' }}>
-          <button onClick={onClose} style={{ padding: '0.65rem 1.35rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '0.55rem', cursor: 'pointer', fontWeight: 600, color: '#475569', transition: 'all 0.15s' }}>Batal</button>
+        <div className="schedule-modal-footer">
           <button 
+            type="button"
+            onClick={onClose} 
+            className="schedule-modal-btn-cancel"
+          >
+            Batal
+          </button>
+          <button 
+            type="button"
             onClick={() => {
               // KUNCI RUANGAN: Cek apakah ruangan sudah dipinjam di jam yang sama
               const conflict = findRoomConflict(editingSchedule, existingSchedules);
@@ -678,11 +685,9 @@ export default function ScheduleModal({
               setEditingSchedule(finalSchedule);
               onSave(finalSchedule);
             }} 
-            style={{ padding: '0.65rem 1.45rem', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: 'white', border: 'none', borderRadius: '0.55rem', cursor: 'pointer', fontWeight: 600, display: 'flex', gap: '0.5rem', alignItems: 'center', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)', transition: 'all 0.15s' }} 
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} 
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+            className="schedule-modal-btn-save"
           >
-            <Save size={16} /> Simpan Kegiatan
+            <Save size={16} /> <span>Simpan Kegiatan</span>
           </button>
         </div>
 

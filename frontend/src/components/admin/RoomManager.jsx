@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { 
   Building2, Plus, Trash2, MapPin, Users, CheckCircle, 
-  Search, RefreshCw, Layers, ShieldCheck, Tag
+  Search, RefreshCw, Layers, ShieldCheck, Tag, X, Sparkles
 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
 import Pagination from './Pagination';
@@ -131,8 +131,8 @@ export default function RoomManager() {
       text: `Apakah Anda yakin ingin menghapus "${room.name}"? Jadwal yang menggunakan ruangan ini tetap tersimpan.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
       confirmButtonText: 'Ya, Hapus',
       cancelButtonText: 'Batal'
     });
@@ -185,366 +185,230 @@ export default function RoomManager() {
   const uniqueBuildings = Array.from(new Set(rooms.map(r => r.building).filter(Boolean)));
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-      {/* Header Bar */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
-            }}>
-              <Building2 size={22} />
+    <div className="rooms-container">
+      
+      {/* 1. HEADER BAR */}
+      <div className="card rooms-header-card">
+        <div className="rooms-header-content">
+          <div className="rooms-title-box">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <div className="rooms-icon-badge">
+                <Building2 size={20} />
+              </div>
+              <div>
+                <h3 className="rooms-page-title">
+                  Master Ruangan & Studio Kampus
+                </h3>
+              </div>
+              <span className="rooms-header-pill">
+                Master Data
+              </span>
             </div>
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-                Master Ruangan & Studio Kampus
-              </h2>
-              <p style={{ margin: '3px 0 0', fontSize: '0.88rem', color: '#64748b' }}>
-                Kelola data ruang rapat, auditorium, dan studio yang terintegrasi langsung dengan TV Display
-              </p>
-            </div>
+            <p className="rooms-page-desc">
+              Kelola data ruang rapat, auditorium, dan studio yang terintegrasi langsung dengan TV Display.
+            </p>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            onClick={fetchRooms}
-            style={{
-              padding: '9px 14px',
-              borderRadius: '10px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              color: '#475569',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontWeight: 600,
-              fontSize: '0.85rem'
-            }}
-          >
-            <RefreshCw size={15} className={loading ? 'spin-anim' : ''} />
-            Segarkan
-          </button>
-
-          <button
-            onClick={handleOpenAdd}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.35)'
-            }}
-          >
-            <Plus size={18} />
-            Tambah Ruangan Baru
-          </button>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div style={{
-        background: '#ffffff',
-        padding: '16px 20px',
-        borderRadius: '14px',
-        border: '1px solid #e2e8f0',
-        marginBottom: '20px',
-        display: 'flex',
-        gap: '16px',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-      }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-          <Search size={17} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input
-            type="text"
-            placeholder="Cari nama ruangan, gedung, atau fasilitas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '9px 12px 9px 38px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.9rem',
-              outline: 'none'
-            }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Gedung:</span>
-          <select
-            value={filterBuilding}
-            onChange={(e) => setFilterBuilding(e.target.value)}
-            style={{
-              padding: '9px 12px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.88rem',
-              background: '#fff',
-              color: '#334155',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="ALL">Semua Gedung ({rooms.length})</option>
-            {uniqueBuildings.map(b => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
-        </div>
-
-        {isSuperAdmin && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Fakultas / Unit:</span>
-            <select
-              value={filterFaculty}
-              onChange={(e) => setFilterFaculty(e.target.value)}
-              style={{
-                padding: '9px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '0.88rem',
-                background: '#fff',
-                color: '#334155',
-                outline: 'none',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
+          {/* Action Buttons: 2-column grid on mobile */}
+          <div className="rooms-action-group">
+            <button
+              type="button"
+              onClick={fetchRooms}
+              className="rooms-btn-refresh"
+              title="Segarkan daftar ruangan"
             >
-              <option value="ALL">Semua Unit & Fakultas ({rooms.length})</option>
-              <option value="main">Pusat / Rektorat ({rooms.filter(r => !r.faculty_prefix || r.faculty_prefix === 'main').length})</option>
-              {FACULTY_LIST.filter(f => f.prefix !== 'main').map(f => {
-                const count = rooms.filter(r => r.faculty_prefix === f.prefix).length;
-                return (
-                  <option key={f.prefix} value={f.prefix}>
-                    {f.name} ({f.code}) ({count})
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-        )}
+              <RefreshCw size={15} className={loading ? 'spin-anim' : ''} />
+              <span>Segarkan</span>
+            </button>
 
-        <div style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-          Total Terdaftar: <strong style={{ color: '#0284c7' }}>{filteredRooms.length} Ruangan</strong>
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="rooms-btn-add"
+              title="Tambah ruangan baru"
+            >
+              <Plus size={16} />
+              <span>Tambah Ruangan</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Room Cards Grid */}
+      {/* 2. FILTER & SEARCH TOOLBAR */}
+      <div className="card rooms-filter-card">
+        <div className="rooms-filter-row">
+          {/* Search Box */}
+          <div className="rooms-search-box">
+            <Search size={16} className="rooms-search-icon" />
+            <input
+              type="text"
+              placeholder="Cari nama ruangan, gedung, atau fasilitas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="rooms-search-input"
+            />
+            {searchTerm && (
+              <button 
+                type="button" 
+                onClick={() => setSearchTerm('')} 
+                className="rooms-search-clear"
+                title="Hapus pencarian"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Filter Selects Group */}
+          <div className="rooms-filter-selects">
+            {/* Filter Gedung */}
+            <div className="rooms-select-item">
+              <span className="rooms-select-label">Gedung:</span>
+              <select
+                value={filterBuilding}
+                onChange={(e) => setFilterBuilding(e.target.value)}
+                className="rooms-select-input"
+              >
+                <option value="ALL">Semua Gedung ({rooms.length})</option>
+                {uniqueBuildings.map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter Unit / Fakultas (Super Admin Only) */}
+            {isSuperAdmin && (
+              <div className="rooms-select-item">
+                <span className="rooms-select-label">Unit:</span>
+                <select
+                  value={filterFaculty}
+                  onChange={(e) => setFilterFaculty(e.target.value)}
+                  className="rooms-select-input"
+                >
+                  <option value="ALL">Semua Unit ({rooms.length})</option>
+                  <option value="main">Pusat / Rektorat ({rooms.filter(r => !r.faculty_prefix || r.faculty_prefix === 'main').length})</option>
+                  {FACULTY_LIST.filter(f => f.prefix !== 'main').map(f => {
+                    const count = rooms.filter(r => r.faculty_prefix === f.prefix).length;
+                    return (
+                      <option key={f.prefix} value={f.prefix}>
+                        {f.name} ({f.code}) ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Counter Badge */}
+          <div className="rooms-counter-badge">
+            Total Terdaftar: <strong>{filteredRooms.length} Ruangan</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. ROOM CARDS GRID */}
       {loading ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', color: '#94a3b8' }}>
-          <RefreshCw size={36} className="spin-anim" style={{ margin: '0 auto 12px', color: '#0284c7' }} />
+        <div className="rooms-loading-state">
+          <RefreshCw size={36} className="spin-anim" style={{ margin: '0 auto 12px', color: '#2563eb' }} />
           <p>Memuat daftar ruangan master...</p>
         </div>
       ) : filteredRooms.length === 0 ? (
-        <div style={{
-          background: '#fff',
-          padding: '60px 20px',
-          borderRadius: '16px',
-          textAlign: 'center',
-          border: '1px dashed #cbd5e1'
-        }}>
+        <div className="card rooms-empty-state">
           <Building2 size={48} style={{ color: '#cbd5e1', marginBottom: '12px' }} />
-          <h3 style={{ margin: '0 0 6px', color: '#475569' }}>Tidak Ada Ruangan Ditemukan</h3>
-          <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>
-            {searchTerm ? 'Coba ubah kata kunci pencarian Anda.' : 'Belum ada ruangan yang didaftarkan. Klik "Tambah Ruangan Baru" di atas.'}
+          <h4 style={{ margin: '0 0 6px', color: '#1e293b', fontWeight: 800 }}>Tidak Ada Ruangan Ditemukan</h4>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
+            {searchTerm ? 'Coba ubah kata kunci atau reset filter Anda.' : 'Belum ada ruangan yang didaftarkan. Klik "Tambah Ruangan" di atas.'}
           </p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '18px'
-        }}>
+        <div className="rooms-cards-grid">
           {paginatedRooms.map((room) => (
-            <div
-              key={room.id}
-              style={{
-                background: '#ffffff',
-                borderRadius: '14px',
-                border: '1px solid #e2e8f0',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.07)';
-                e.currentTarget.style.borderColor = '#38bdf8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
-            >
-              {/* Category Tag & Action */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      background: '#e0f2fe',
-                      color: '#0369a1'
-                    }}>
-                      {room.category || 'Ruang Rapat'}
-                    </span>
+            <div key={room.id} className="room-item-card">
+              
+              {/* Category, Faculty Badge & Delete Action */}
+              <div className="room-card-top-bar">
+                <div className="room-badge-group">
+                  <span className="room-category-pill">
+                    {room.category || 'Ruang Rapat'}
+                  </span>
 
-                    {/* Unit / Faculty Badge */}
-                    {(!room.faculty_prefix || room.faculty_prefix === 'main') ? (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        background: '#f1f5f9',
-                        color: '#475569',
-                        border: '1px solid #e2e8f0'
-                      }}>
-                        🏛️ Pusat / Rektorat
-                      </span>
-                    ) : (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        background: '#fef3c7',
-                        color: '#92400e',
-                        border: '1px solid #fde68a'
-                      }}>
-                        🎓 {FACULTY_LIST?.find(f => f.prefix === room.faculty_prefix)?.code || room.faculty_prefix.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {(!isSuperAdmin && (!room.faculty_prefix || room.faculty_prefix === 'main')) ? (
-                    <span title="Ruangan Global Kampus hanya dapat dihapus oleh Super Admin" style={{ color: '#94a3b8', fontSize: '0.75rem', padding: '4px', cursor: 'not-allowed' }}>
-                      🔒 Pusat
+                  {/* Unit / Faculty Badge */}
+                  {(!room.faculty_prefix || room.faculty_prefix === 'main') ? (
+                    <span className="room-faculty-pill pusat">
+                      🏛️ Pusat
                     </span>
                   ) : (
-                    <button
-                      onClick={() => handleDeleteRoom(room)}
-                      title="Hapus Ruangan"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#cbd5e1',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        borderRadius: '6px',
-                        transition: 'color 0.15s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = '#cbd5e1'}
-                    >
-                      <Trash2 size={17} />
-                    </button>
+                    <span className="room-faculty-pill faculty">
+                      🎓 {FACULTY_LIST?.find(f => f.prefix === room.faculty_prefix)?.code || room.faculty_prefix.toUpperCase()}
+                    </span>
                   )}
                 </div>
-
-                <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
-                  {room.name}
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px', fontSize: '0.85rem', color: '#64748b' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <MapPin size={15} style={{ color: '#0284c7' }} />
-                    <span>{room.building || 'Gedung Pusat'} {room.floor ? `(${room.floor})` : ''}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <Users size={15} style={{ color: '#059669' }} />
-                    <span>Kapasitas: <strong>{room.capacity || 30} Orang</strong></span>
-                  </div>
-                </div>
-
-                {/* Facilities */}
-                {room.facilities && (
-                  <div style={{
-                    padding: '10px 12px',
-                    background: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '1px solid #f1f5f9',
-                    fontSize: '0.82rem',
-                    color: '#475569'
-                  }}>
-                    <strong style={{ display: 'block', marginBottom: '4px', color: '#334155' }}>Fasilitas Ruang:</strong>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {room.facilities.split(',').map((fac, idx) => (
-                        <span key={idx} style={{
-                          background: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.78rem'
-                        }}>
-                          {fac.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                
+                {/* Delete Button */}
+                {(!isSuperAdmin && (!room.faculty_prefix || room.faculty_prefix === 'main')) ? (
+                  <span title="Ruangan Global Kampus hanya dapat dihapus oleh Super Admin" className="room-locked-badge">
+                    🔒
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRoom(room)}
+                    title="Hapus Ruangan"
+                    className="room-btn-delete"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 )}
               </div>
 
+              {/* Room Name */}
+              <h4 className="room-card-name">
+                {room.name}
+              </h4>
+
+              {/* Room Location & Capacity */}
+              <div className="room-card-info-list">
+                <div className="room-info-item">
+                  <MapPin size={14} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <span>{room.building || 'Gedung Pusat'} {room.floor ? `(${room.floor})` : ''}</span>
+                </div>
+                <div className="room-info-item">
+                  <Users size={14} color="#10b981" style={{ flexShrink: 0 }} />
+                  <span>Kapasitas: <strong>{room.capacity || 30} Orang</strong></span>
+                </div>
+              </div>
+
+              {/* Facilities Tags */}
+              {room.facilities && (
+                <div className="room-facilities-box">
+                  <span className="room-facilities-title">Fasilitas Ruang:</span>
+                  <div className="room-facilities-tags">
+                    {room.facilities.split(',').map((fac, idx) => (
+                      <span key={idx} className="room-facility-chip">
+                        {fac.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Footer Status */}
-              <div style={{
-                marginTop: '16px',
-                paddingTop: '12px',
-                borderTop: '1px solid #f1f5f9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '0.8rem'
-              }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#16a34a', fontWeight: 600 }}>
+              <div className="room-card-footer">
+                <span className="room-status-ready">
                   <CheckCircle size={14} /> Siap Digunakan
                 </span>
-                <span style={{ color: '#94a3b8' }}>
-                  Prefix: <strong style={{ color: '#64748b' }}>{room.faculty_prefix || 'main'}</strong>
+                <span className="room-prefix-tag">
+                  Unit: <strong>{room.faculty_prefix || 'main'}</strong>
                 </span>
               </div>
+
             </div>
           ))}
         </div>
       )}
 
-      {/* Pagination Ruangan */}
+      {/* 4. PAGINATION */}
       {!loading && filteredRooms.length > 0 && (
         <Pagination
           currentPage={currentPage}
@@ -560,265 +424,156 @@ export default function RoomManager() {
         />
       )}
 
-      {/* Add Room Modal */}
+      {/* 5. ADD ROOM MODAL (RESPONSIVE) */}
       {isModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '16px'
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '540px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            overflow: 'hidden',
-            animation: 'fadeInScale 0.2s ease-out'
-          }}>
+        <div className="room-modal-overlay">
+          <div className="room-modal-card">
+            
             {/* Modal Header */}
-            <div style={{
-              padding: '20px 24px',
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-              color: '#fff',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
+            <div className="room-modal-header">
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
+                <h3 className="room-modal-title">
                   Tambah Ruangan Baru
                 </h3>
-                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>
-                  Daftarkan ruangan resmi kampus untuk jadwal TV & peminjaman
+                <p className="room-modal-subtitle">
+                  Daftarkan ruangan resmi kampus untuk jadwal TV & agenda
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: 'none',
-                  color: '#fff',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '1.1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="room-modal-btn-close"
+                title="Tutup"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSaveRoom} style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Nama Ruangan / Studio *
+            {/* Modal Body Form */}
+            <form onSubmit={handleSaveRoom} className="room-modal-body">
+              <div className="room-form-group">
+                <label className="room-form-label">
+                  Nama Ruangan / Studio *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Studio Gurindam 12, Ruang Senat Lt.5"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="admin-input room-form-input"
+                />
+              </div>
+
+              <div className="room-form-grid-2col">
+                <div className="room-form-group">
+                  <label className="room-form-label">
+                    Kategori Ruangan
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="admin-input room-form-select"
+                  >
+                    {categories.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="room-form-group">
+                  <label className="room-form-label">
+                    Kapasitas (Orang)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5000"
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })}
+                    className="admin-input room-form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="room-form-grid-2col">
+                <div className="room-form-group">
+                  <label className="room-form-label">
+                    Gedung
                   </label>
                   <input
                     type="text"
-                    required
-                    placeholder="Contoh: Studio Gurindam 12, Ruang Senat Lt.5"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.9rem'
-                    }}
+                    placeholder="Contoh: Gedung Rektorat, UPA Perpustakaan"
+                    value={formData.building}
+                    onChange={(e) => setFormData({ ...formData, building: e.target.value })}
+                    className="admin-input room-form-input"
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                      Kategori Ruangan
-                    </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.9rem',
-                        background: '#fff'
-                      }}
-                    >
-                      {categories.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                      Kapasitas (Orang)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="5000"
-                      value={formData.capacity}
-                      onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                      Gedung
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: Gedung Rektorat, UPA Perpustakaan"
-                      value={formData.building}
-                      onChange={(e) => setFormData({ ...formData, building: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                      Lantai
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: Lt. 1, Lt. 2, Lt. 5"
-                      value={formData.floor}
-                      onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Fasilitas Ruang (Pisahkan dengan koma)
+                <div className="room-form-group">
+                  <label className="room-form-label">
+                    Lantai
                   </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Contoh: AC, Proyektor, Wireless Mic, Video Wall, Sound System"
-                    value={formData.facilities}
-                    onChange={(e) => setFormData({ ...formData, facilities: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.9rem',
-                      resize: 'none'
-                    }}
+                  <input
+                    type="text"
+                    placeholder="Contoh: Lt. 1, Lt. 2, Lt. 5"
+                    value={formData.floor}
+                    onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                    className="admin-input room-form-input"
                   />
                 </div>
-
-                {isSuperAdmin ? (
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                      Unit / Fakultas Pemilik Ruangan
-                    </label>
-                    <select
-                      value={formData.faculty_prefix}
-                      onChange={(e) => setFormData({ ...formData, faculty_prefix: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.9rem',
-                        background: '#fff'
-                      }}
-                    >
-                      <option value="main">Pusat / Rektorat (Global Kampus)</option>
-                      {FACULTY_LIST.filter(f => f.prefix !== 'main').map(f => (
-                        <option key={f.prefix} value={f.prefix}>{f.name} ({f.code})</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div style={{
-                    background: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    borderRadius: '8px',
-                    padding: '10px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                  }}>
-                    <span style={{ fontSize: '1.25rem' }}>🏛️</span>
-                    <div style={{ fontSize: '0.82rem', color: '#166534', lineHeight: 1.45 }}>
-                      Ruangan ini akan disimpan untuk <strong>{currentFacultyObj ? currentFacultyObj.name : activeFaculty.toUpperCase()}</strong> dan otomatis dapat dipantau oleh <strong>Super Admin</strong>.
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Modal Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+              <div className="room-form-group">
+                <label className="room-form-label">
+                  Fasilitas Ruang (Pisahkan dengan koma)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Contoh: AC, Proyektor, Wireless Mic, Video Wall, Sound System"
+                  value={formData.facilities}
+                  onChange={(e) => setFormData({ ...formData, facilities: e.target.value })}
+                  className="admin-input room-form-textarea"
+                />
+              </div>
+
+              {isSuperAdmin ? (
+                <div className="room-form-group">
+                  <label className="room-form-label">
+                    Unit / Fakultas Pemilik Ruangan
+                  </label>
+                  <select
+                    value={formData.faculty_prefix}
+                    onChange={(e) => setFormData({ ...formData, faculty_prefix: e.target.value })}
+                    className="admin-input room-form-select"
+                  >
+                    <option value="main">Pusat / Rektorat (Global Kampus)</option>
+                    {FACULTY_LIST.filter(f => f.prefix !== 'main').map(f => (
+                      <option key={f.prefix} value={f.prefix}>{f.name} ({f.code})</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="room-faculty-notice">
+                  <span style={{ fontSize: '1.25rem' }}>🏛️</span>
+                  <div style={{ fontSize: '0.82rem', color: '#166534', lineHeight: 1.45 }}>
+                    Ruangan ini akan disimpan untuk <strong>{currentFacultyObj ? currentFacultyObj.name : activeFaculty.toUpperCase()}</strong> dan otomatis dapat dipantau oleh <strong>Super Admin</strong>.
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Buttons (2-column on mobile) */}
+              <div className="room-modal-footer">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f8fafc',
-                    color: '#475569',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+                  className="room-modal-btn-cancel"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{
-                    padding: '10px 22px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                    color: '#fff',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
-                  }}
+                  className="room-modal-btn-save"
                 >
                   Simpan Ruangan
                 </button>
@@ -827,6 +582,8 @@ export default function RoomManager() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
+
