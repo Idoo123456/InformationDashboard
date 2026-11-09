@@ -241,6 +241,7 @@ async function migrateAll() {
       media_url LONGTEXT,
       is_media_only BOOLEAN DEFAULT FALSE,
       media_fit VARCHAR(50) DEFAULT 'cover',
+      duration INT NULL DEFAULT NULL,
       target_tvs TEXT NULL,
       sort_order INT DEFAULT 0,
       is_active BOOLEAN DEFAULT TRUE,

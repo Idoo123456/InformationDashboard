@@ -593,12 +593,12 @@ const TUSlider = ({ currentTv }) => {
             </p>
           </div>
 
-          {/* SECTION 3: SPECS DECK (4 SOLID PANELS) */}
-          <div className="tu-card-specs-deck">
+          {/* SECTION 3: UNIFIED INFO CARD (1 Card Berisi Ruangan, PIC, Kategori & Estimasi) */}
+          <div className="tu-card-specs-deck" title="Informasi Lengkap Pelaksanaan Kegiatan">
             {/* Ruangan */}
-            <div className="tu-deck-cell" title="Lokasi Ruangan">
+            <div className="tu-deck-cell" title={`Lokasi / Ruangan: ${item.loc || 'Ruang Rapat Utama'}`}>
               <div className="tu-cell-icon cell-loc">
-                <MapPin size={24} />
+                <MapPin size={20} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">LOKASI / TEMPAT</span>
@@ -607,9 +607,9 @@ const TUSlider = ({ currentTv }) => {
             </div>
 
             {/* PIC */}
-            <div className="tu-deck-cell" title="Penanggung Jawab">
+            <div className="tu-deck-cell" title={`Penanggung Jawab: ${item.pic || 'Tata Usaha / Fakultas'}`}>
               <div className="tu-cell-icon cell-pic">
-                <User size={24} />
+                <User size={20} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">PENANGGUNG JAWAB</span>
@@ -618,9 +618,9 @@ const TUSlider = ({ currentTv }) => {
             </div>
 
             {/* Kategori Mitra */}
-            <div className="tu-deck-cell" title="Kategori Mitra">
+            <div className="tu-deck-cell" title={`Kategori Mitra: ${item.partnerCategory || 'Internal Kampus'}`}>
               <div className="tu-cell-icon cell-cat">
-                <Briefcase size={24} />
+                <Briefcase size={20} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">KATEGORI MITRA</span>
@@ -628,10 +628,10 @@ const TUSlider = ({ currentTv }) => {
               </div>
             </div>
 
-            {/* Durasi & Tahun */}
-            <div className="tu-deck-cell" title="Estimasi & Kalender">
+            {/* Durasi & Estimasi */}
+            <div className="tu-deck-cell" title={`Estimasi Durasi: ${durationText ? `${durationText} Pelaksanaan` : 'Jadwal Reguler'}`}>
               <div className="tu-cell-icon cell-time">
-                <Hourglass size={24} />
+                <Hourglass size={20} />
               </div>
               <div className="tu-cell-text">
                 <span className="tu-cell-label">ESTIMASI DURASI</span>

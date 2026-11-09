@@ -2614,39 +2614,43 @@ body {
 
 /* Penyesuaian khusus Grid 4x2 (8 Kegiatan) */
 .tu-grid-4x2 .tu-card {
-  padding: 0.95rem 1.1rem 0.9rem 1.1rem;
-  gap: 0.75rem;
+  padding: 0.85rem 1.05rem 0.8rem 1.05rem;
+  gap: 0.65rem;
 }
 .tu-grid-4x2 .tu-card-title {
-  font-size: 1.28rem;
-  line-height: 1.28;
+  font-size: 1.55rem;
+  line-height: 1.25;
   margin-bottom: 0;
 }
 .tu-grid-4x2 .tu-card-desc {
-  font-size: 0.88rem;
+  font-size: 1.02rem;
   line-height: 1.35;
 }
 .tu-grid-4x2 .tu-card-specs-deck {
-  gap: 0.75rem 0.9rem;
-  padding: 0.85rem 1rem;
+  gap: 0.5rem 0.85rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.85rem;
 }
 .tu-grid-4x2 .tu-deck-cell {
-  padding: 0.75rem 0.95rem;
-  min-height: 64px;
-  gap: 0.85rem;
-  border-radius: 0.75rem;
+  padding: 0.1rem 0.2rem;
+  min-height: auto;
+  gap: 0.65rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 .tu-grid-4x2 .tu-cell-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 0.7rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 0.65rem;
 }
 .tu-grid-4x2 .tu-cell-label {
-  font-size: 0.72rem;
-  margin-bottom: 0.25rem;
+  font-size: 0.66rem;
+  margin-bottom: 0.18rem;
 }
 .tu-grid-4x2 .tu-cell-value {
-  font-size: 1.08rem;
+  font-size: 1.02rem;
 }
 .tu-grid-4x2 .tu-date-badge-date {
   font-size: 0.78rem;
@@ -2670,41 +2674,45 @@ body {
 
 /* Penyesuaian khusus Grid 3x3 (9 Kegiatan) */
 .tu-grid-3x3 .tu-card {
-  padding: 0.75rem 1.1rem 0.7rem 1.1rem;
-  gap: 0.55rem;
+  padding: 0.75rem 1rem 0.7rem 1rem;
+  gap: 0.5rem;
 }
 .tu-grid-3x3 .tu-card-title {
-  font-size: 1.18rem;
-  line-height: 1.24;
+  font-size: 1.38rem;
+  line-height: 1.22;
   margin-bottom: 0;
   -webkit-line-clamp: 1;
 }
 .tu-grid-3x3 .tu-card-desc {
-  font-size: 0.84rem;
-  line-height: 1.32;
+  font-size: 0.94rem;
+  line-height: 1.3;
   -webkit-line-clamp: 1;
 }
 .tu-grid-3x3 .tu-card-specs-deck {
-  gap: 0.6rem 0.85rem;
-  padding: 0.75rem 0.9rem;
+  gap: 0.4rem 0.75rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.75rem;
 }
 .tu-grid-3x3 .tu-deck-cell {
-  padding: 0.6rem 0.8rem;
-  min-height: 56px;
-  gap: 0.75rem;
-  border-radius: 0.7rem;
+  padding: 0.05rem 0.15rem;
+  min-height: auto;
+  gap: 0.55rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 .tu-grid-3x3 .tu-cell-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 0.65rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 0.6rem;
 }
 .tu-grid-3x3 .tu-cell-label {
-  font-size: 0.68rem;
-  margin-bottom: 0.2rem;
+  font-size: 0.62rem;
+  margin-bottom: 0.15rem;
 }
 .tu-grid-3x3 .tu-cell-value {
-  font-size: 1.02rem;
+  font-size: 0.95rem;
 }
 .tu-grid-3x3 .tu-date-badge-date {
   font-size: 0.74rem;
@@ -2956,26 +2964,26 @@ body {
   justify-content: flex-start;
   min-height: 0;
   margin: 0;
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
 .tu-card-title {
-  font-size: 1.48rem;
+  font-size: 1.85rem;
   font-weight: 850;
   color: #0f172a;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.35px;
 }
 
 .tu-card-desc {
-  font-size: 0.96rem;
+  font-size: 1.15rem;
   color: #475569;
-  line-height: 1.42;
+  line-height: 1.45;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -2983,35 +2991,36 @@ body {
   overflow: hidden;
 }
 
-/* SECTION 3: SPECS DECK (4 SOLID PANELS) */
+/* SECTION 3: UNIFIED INFO CARD (1 SOLID CARD BERISI SEMUA SPESIFIKASI) */
 .tu-card-specs-deck {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.95rem 1.15rem;
+  gap: 0.75rem 1.25rem;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.1rem 1.25rem;
+  border-radius: 0.95rem;
+  padding: 0.85rem 1.15rem;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 .tu-deck-cell {
   display: flex;
   align-items: center;
-  gap: 1.05rem;
-  background: #ffffff;
-  border: 1.5px solid #edf2f7;
-  border-radius: 0.85rem;
-  padding: 1rem 1.25rem;
-  min-height: 76px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  gap: 0.85rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.15rem 0.25rem;
+  min-height: auto;
+  box-shadow: none;
   min-width: 0;
 }
 
 .tu-cell-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 0.8rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3050,17 +3059,17 @@ body {
 }
 
 .tu-cell-label {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 850;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   line-height: 1;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
 }
 
 .tu-cell-value {
-  font-size: 1.25rem;
+  font-size: 1.18rem;
   font-weight: 850;
   color: #0f172a;
   white-space: nowrap;

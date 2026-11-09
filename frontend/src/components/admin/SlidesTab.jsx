@@ -3,7 +3,7 @@ import {
   Activity, Trash2, Plus, Save, Image as ImageIcon, MessageSquare, 
   Upload, Video, CheckCircle2, Sparkles, Tv, Search, X, Check,
   Edit3, Eye, Layers, Palette, Link as LinkIcon, QrCode, Monitor,
-  Maximize2, ListFilter
+  Maximize2, ListFilter, Clock
 } from 'lucide-react';
 import { resolveMediaInfo } from '../../utils/mediaUtils';
 import SlideMedia from '../display/SlideMedia';
@@ -317,6 +317,69 @@ export default function SlidesTab({
         textTransform: 'uppercase'
       }}>
         {icon} {text}
+      </span>
+    );
+  };
+
+  // Helper menampilkan badge durasi tayang slide
+  const renderDurationBadge = (slide) => {
+    const isVideo = slide.mediaType === 'video';
+    const customDur = slide.duration !== undefined && slide.duration !== null && slide.duration !== ''
+      ? Number(slide.duration)
+      : null;
+
+    if (isVideo && customDur === 0) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          padding: '0.2rem 0.55rem',
+          borderRadius: '0.4rem',
+          background: '#f5f3ff',
+          color: '#6d28d9',
+          border: '1px solid #ddd6fe',
+          fontSize: '0.72rem',
+          fontWeight: 700
+        }} title="Durasi Video: Putar Penuh sampai selesai (Otomatis)">
+          <Clock size={11} /> Video (Auto)
+        </span>
+      );
+    }
+
+    if (customDur !== null && customDur > 0) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          padding: '0.2rem 0.55rem',
+          borderRadius: '0.4rem',
+          background: '#eff6ff',
+          color: '#1d4ed8',
+          border: '1px solid #bfdbfe',
+          fontSize: '0.72rem',
+          fontWeight: 800
+        }} title={`Durasi khusus slide ini: ${customDur} detik`}>
+          <Clock size={11} /> {customDur}s
+        </span>
+      );
+    }
+
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.25rem',
+        padding: '0.2rem 0.55rem',
+        borderRadius: '0.4rem',
+        background: '#f8fafc',
+        color: '#64748b',
+        border: '1px solid #e2e8f0',
+        fontSize: '0.72rem',
+        fontWeight: 600
+      }} title={`Mengikuti durasi standar: ${localSlideDuration || 8} detik`}>
+        <Clock size={11} /> {localSlideDuration || 8}s (Default)
       </span>
     );
   };
@@ -733,6 +796,9 @@ export default function SlidesTab({
 
                   {/* Tipe Media */}
                   {renderMediaTypeBadge(slide.mediaType)}
+
+                  {/* Indikator Durasi Slide */}
+                  {renderDurationBadge(slide)}
 
                   {/* Indikator Target TV */}
                   {renderTargetBadge(slide)}
@@ -1257,6 +1323,192 @@ export default function SlidesTab({
                     style={{ background: 'white' }} 
                   />
                 </div>
+              </div>
+
+              {/* SEKSI 3: DURASI TAYANG SLIDE (WAKTU TAMPIL DI LAYAR TV) */}
+              <div className="slide-section" style={{ background: '#f8fafc', borderRadius: '1rem', padding: '1.25rem', border: '1px solid #e2e8f0' }}>
+                <div className="slide-section-title" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <Clock size={16} color="#2563eb" /> DURASI TAYANG SLIDE (WAKTU TAMPIL DI LAYAR)
+                </div>
+
+                <p style={{ margin: '0 0 0.85rem 0', fontSize: '0.82rem', color: '#64748b' }}>
+                  Tentukan berapa lama slide ini akan ditampilkan sebelum otomatis bergulir ke slide selanjutnya.
+                </p>
+
+                {(() => {
+                  const isVideo = editingSlide.mediaType === 'video';
+                  const currentDur = editingSlide.duration !== undefined && editingSlide.duration !== null && editingSlide.duration !== ''
+                    ? Number(editingSlide.duration)
+                    : null;
+                  
+                  const isAutoVideo = isVideo && currentDur === 0;
+                  const isCustom = currentDur !== null && currentDur > 0;
+                  const isDefault = currentDur === null || (!isAutoVideo && !isCustom);
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {/* Pilihan 1: Khusus Video - Otomatis Sesuai Panjang Video */}
+                      {isVideo && (
+                        <div
+                          onClick={() => updateSlide(editingSlide.id, 'duration', 0)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem',
+                            padding: '0.85rem 1rem',
+                            background: isAutoVideo ? '#f5f3ff' : 'white',
+                            border: `1.5px solid ${isAutoVideo ? '#7c3aed' : '#cbd5e1'}`,
+                            borderRadius: '0.75rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <input 
+                            type="radio" 
+                            name={`duration_mode_${editingSlide.id}`}
+                            checked={isAutoVideo}
+                            onChange={() => updateSlide(editingSlide.id, 'duration', 0)}
+                            style={{ marginTop: '0.2rem', accentColor: '#7c3aed', cursor: 'pointer' }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: isAutoVideo ? '#6d28d9' : '#1e293b' }}>
+                                🎬 Otomatis Sesuai Panjang Video (Putar Penuh)
+                              </span>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '0.1rem 0.45rem', borderRadius: '0.35rem', background: '#ede9fe', color: '#6d28d9' }}>
+                                Disarankan untuk Video
+                              </span>
+                            </div>
+                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.76rem', color: '#64748b', lineHeight: 1.4 }}>
+                              Slide ini akan terus tayang memutar video sampai selesai 100%, lalu langsung bergulir otomatis ke slide berikutnya.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pilihan 2: Atur Durasi Kustom Sendiri */}
+                      <div
+                        onClick={() => {
+                          if (!isCustom) {
+                            updateSlide(editingSlide.id, 'duration', isVideo ? 20 : 10);
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.75rem',
+                          padding: '0.85rem 1rem',
+                          background: isCustom ? '#eff6ff' : 'white',
+                          border: `1.5px solid ${isCustom ? '#2563eb' : '#cbd5e1'}`,
+                          borderRadius: '0.75rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <input 
+                          type="radio" 
+                          name={`duration_mode_${editingSlide.id}`}
+                          checked={isCustom}
+                          onChange={() => updateSlide(editingSlide.id, 'duration', isVideo ? 20 : 10)}
+                          style={{ marginTop: '0.2rem', accentColor: '#2563eb', cursor: 'pointer' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.88rem', fontWeight: 800, color: isCustom ? '#1d4ed8' : '#1e293b' }}>
+                              ⏱️ Atur Durasi Kustom
+                            </span>
+                            <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                              (Bebas atur detik khusus untuk slide ini)
+                            </span>
+                          </div>
+
+                          {isCustom && (
+                            <div 
+                              onClick={(e) => e.stopPropagation()} 
+                              style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <input 
+                                  type="number" 
+                                  min="1" 
+                                  max="3600"
+                                  value={currentDur || (isVideo ? 20 : 10)} 
+                                  onChange={(e) => {
+                                    const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                    updateSlide(editingSlide.id, 'duration', val);
+                                  }}
+                                  className="admin-input"
+                                  style={{ width: '90px', padding: '0.45rem 0.65rem', fontWeight: 800, fontSize: '1rem', color: '#1d4ed8', background: 'white' }}
+                                />
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>Detik</span>
+                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                  ({Math.floor((currentDur || (isVideo ? 20 : 10)) / 60) > 0 ? `${Math.floor((currentDur || (isVideo ? 20 : 10)) / 60)} menit ${(currentDur || (isVideo ? 20 : 10)) % 60} dtk` : `${currentDur || (isVideo ? 20 : 10)} detik`})
+                                </span>
+                              </div>
+
+                              {/* Tombol Pilihan Preset Cepat */}
+                              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Pilihan Cepat:</span>
+                                {(isVideo ? [5, 10, 15, 20, 30, 45, 60, 90, 120] : [3, 5, 8, 10, 12, 15, 20, 30, 60]).map(sec => (
+                                  <button
+                                    key={sec}
+                                    type="button"
+                                    onClick={() => updateSlide(editingSlide.id, 'duration', sec)}
+                                    style={{
+                                      padding: '0.25rem 0.55rem',
+                                      borderRadius: '0.35rem',
+                                      fontSize: '0.75rem',
+                                      fontWeight: currentDur === sec ? 800 : 600,
+                                      background: currentDur === sec ? '#2563eb' : '#f1f5f9',
+                                      color: currentDur === sec ? 'white' : '#334155',
+                                      border: `1px solid ${currentDur === sec ? '#2563eb' : '#cbd5e1'}`,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.15s'
+                                    }}
+                                  >
+                                    {sec}s
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Pilihan 3: Ikuti Standar Global TV */}
+                      <div
+                        onClick={() => updateSlide(editingSlide.id, 'duration', null)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.75rem',
+                          padding: '0.85rem 1rem',
+                          background: isDefault ? '#f8fafc' : 'white',
+                          border: `1.5px solid ${isDefault ? '#94a3b8' : '#cbd5e1'}`,
+                          borderRadius: '0.75rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <input 
+                          type="radio" 
+                          name={`duration_mode_${editingSlide.id}`}
+                          checked={isDefault}
+                          onChange={() => updateSlide(editingSlide.id, 'duration', null)}
+                          style={{ marginTop: '0.2rem', accentColor: '#2563eb', cursor: 'pointer' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#334155' }}>
+                            🌐 Ikuti Durasi Standar TV ({localSlideDuration || 8} detik)
+                          </span>
+                          <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.76rem', color: '#64748b' }}>
+                            Slide ini akan mengikuti setelan umum durasi perangkat TV ({localSlideDuration || 8} detik).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* SEKSI 4: TARGET TAYANGAN LAYAR TV */}

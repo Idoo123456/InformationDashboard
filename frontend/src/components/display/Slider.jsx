@@ -50,19 +50,54 @@ const Slider = ({ currentTv }) => {
 
   const activeIndex = Math.min(Math.max(0, Number.isFinite(currentSlide) ? currentSlide : 0), (slides.length || 1) - 1);
 
-  // Reset slide index jika slides berubah
+  // Analisis durasi khusus slide yang sedang aktif
+  const activeSlide = slides[activeIndex];
+  const isVideo = activeSlide?.mediaType === 'video';
+
+  // Custom duration dari slide (angka detik spesifik atau 0 untuk video auto)
+  const slideDurationVal = (activeSlide?.duration !== undefined && activeSlide?.duration !== null && activeSlide?.duration !== '')
+    ? Number(activeSlide.duration)
+    : null;
+
+  // Video mode 'auto' (durasi === 0): putar video sampai selesai penuh baru ganti slide
+  const isVideoAuto = isVideo && slideDurationVal === 0;
+
+  // Fallback standar durasi (perangkat TV atau global slideDuration, default 8s)
+  const globalFallbackSec = Math.max(3, Number(currentTv?.slide_duration) || Number(slideDuration) || 8);
+
+  // Durasi efektif dalam detik untuk progress bar & timer transisi
+  const effectiveDurationSec = (slideDurationVal !== null && slideDurationVal > 0)
+    ? slideDurationVal
+    : (isVideoAuto ? 120 : globalFallbackSec);
+
+  const advanceSlide = () => {
+    setCurrentSlide((prev) => (Number.isFinite(prev) ? (prev + 1) % slides.length : 0));
+  };
+
+  const handleVideoEnded = () => {
+    if (isVideoAuto) {
+      advanceSlide();
+    }
+  };
+
+  // Reset slide index jika daftar slides berubah
   useEffect(() => {
     setCurrentSlide(0);
   }, [slides.length]);
 
+  // Timer per-slide dengan durasi dinamis masing-masing slide
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
-    const durationSec = Math.max(3, Number(currentTv?.slide_duration) || Number(slideDuration) || 8);
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (Number.isFinite(prev) ? (prev + 1) % slides.length : 0));
-    }, durationSec * 1000);
-    return () => clearInterval(timer);
-  }, [slides.length, slideDuration, currentTv?.slide_duration]);
+
+    // Jika video dalam mode auto, timeout sebagai batas maksimal keselamatan (300 detik)
+    const waitTimeMs = isVideoAuto ? 300 * 1000 : effectiveDurationSec * 1000;
+
+    const timer = setTimeout(() => {
+      advanceSlide();
+    }, waitTimeMs);
+
+    return () => clearTimeout(timer);
+  }, [activeIndex, slides.length, effectiveDurationSec, isVideoAuto]);
 
   // Load local blobs if mediaUrl starts with 'localforage:'
   useEffect(() => {
@@ -204,6 +239,7 @@ const Slider = ({ currentTv }) => {
                   slide={slide} 
                   isActive={index === activeIndex} 
                   blobUrl={blobUrls[slide.id]} 
+                  onVideoEnded={index === activeIndex ? handleVideoEnded : undefined}
                 />
               )}
 
@@ -346,9 +382,9 @@ const Slider = ({ currentTv }) => {
             >
               {index === activeIndex && (
                 <span 
-                  key={`progress-${activeIndex}`}
+                  key={`progress-${activeIndex}-${effectiveDurationSec}`}
                   className="indicator-progress" 
-                  style={{ animationDuration: `${Math.max(3, Number(slideDuration) || 8)}s` }}
+                  style={{ animationDuration: `${effectiveDurationSec}s` }}
                 />
               )}
             </button>

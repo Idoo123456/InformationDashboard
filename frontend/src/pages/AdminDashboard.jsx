@@ -776,6 +776,7 @@ function AdminDashboard() {
       qr: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id",
       qrUrl: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://unri.ac.id",
       qrLabel: "Pindai QR",
+      duration: null,
       targetTvs: [],
       target_tvs: []
     };

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { resolveMediaInfo } from '../../utils/mediaUtils';
 import { AlertCircle, Volume2, VolumeX } from 'lucide-react';
 
-export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPreview = false, mediaUrl, mediaType, mediaFit, title }) {
+export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPreview = false, mediaUrl, mediaType, mediaFit, title, onVideoEnded }) {
   const effectiveSlide = slide || { mediaUrl, mediaType, mediaFit, title };
   const finalRawUrl = blobUrl || effectiveSlide?.mediaUrl || mediaUrl || '';
   const resolvedMediaType = effectiveSlide?.mediaType || mediaType || 'image';
@@ -54,6 +54,22 @@ export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPre
       sendYouTubeCommand('pauseVideo');
     }
   }, [isActive, isPreview, isVideoLoaded, mediaInfo.provider]);
+
+  // Listener event selesai untuk video YouTube
+  useEffect(() => {
+    if (!isActive || !onVideoEnded || mediaInfo.provider !== 'youtube') return;
+    const handleMessage = (e) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        // Event YouTube: state 0 = ENDED
+        if ((data?.event === 'onStateChange' && (data?.info === 0 || data?.info === '0')) || (data?.infoDelivery?.playerState === 0)) {
+          onVideoEnded();
+        }
+      } catch (_) {}
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [isActive, onVideoEnded, mediaInfo.provider]);
 
   // Manajemen pemutaran video langsung (play saat aktif, pause saat tidak aktif)
   useEffect(() => {
@@ -236,13 +252,18 @@ export default function SlideMedia({ slide, isActive = true, blobUrl = '', isPre
         ref={videoRef}
         src={mediaInfo.url}
         autoPlay
-        loop
+        loop={!onVideoEnded}
         muted={isMuted}
         playsInline
         onLoadedMetadata={(e) => {
           e.target.muted = isMuted;
           if (isActive || isPreview) {
             e.target.play().catch(() => {});
+          }
+        }}
+        onEnded={() => {
+          if (onVideoEnded && isActive) {
+            onVideoEnded();
           }
         }}
         onError={() => setHasError(true)}

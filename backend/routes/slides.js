@@ -55,6 +55,7 @@ router.get('/:prefix', async (req, res) => {
         mediaUrl: r.media_url || '',
         isMediaOnly: Boolean(r.is_media_only),
         mediaFit: r.media_fit || 'cover',
+        duration: r.duration !== null && r.duration !== undefined ? Number(r.duration) : null,
         targetTvs: targetTvs,
         target_tvs: targetTvs,
         sortOrder: r.sort_order || 0,
@@ -105,12 +106,21 @@ router.put('/:prefix/bulk', async (req, res) => {
       
       // Target TV list (JSON array string)
       const targetTvsVal = JSON.stringify(s.targetTvs || s.target_tvs || []);
+      
+      // Durasi kustom per slide (dalam detik; null jika mengikuti default TV / auto)
+      let durationVal = null;
+      if (s.duration !== undefined && s.duration !== null && s.duration !== '') {
+        const parsed = parseInt(s.duration, 10);
+        if (!isNaN(parsed) && parsed >= 0) {
+          durationVal = parsed;
+        }
+      }
 
       await connection.query(
         `INSERT INTO slides (
           faculty_prefix, tag, title, description, btn_text, btn_link, bg, qr_url, qr_label, 
-          media_type, media_url, is_media_only, media_fit, target_tvs, sort_order
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          media_type, media_url, is_media_only, media_fit, duration, target_tvs, sort_order
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           prefix,
           s.tag || '',
@@ -125,6 +135,7 @@ router.put('/:prefix/bulk', async (req, res) => {
           s.mediaUrl || '',
           isMediaOnlyVal,
           mediaFitVal,
+          durationVal,
           targetTvsVal,
           idx + 1
         ]
