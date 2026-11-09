@@ -30,15 +30,14 @@ const Header = ({ currentTv }) => {
   // Nama fakultas / unit kerja resmi (dinamis sesuai prefix & pengaturan)
   const displayFaculty = facultyName || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
 
-  // Identitas brand di samping logo: hanya teks "PW" dengan font hitam tebal yang rapi & diperbesar
+  // Identitas brand di samping logo: teks "PERPUSTAKAAN" kapital dengan font hitam tebal yang rapi & diperbesar
   const isCustomUnit = subUnitName && subUnitName.trim() && subUnitName !== 'Pusat Informasi & Layanan Terpadu' && subUnitName !== 'Pusat Informasi Fakultas';
-  const brandTitle = isCustomUnit
-    ? (subUnitName.trim().toLowerCase() === 'PERPUSTAKAAN' ? 'PERPUSTAKAAN' : subUnitName.trim())
-    : 'PERPUSTAKAAN';
+  const rawBrand = isCustomUnit ? subUnitName.trim() : 'PERPUSTAKAAN';
+  const brandTitle = rawBrand.toUpperCase();
 
   return (
     <header className="header glass-panel header-grand">
-      {/* BAGIAN KIRI: LOGO RESMI & TEKS PERPUSTAKAAN */}
+      {/* BAGIAN KIRI: LOGO RESMI & TEKS PERPUSTAKAAN KAPITAL */}
       <div className="header-brand">
         <div className="header-logo-wrap">
           <img src={logoUnri} alt="Logo UNRI" className="header-logo-img" />
@@ -47,7 +46,7 @@ const Header = ({ currentTv }) => {
         <div className="header-brand-divider" />
 
         <div className="header-brand-text">
-          <h2 className="header-PERPUSTAKAAN-title">{brandTitle}</h2>
+          <h2 className="header-perpustakaan-title" style={{ textTransform: 'uppercase' }}>{brandTitle}</h2>
         </div>
       </div>
 
