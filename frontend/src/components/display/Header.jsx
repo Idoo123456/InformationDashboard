@@ -30,10 +30,8 @@ const Header = ({ currentTv }) => {
   // Nama fakultas / unit kerja resmi (dinamis sesuai prefix & pengaturan)
   const displayFaculty = facultyName || (prefix === 'main' ? 'Universitas Riau (Kantor Pusat)' : 'Universitas Riau');
 
-  // Identitas brand di samping logo: teks "PERPUSTAKAAN" kapital dengan font hitam tebal yang rapi & diperbesar
-  const isCustomUnit = subUnitName && subUnitName.trim() && subUnitName !== 'Pusat Informasi & Layanan Terpadu' && subUnitName !== 'Pusat Informasi Fakultas';
-  const rawBrand = isCustomUnit ? subUnitName.trim() : 'PERPUSTAKAAN';
-  const brandTitle = rawBrand.toUpperCase();
+  // Identitas brand di samping logo: tetap PERPUSTAKAAN kapital sesuai permintaan
+  const brandTitle = 'PERPUSTAKAAN';
 
   return (
     <header className="header glass-panel header-grand">
@@ -46,7 +44,7 @@ const Header = ({ currentTv }) => {
         <div className="header-brand-divider" />
 
         <div className="header-brand-text">
-          <h2 className="header-perpustakaan-title" style={{ textTransform: 'uppercase' }}>{brandTitle}</h2>
+          <h2 className="header-perpustakaan-title">PERPUSTAKAAN</h2>
         </div>
       </div>
 
@@ -89,7 +87,6 @@ const Header = ({ currentTv }) => {
       <div className="header-time-widget">
         <div className="header-clock-row">
           <span className="header-clock">{formatTime(time)}</span>
-          <span className="header-tz-badge">WIB</span>
         </div>
         <div className="header-date-row">
           <span className="header-day-tag">{days[time.getDay()]}</span>
